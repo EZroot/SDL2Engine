@@ -7,7 +7,7 @@ namespace SDL2Engine.Core.Rendering
 {
     internal class RenderService : IServiceRenderService
     {
-        private readonly IServiceWindowConfig m_windowConfig; // replace with a renderer config
+        private readonly IServiceWindowConfig m_windowConfig; // Replace with a renderer config if I need to
         public RenderService(IServiceWindowConfig? windowConfig)
         {
             m_windowConfig = windowConfig ?? throw new ArgumentNullException(nameof(windowConfig));

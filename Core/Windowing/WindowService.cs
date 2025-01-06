@@ -16,8 +16,7 @@ namespace SDL2Engine.Core.Windowing
 
         /// <summary>
         /// Create a window using OpenGL Renderer.
-        /// Force's the window to use OpenGL Renderer instead of relying on SDL renderer (Which auto-picks based on platform I believe)
-        /// Best to use with ImgGui which requires OpenGL
+        /// Requires manual opengl management.
         /// </summary>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
@@ -45,7 +44,7 @@ namespace SDL2Engine.Core.Windowing
         }
 
         /// <summary>
-        /// Create a window using SDL Default Renderer
+        /// Create a window using SDL Default Renderer.
         /// </summary>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
@@ -57,7 +56,7 @@ namespace SDL2Engine.Core.Windowing
                 SDL.SDL_WINDOWPOS_CENTERED,
                 m_windowConfig.Settings.Width,
                 m_windowConfig.Settings.Height,
-                SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN 
+                SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL.SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI
             );
 
             if (window == IntPtr.Zero)

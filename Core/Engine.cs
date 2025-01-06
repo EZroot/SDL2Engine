@@ -3,9 +3,8 @@ using SDL2Engine.Core.Rendering;
 using SDL2Engine.Core.Windowing.Interfaces;
 using Debug = SDL2Engine.Core.Utils.Debug;
 using ImGuiNET;
-using OpenTK.Graphics.OpenGL4;
 using SDL2Engine.Core.Rendering.Interfaces;
-using SDL2Engine.Core.Rendering.GLBindingsContext;
+using SDL2Engine.Core.GuiRenderer;
 
 namespace SDL2Engine.Core
 {
@@ -13,21 +12,25 @@ namespace SDL2Engine.Core
     {
         private readonly IServiceWindowService m_windowService;
         private readonly IServiceRenderService m_renderService;
+        private readonly IServiceGuiRenderService m_guiRenderService;
 
-        private IntPtr m_window, m_renderer, m_glContext;
-        private ImGuiRenderer _imguiRenderer;  // ImGui renderer
+        private IntPtr m_window, m_renderer;
+
+        private bool disposed = false;
 
         public Engine
         (
             IServiceWindowService? windowService,
-            IServiceRenderService? renderService
+            IServiceRenderService? renderService,
+            IServiceGuiRenderService? guiRenderService
         )
         {
             m_windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
             m_renderService = renderService ?? throw new ArgumentNullException(nameof(renderService));
+            m_guiRenderService = guiRenderService ?? throw new ArgumentNullException(nameof(guiRenderService));
         }
 
-        public void Run()
+        public unsafe void Run()
         {
             if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
             {
@@ -35,63 +38,79 @@ namespace SDL2Engine.Core
                 return;
             }
 
-            m_window = m_windowService.CreateWindowOpenGL();
+            m_window = m_windowService.CreateWindowSDL();
             m_renderer = m_renderService.CreateRenderer(m_window);
-            m_glContext = m_renderService.CreateOpenGLContext(m_window);
 
-            m_renderService.GLMakeCurrent(m_window, m_glContext);
+            IntPtr imguiContext = ImGui.CreateContext();
+            ImGui.SetCurrentContext(imguiContext);
 
-            GL.LoadBindings(new SDL2BindingsContext());
-                // 🔧 Create and set the ImGui context
-    // Create and set the ImGui context
-    IntPtr imguiContext = ImGui.CreateContext();
-    ImGui.SetCurrentContext(imguiContext);
-
-    // Initialize ImGui Renderer
-    SDL.SDL_GetWindowSize(m_window, out int windowWidth, out int windowHeight);
-    _imguiRenderer = new ImGuiRenderer(m_window, windowWidth, windowHeight);
+            SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
+            Debug.Log($"Window size: {windowWidth}x{windowHeight}");
+            
+            m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
+            m_guiRenderService.SetupIO(windowWidth,windowHeight);
 
             bool running = true;
             while (running)
             {
                 while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
                 {
-                    if (e.type == SDL.SDL_EventType.SDL_QUIT)
+                    Debug.LogSDLPollEvents(e);
+                    if (e.type == SDL.SDL_EventType.SDL_QUIT ||
+                        (e.type == SDL.SDL_EventType.SDL_KEYDOWN && e.key.keysym.sym == SDL.SDL_Keycode.SDLK_ESCAPE))
                     {
                         running = false;
+                        break;
                     }
-                    else if (e.type == SDL.SDL_EventType.SDL_KEYDOWN &&
-                             e.key.keysym.sym == SDL.SDL_Keycode.SDLK_ESCAPE)
+                    if (e.type == SDL.SDL_EventType.SDL_WINDOWEVENT && e.window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED)
                     {
-                        running = false;
+                        int newWidth = e.window.data1;
+                        int newHeight = e.window.data2;
+                        m_guiRenderService.OnWindowResize(newWidth, newHeight);
                     }
-                    
-                    // Process ImGui input
-                    _imguiRenderer.ProcessEvent(e);
+                    m_guiRenderService.ProcessEvent(e);
                 }
 
-                SDL.SDL_SetRenderDrawColor(m_renderer, 0, 0, 255, 255);
-                SDL.SDL_RenderClear(m_renderer);
+                SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 80, 255);  
+                SDL.SDL_RenderClear(m_renderer); 
 
-                // Start the ImGui frame
-                _imguiRenderer.NewFrame();
+                ImGui.NewFrame();
 
-                // Your ImGui drawing code here (e.g., ImGui.ShowDemoWindow())
+                ImGui.Begin("Test");
+                ImGui.Text("DERP DERP");
+                ImGui.End();
+                ImGui.ShowDemoWindow();
 
-                // Render ImGui
                 ImGui.Render();
-                _imguiRenderer.RenderDrawData(ImGui.GetDrawData());
+
+                var drawData = ImGui.GetDrawData();
+
+                if (drawData.CmdListsCount > 0)
+                {
+                    m_guiRenderService.RenderDrawData(drawData);
+                }
+
+                if ((ImGui.GetIO().ConfigFlags & ImGuiConfigFlags.ViewportsEnable) != 0)
+                {
+                    ImGui.UpdatePlatformWindows();
+                    ImGui.RenderPlatformWindowsDefault();
+                }
 
                 SDL.SDL_RenderPresent(m_renderer);
             }
 
-            SDL.SDL_DestroyRenderer(m_renderer);
-            SDL.SDL_DestroyWindow(m_window);
-            SDL.SDL_Quit();
+            Dispose();
         }
 
         public void Dispose()
         {
+            if (disposed)
+                return;
+
+            disposed = true;
+
+            m_guiRenderService?.Dispose();
+
             if (m_renderer != IntPtr.Zero)
             {
                 SDL.SDL_DestroyRenderer(m_renderer);
@@ -101,8 +120,6 @@ namespace SDL2Engine.Core
             {
                 SDL.SDL_DestroyWindow(m_window);
             }
-
-            _imguiRenderer?.Dispose();  // Ensure ImGui resources are released
 
             SDL.SDL_Quit();
         }
