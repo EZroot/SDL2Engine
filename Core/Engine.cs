@@ -5,6 +5,7 @@ using Debug = SDL2Engine.Core.Utils.Debug;
 using ImGuiNET;
 using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.GuiRenderer;
+using SDL2Engine.Core.Addressables;
 
 namespace SDL2Engine.Core
 {
@@ -13,6 +14,7 @@ namespace SDL2Engine.Core
         private readonly IServiceWindowService m_windowService;
         private readonly IServiceRenderService m_renderService;
         private readonly IServiceGuiRenderService m_guiRenderService;
+        private readonly IServiceImageLoader m_imageLoader;
 
         private IntPtr m_window, m_renderer;
 
@@ -22,12 +24,14 @@ namespace SDL2Engine.Core
         (
             IServiceWindowService? windowService,
             IServiceRenderService? renderService,
-            IServiceGuiRenderService? guiRenderService
+            IServiceGuiRenderService? guiRenderService,
+            IServiceImageLoader? imageLoader
         )
         {
             m_windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
             m_renderService = renderService ?? throw new ArgumentNullException(nameof(renderService));
             m_guiRenderService = guiRenderService ?? throw new ArgumentNullException(nameof(guiRenderService));
+            m_imageLoader = imageLoader ?? throw new ArgumentNullException(nameof(imageLoader));
         }
 
         public unsafe void Run()
@@ -37,8 +41,10 @@ namespace SDL2Engine.Core
                 Debug.LogError("SDL could not initialize! SDL_Error: " + SDL.SDL_GetError());
                 return;
             }
-
+            m_imageLoader.Initialize();
             m_window = m_windowService.CreateWindowSDL();
+            m_windowService.SetWindowIcon(m_window, "resources/ashh.png");
+            
             m_renderer = m_renderService.CreateRenderer(m_window);
 
             IntPtr imguiContext = ImGui.CreateContext();

@@ -6,6 +6,7 @@ using SDL2Engine.Core.Windowing;
 using SDL2Engine.Core.Windowing.Interfaces;
 using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.GuiRenderer;
+using SDL2Engine.Core.Addressables;
 
 class Program
 {
@@ -17,6 +18,7 @@ class Program
             services.AddSingleton<IServiceWindowService, WindowService>();
             services.AddSingleton<IServiceRenderService, RenderService>();
             services.AddSingleton<IServiceGuiRenderService, ImGuiRenderService>();
+            services.AddSingleton<IServiceImageLoader, ImageLoader>();
 
             services.AddSingleton<Engine>();
 

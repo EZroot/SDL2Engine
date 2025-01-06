@@ -4,5 +4,6 @@ namespace SDL2Engine.Core.Windowing.Interfaces
     {
         IntPtr CreateWindowOpenGL();
         IntPtr CreateWindowSDL();
+        void SetWindowIcon(IntPtr window, string iconPath);
     }
 }

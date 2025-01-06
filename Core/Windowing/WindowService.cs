@@ -2,16 +2,22 @@ using SDL2;
 using SDL2Engine.Core.Windowing.Interfaces;
 using SDL2Engine.Core.Configuration;
 using SDL2Engine.Core.Utils;
+using SDL2Engine.Core.Addressables;
 
 namespace SDL2Engine.Core.Windowing
 {
     internal class WindowService : IServiceWindowService
     {
         private readonly IServiceWindowConfig m_windowConfig;
+        private readonly IServiceImageLoader m_imageLoader;
 
-        public WindowService(IServiceWindowConfig? windowConfig)
+        public WindowService(
+            IServiceWindowConfig? windowConfig,
+            IServiceImageLoader? imageLoader
+            )
         {
-            m_windowConfig = windowConfig  ?? throw new ArgumentNullException(nameof(windowConfig));
+            m_windowConfig = windowConfig ?? throw new ArgumentNullException(nameof(windowConfig));
+            m_imageLoader = imageLoader ?? throw new ArgumentNullException(nameof(imageLoader));
         }
 
         /// <summary>
@@ -39,7 +45,7 @@ namespace SDL2Engine.Core.Windowing
                 SDL.SDL_Quit();
                 throw new InvalidOperationException("Renderer creation failed! SDL_Error: " + SDL.SDL_GetError());
             }
-            
+
             return window;
         }
 
@@ -66,6 +72,19 @@ namespace SDL2Engine.Core.Windowing
                 throw new InvalidOperationException("Renderer creation failed! SDL_Error: " + SDL.SDL_GetError());
             }
             return window;
+        }
+
+        public void SetWindowIcon(IntPtr window, string iconPath)
+        {
+            if (window == IntPtr.Zero)
+            {
+                throw new ArgumentException("Invalid window handle.");
+            }
+
+            IntPtr iconSurface = m_imageLoader.LoadImage(iconPath);
+
+            SDL.SDL_SetWindowIcon(window, iconSurface);
+            SDL.SDL_FreeSurface(iconSurface); // Clean up the surface after setting the icon
         }
     }
 }

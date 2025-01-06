@@ -5,7 +5,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Nullable>enable</Nullable>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier> <!-- Set default runtime identifier -->
     <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers> <!-- Correct placement -->
   </PropertyGroup>
@@ -18,28 +17,12 @@
       <HintPath>lib/SDL2-CS.dll</HintPath>
     </Reference>
     <None Include="lib/cimgui.so">
-    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    <Link>cimgui.so</Link>
-  </None>
-  </ItemGroup>
-<!-- 
-  <ItemGroup Condition=" '$(RuntimeIdentifier)' == 'linux-x64' ">
-    <Content Include="runtimes/linux-x64/native/libcimgui.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>libcimgui.so</Link>
-    </Content>
-  </ItemGroup>
-  <ItemGroup Condition=" '$(RuntimeIdentifier)' == 'win-x64' ">
-    <Content Include="runtimes/win-x64/native/cimgui.dll">
+      <Link>cimgui.so</Link>
+    </None>
+    <None Include="lib/SDL2_image.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>cimgui.dll</Link>
-    </Content>
+      <Link>SDL2_image.so</Link>
+    </None>
   </ItemGroup>
-  <ItemGroup Condition=" '$(RuntimeIdentifier)' == 'osx-x64' ">
-    <Content Include="runtimes/osx-x64/native/libcimgui.dylib">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>libcimgui.dylib</Link>
-    </Content>
-  </ItemGroup> -->
-
 </Project>
