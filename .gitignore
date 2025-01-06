@@ -1,0 +1,39 @@
+# Build artifacts
+bin/
+obj/
+
+# Visual Studio
+*.suo
+*.user
+*.userprefs
+*.csproj.user
+
+# Rider/JetBrains
+.idea/
+*.iml
+
+# Visual Studio Code
+.vscode/
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+packages/
+packages.lock.json
+
+# Logs
+*.log
+
+# Archives
+*.zip
+*.tar
+*.gz
+*.7z
+
+# OS / System
+*.DS_Store
+Thumbs.db
+
+# Coverage
+*.cov
+coverage/
