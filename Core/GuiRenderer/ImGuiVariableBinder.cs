@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using ImGuiNET;
+using SDL2Engine.Core.GuiRenderer.Helpers;
 
 namespace SDL2Engine.Core.GuiRenderer
 {
@@ -12,68 +13,24 @@ namespace SDL2Engine.Core.GuiRenderer
         public void BindVariable<T>(string key, T variable)
         {
             _variables[key] = variable;
-            _drawActions[key] = () => DrawAction(key, variable);
+            _drawActions[key] = () => DrawAction(key, ref variable);
         }
 
-        private void DrawAction<T>(string key, T variable)
+        private void DrawAction<T>(string key, ref T variable)
         {
-            switch (variable)
+            var type = typeof(T);
+
+            if (ImGuiInputHelper.InputActions.TryGetValue(type, out var action))
             {
-                case int val:
-                    DrawEditable(key, ref val);
-                    break;
-                case float val:
-                    DrawEditable(key, ref val);
-                    break;
-                case string val:
-                    DrawEditable(key, ref val, 100);
-                    break;
-                case bool val:
-                    DrawEditable(key, ref val);
-                    break;
-                default:
-                    throw new InvalidOperationException($"Unsupported type {typeof(T)} provided for ImGui binding.");
+                object boxedVariable = variable;
+                action(key, ref boxedVariable);
+                variable = (T)boxedVariable;
             }
-            _variables[key] = variable;
+            else
+            {
+                ImGui.Text($"Unsupported type: {type}");
+            }
         }
-
-private void DrawEditable<T>(string key, ref T value, int maxLength = 0)
-{
-    // Handling integers
-    if (value is int intValue)
-    {
-        ImGui.InputInt(key, ref intValue);
-        value = (T)(object)intValue;
-        return;
-    }
-
-    // Handling floats
-    if (value is float floatValue)
-    {
-        ImGui.InputFloat(key, ref floatValue);
-        value = (T)(object)floatValue;
-        return;
-    }
-
-    // Handling booleans
-    if (value is bool boolValue)
-    {
-        ImGui.Checkbox(key, ref boolValue);
-        value = (T)(object)boolValue;
-        return;
-    }
-
-    // Handling strings
-    if (value is string stringValue)
-    {
-        ImGui.InputText(key, ref stringValue, (uint)maxLength);
-        value = (T)(object)stringValue;
-        return;
-    }
-
-    ImGui.Text($"Unsupported type {typeof(T)} for ImGui binding.");
-}
-
 
         public void Draw(string key)
         {

@@ -57,7 +57,7 @@ namespace SDL2Engine.Core.GuiRenderer
             ImGuiIOPtr io = ImGui.GetIO();
             io.Fonts.AddFontFromFileTTF(fontPath, fontSize);
             io.Fonts.Build();
-
+            
             // Re-invoke loading texture data after adding a new font
             LoadFontTexture();
         }
