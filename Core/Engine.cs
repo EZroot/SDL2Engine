@@ -1,11 +1,11 @@
 using SDL2;
-using SDL2Engine.Core.Rendering;
 using SDL2Engine.Core.Windowing.Interfaces;
 using Debug = SDL2Engine.Core.Utils.Debug;
 using ImGuiNET;
 using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.GuiRenderer;
-using SDL2Engine.Core.Addressables;
+using SDL2Engine.Core.Addressables.Interfaces;
+using SDL2Engine.Core.GuiRenderer.Interfaces;
 
 namespace SDL2Engine.Core
 {
@@ -14,6 +14,7 @@ namespace SDL2Engine.Core
         private readonly IServiceWindowService m_windowService;
         private readonly IServiceRenderService m_renderService;
         private readonly IServiceGuiRenderService m_guiRenderService;
+        private readonly IServiceGuiWindowService m_guiWindowBuilder;
         private readonly IServiceImageLoader m_imageLoader;
 
         private IntPtr m_window, m_renderer;
@@ -25,12 +26,14 @@ namespace SDL2Engine.Core
             IServiceWindowService? windowService,
             IServiceRenderService? renderService,
             IServiceGuiRenderService? guiRenderService,
-            IServiceImageLoader? imageLoader
+            IServiceImageLoader? imageLoader,
+            IServiceGuiWindowService? guiWindowBuilder
         )
         {
             m_windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
             m_renderService = renderService ?? throw new ArgumentNullException(nameof(renderService));
             m_guiRenderService = guiRenderService ?? throw new ArgumentNullException(nameof(guiRenderService));
+            m_guiWindowBuilder = guiWindowBuilder ?? throw new ArgumentNullException(nameof(guiWindowBuilder));
             m_imageLoader = imageLoader ?? throw new ArgumentNullException(nameof(imageLoader));
         }
 
@@ -51,10 +54,22 @@ namespace SDL2Engine.Core
             ImGui.SetCurrentContext(imguiContext);
 
             SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
-            Debug.Log($"Window size: {windowWidth}x{windowHeight}");
             
             m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
             m_guiRenderService.SetupIO(windowWidth,windowHeight);
+
+
+            // Example of variable bindings
+            int someInteger = 42;
+            float someFloat = 3.14f;
+            string someString = "Initial Text";
+            bool someBool = true;
+
+            // Bind variables
+            m_guiWindowBuilder.BindVariable("Integer", someInteger);
+            m_guiWindowBuilder.BindVariable("Float", someFloat);
+            m_guiWindowBuilder.BindVariable("String", someString);
+            m_guiWindowBuilder.BindVariable("Bool", someBool);
 
             bool running = true;
             while (running)
@@ -82,9 +97,15 @@ namespace SDL2Engine.Core
 
                 ImGui.NewFrame();
 
-                ImGui.Begin("Test");
-                ImGui.Text("DERP DERP");
-                ImGui.End();
+                m_guiWindowBuilder.BeginWindow("Window");
+
+                m_guiWindowBuilder.Draw("Integer");
+                m_guiWindowBuilder.Draw("Float");
+                m_guiWindowBuilder.Draw("String");
+                m_guiWindowBuilder.Draw("Bool");
+
+                m_guiWindowBuilder.EndWindow();
+
                 ImGui.ShowDemoWindow();
 
                 ImGui.Render();

@@ -1,22 +1,24 @@
 using SDL2;
+using SDL2Engine.Core.Addressables.Interfaces;
+using SDL2Engine.Core.Utils;
 namespace SDL2Engine.Core.Addressables
 {
 public class ImageLoader : IServiceImageLoader
 {
     public ImageLoader()
     {
-        
+
     }
 
     public void Initialize()
     {
         var imgFlags = SDL_image.IMG_InitFlags.IMG_INIT_PNG | SDL_image.IMG_InitFlags.IMG_INIT_JPG | SDL_image.IMG_InitFlags.IMG_INIT_TIF | SDL_image.IMG_InitFlags.IMG_INIT_WEBP;
-        var inittedFlags = SDL_image.IMG_Init(imgFlags);
-        // if ((inittedFlags & imgFlags) != imgFlags)
-        // {
-        //     Console.WriteLine("IMG_Init: Failed to init required jpg and png support!");
-        //     Console.WriteLine("IMG_Init: " + SDL.SDL_GetError());
-        // }
+        var imgInitFlag = SDL_image.IMG_Init(imgFlags);
+        if (imgInitFlag != (int)imgFlags)
+        {
+            Debug.LogError($"ERROR: IMG_Init failed! {imgInitFlag} != {(int)imgFlags}");
+            throw new Exception();
+        }
     }
 
     public IntPtr LoadImage(string path)
@@ -24,12 +26,12 @@ public class ImageLoader : IServiceImageLoader
         IntPtr surface = SDL_image.IMG_Load(path);
         if (surface == IntPtr.Zero)
         {
-            Console.WriteLine("IMG_Load: Failed to load image! SDL_Error: " + SDL.SDL_GetError());
+            Debug.LogError("IMG_Load: Failed to load image! SDL_Error: " + SDL.SDL_GetError());
         }
         return surface;
     }
 
-    public void Shutdown()
+    public void CleanUp()
     {
         SDL_image.IMG_Quit();
         SDL.SDL_Quit();

@@ -3,6 +3,7 @@ using SDL2Engine.Core.Windowing.Interfaces;
 using SDL2Engine.Core.Configuration;
 using SDL2Engine.Core.Utils;
 using SDL2Engine.Core.Addressables;
+using SDL2Engine.Core.Addressables.Interfaces;
 
 namespace SDL2Engine.Core.Windowing
 {
@@ -84,7 +85,7 @@ namespace SDL2Engine.Core.Windowing
             IntPtr iconSurface = m_imageLoader.LoadImage(iconPath);
 
             SDL.SDL_SetWindowIcon(window, iconSurface);
-            SDL.SDL_FreeSurface(iconSurface); // Clean up the surface after setting the icon
+            SDL.SDL_FreeSurface(iconSurface); 
         }
     }
 }
