@@ -22,6 +22,7 @@ class Program
 
             services.AddSingleton<IServiceGuiRenderService, ImGuiRenderService>();
             services.AddSingleton<IServiceGuiWindowService, ImGuiWindowBuilder>();
+            services.AddSingleton<IVariableBinder, ImGuiVariableBinder>();
             
             services.AddSingleton<IServiceImageLoader, ImageLoader>();
 
@@ -29,7 +30,7 @@ class Program
 
             var serviceProvider = services.BuildServiceProvider();
 
-            //Ensure disposability
+            // ensure disposability
             using (var engine = serviceProvider.GetService<Engine>())
             {
                 engine?.Run();

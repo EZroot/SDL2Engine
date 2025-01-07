@@ -15,6 +15,7 @@ namespace SDL2Engine.Core
         private readonly IServiceRenderService m_renderService;
         private readonly IServiceGuiRenderService m_guiRenderService;
         private readonly IServiceGuiWindowService m_guiWindowBuilder;
+        private readonly IVariableBinder m_guiVariableBinder;
         private readonly IServiceImageLoader m_imageLoader;
 
         private IntPtr m_window, m_renderer;
@@ -27,7 +28,8 @@ namespace SDL2Engine.Core
             IServiceRenderService? renderService,
             IServiceGuiRenderService? guiRenderService,
             IServiceImageLoader? imageLoader,
-            IServiceGuiWindowService? guiWindowBuilder
+            IServiceGuiWindowService? guiWindowBuilder,
+            IVariableBinder? guiVariableBinder
         )
         {
             m_windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
@@ -35,6 +37,7 @@ namespace SDL2Engine.Core
             m_guiRenderService = guiRenderService ?? throw new ArgumentNullException(nameof(guiRenderService));
             m_guiWindowBuilder = guiWindowBuilder ?? throw new ArgumentNullException(nameof(guiWindowBuilder));
             m_imageLoader = imageLoader ?? throw new ArgumentNullException(nameof(imageLoader));
+            m_guiVariableBinder = guiVariableBinder ?? throw new ArgumentNullException(nameof(guiVariableBinder));
         }
 
         public unsafe void Run()
@@ -44,32 +47,34 @@ namespace SDL2Engine.Core
                 Debug.LogError("SDL could not initialize! SDL_Error: " + SDL.SDL_GetError());
                 return;
             }
+
             m_imageLoader.Initialize();
             m_window = m_windowService.CreateWindowSDL();
             m_windowService.SetWindowIcon(m_window, "resources/ashh.png");
-            
+
             m_renderer = m_renderService.CreateRenderer(m_window);
 
             IntPtr imguiContext = ImGui.CreateContext();
             ImGui.SetCurrentContext(imguiContext);
 
             SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
-            
+
             m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
             m_guiRenderService.SetupIO(windowWidth,windowHeight);
 
 
-            // Example of variable bindings
+            // testing variable bindings
             int someInteger = 42;
             float someFloat = 3.14f;
             string someString = "Initial Text";
             bool someBool = true;
 
-            // Bind variables
-            m_guiWindowBuilder.BindVariable("Integer", someInteger);
-            m_guiWindowBuilder.BindVariable("Float", someFloat);
-            m_guiWindowBuilder.BindVariable("String", someString);
-            m_guiWindowBuilder.BindVariable("Bool", someBool);
+            // bind variables
+            m_guiVariableBinder.BindVariable("Integer", someInteger);
+            m_guiVariableBinder.BindVariable("Float", someFloat);
+            m_guiVariableBinder.BindVariable("String", someString);
+            m_guiVariableBinder.BindVariable("Bool", someBool);
+
 
             bool running = true;
             while (running)
@@ -92,8 +97,8 @@ namespace SDL2Engine.Core
                     m_guiRenderService.ProcessEvent(e);
                 }
 
-                SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 80, 255);  
-                SDL.SDL_RenderClear(m_renderer); 
+                SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 80, 255);
+                SDL.SDL_RenderClear(m_renderer);
 
                 ImGui.NewFrame();
 
