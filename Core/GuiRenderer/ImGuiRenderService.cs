@@ -34,9 +34,27 @@ namespace SDL2Engine.Core.GuiRenderer
         {
             ImGuiIOPtr io = ImGui.GetIO();
             io.DisplaySize = new System.Numerics.Vector2(windowWidth, windowHeight);
-            io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;   
-            io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;      
-            io.ConfigFlags |= ImGuiConfigFlags.ViewportsEnable;    
+            io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
+            io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+            io.ConfigFlags |= ImGuiConfigFlags.ViewportsEnable;
+        }
+
+        public void RenderFullScreenDockSpace()
+        {
+            ImGui.SetNextWindowPos(Vector2.Zero);
+            ImGui.SetNextWindowSize(ImGui.GetIO().DisplaySize);
+            ImGui.SetNextWindowViewport(ImGui.GetMainViewport().ID);
+
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+
+            ImGui.Begin("DockSpace Window", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoNavFocus);
+
+            ImGui.PopStyleVar(3);
+            ImGui.DockSpace(ImGui.GetID("MainDockSpace"));
+
+            ImGui.End();
         }
 
         public unsafe void RenderDrawData(ImDrawDataPtr drawData)

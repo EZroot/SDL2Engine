@@ -179,9 +179,9 @@ namespace SDL2Engine.Core
 
                 ImGui.NewFrame();
 
-                m_guiWindowBuilder.BeginWindow("Window");
-
-                // Numeric types
+                m_guiRenderService.RenderFullScreenDockSpace();
+                
+                m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.AlwaysVerticalScrollbar);
                 m_guiWindowBuilder.Draw("Integer");
                 m_guiWindowBuilder.Draw("Float");
                 m_guiWindowBuilder.Draw("Double");
@@ -194,7 +194,6 @@ namespace SDL2Engine.Core
                 m_guiWindowBuilder.Draw("SByte");
                 m_guiWindowBuilder.Draw("Bool");
                 m_guiWindowBuilder.Draw("String");
-                // m_guiWindowBuilder.Draw("Tabs");
                 m_guiWindowBuilder.Draw("Enum");
                 m_guiWindowBuilder.Draw("Vector2");
                 m_guiWindowBuilder.Draw("Vector3");
@@ -202,11 +201,10 @@ namespace SDL2Engine.Core
                 m_guiWindowBuilder.Draw("Table");
                 m_guiWindowBuilder.Draw("CellTable");
                 m_guiWindowBuilder.Draw("Action");
-
-
                 m_guiWindowBuilder.EndWindow();
 
-                ImGui.ShowDemoWindow();
+                ImGui.ShowDebugLogWindow();
+                ImGui.ShowIDStackToolWindow();
 
                 ImGui.Render();
 
