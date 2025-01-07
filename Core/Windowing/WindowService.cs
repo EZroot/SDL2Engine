@@ -4,6 +4,7 @@ using SDL2Engine.Core.Configuration;
 using SDL2Engine.Core.Utils;
 using SDL2Engine.Core.Addressables;
 using SDL2Engine.Core.Addressables.Interfaces;
+using SDL2Engine.Events;
 
 namespace SDL2Engine.Core.Windowing
 {
@@ -72,6 +73,8 @@ namespace SDL2Engine.Core.Windowing
                 SDL.SDL_Quit();
                 throw new InvalidOperationException("Renderer creation failed! SDL_Error: " + SDL.SDL_GetError());
             }
+
+            SubscribeToEvents();
             return window;
         }
 
@@ -86,6 +89,31 @@ namespace SDL2Engine.Core.Windowing
 
             SDL.SDL_SetWindowIcon(window, iconSurface);
             SDL.SDL_FreeSurface(iconSurface); 
+        }
+
+        private void SubscribeToEvents()
+        {
+            EventHub.Subscribe<OnWindowResized>(OnWindowResizedEvent);
+        }
+
+        private void UnsubscribeToEvents()
+        {
+            EventHub.Unsubscribe<OnWindowResized>(OnWindowResizedEvent);
+        }
+        
+        private void OnWindowResizedEvent(object sender, OnWindowResized e)
+        {
+            m_windowConfig.Save(e.WindowSettings);
+        }
+
+        public void Dispose()
+        {
+            UnsubscribeToEvents();
+        }
+
+        ~WindowService()
+        {
+            Dispose();
         }
     }
 }

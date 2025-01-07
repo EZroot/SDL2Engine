@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using OpenTK.Graphics.OpenGL;
 using SDL2;
@@ -9,10 +11,24 @@ namespace SDL2Engine.Core.Utils
     {
         private static bool IsDebugMode = true;
         private static bool IsDebugModePollEvents = false;
+        private static bool IsDebugModeEventHub = true;
         private static bool IsShowingMethodNames = true;
 
-        
-        public static void LogSDLPollEvents(SDL.SDL_Event e)
+        public static void LogEvents(string msg)
+        {
+            if (!IsDebugModeEventHub) return;
+            Log($"<color=darkyellow>{msg}</color>");
+        }
+
+        // No worky ):
+        // public static void LogEvents<TEventArgs>(TEventArgs e) where TEventArgs : EventArgs
+        // {
+        //     if (!IsDebugModeEventHub) return;
+        //     var details = GetEventArgsDetails(e);
+        //     Log($"<color=darkyellow>{details}</color>");
+        // }
+
+        public static void LogPollEvents(SDL.SDL_Event e)
         {
             if (!IsDebugModePollEvents) return;
             switch (e.type)
@@ -156,5 +172,23 @@ namespace SDL2Engine.Core.Utils
 
             return name;
         }
+
+        private static string GetEventArgsDetails<TEventArgs>(TEventArgs e) where TEventArgs : EventArgs
+        {
+            var properties = typeof(TEventArgs).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
+            var eventArgsDetails = new StringBuilder();
+            foreach (var prop in properties)
+            {
+                var value = prop.GetValue(e, null);
+                eventArgsDetails.Append($"{prop.Name}: {value}, ");
+            }
+
+            // Remove the last comma and space
+            if (eventArgsDetails.Length > 0)
+                eventArgsDetails.Length -= 2;
+
+            return eventArgsDetails.ToString();
+        }
+
     }
 }

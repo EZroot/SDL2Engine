@@ -6,5 +6,6 @@ namespace SDL2Engine.Core.Configuration
     {
         WindowSettings Settings { get; }
         void Save();
+        void Save(WindowSettings newSettings);
     }
 }

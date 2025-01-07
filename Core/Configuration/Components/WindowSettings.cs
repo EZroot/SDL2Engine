@@ -1,4 +1,3 @@
-// File: Source/Engine/Core/Configuration/WindowSettings.cs
 namespace SDL2Engine.Core.Configuration.Components
 {
     public struct WindowSettings
@@ -7,5 +6,13 @@ namespace SDL2Engine.Core.Configuration.Components
         public int Width { get; set; }
         public int Height { get; set; }
         public bool Fullscreen { get; set; }
+
+        public WindowSettings(string windowName, int width, int height, bool fullscreen)
+        {
+            WindowName = windowName;
+            Width = width;
+            Height = height;
+            Fullscreen = fullscreen;
+        }
     }
 }

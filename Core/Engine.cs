@@ -6,6 +6,8 @@ using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.GuiRenderer;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.GuiRenderer.Interfaces;
+using SDL2Engine.Events;
+using SDL2Engine.Core.Configuration.Components;
 
 namespace SDL2Engine.Core
 {
@@ -81,7 +83,7 @@ namespace SDL2Engine.Core
             {
                 while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
                 {
-                    Debug.LogSDLPollEvents(e);
+                    Debug.LogPollEvents(e);
                     if (e.type == SDL.SDL_EventType.SDL_QUIT ||
                         (e.type == SDL.SDL_EventType.SDL_KEYDOWN && e.key.keysym.sym == SDL.SDL_Keycode.SDLK_ESCAPE))
                     {
@@ -90,9 +92,17 @@ namespace SDL2Engine.Core
                     }
                     if (e.type == SDL.SDL_EventType.SDL_WINDOWEVENT && e.window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED)
                     {
+                        string title = SDL.SDL_GetWindowTitle(m_window);
+                        uint flags = SDL.SDL_GetWindowFlags(m_window);
+                        bool isFullscreen = (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0 ||
+                                            (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
+
                         int newWidth = e.window.data1;
                         int newHeight = e.window.data2;
                         m_guiRenderService.OnWindowResize(newWidth, newHeight);
+
+                        var windowSettings = new WindowSettings(title, newWidth, newHeight, isFullscreen);
+                        EventHub.Raise(this, new OnWindowResized(windowSettings));
                     }
                     m_guiRenderService.ProcessEvent(e);
                 }

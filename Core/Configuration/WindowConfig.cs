@@ -70,7 +70,7 @@ namespace SDL2Engine.Core.Configuration
                 Fullscreen = bool.TryParse(m_settings.GetValueOrDefault("fullscreen", "false"), out var fullscreen) && fullscreen
             };
 
-            Utils.Debug.Log($"<color=magenta>Applied Windows Setting:></color>{Settings.WindowName} {Settings.Width}x{Settings.Height} Fullscreen: {Settings.Fullscreen}");
+            Utils.Debug.Log($"<color=magenta>Applied Windows Setting:></color> <color=blue>{Settings.WindowName} {Settings.Width}x{Settings.Height} Fullscreen: {Settings.Fullscreen}");
         }
 
         public void Save()
@@ -81,6 +81,17 @@ namespace SDL2Engine.Core.Configuration
                 writer.WriteLine($"width={Settings.Width}");
                 writer.WriteLine($"height={Settings.Height}");
                 writer.WriteLine($"fullscreen={Settings.Fullscreen}");
+            }
+        }
+
+        public void Save(WindowSettings newSettings)
+        {
+            using (var writer = new StreamWriter(m_configFilePath))
+            {
+                writer.WriteLine($"windowname={newSettings.WindowName}");
+                writer.WriteLine($"width={newSettings.Width}");
+                writer.WriteLine($"height={newSettings.Height}");
+                writer.WriteLine($"fullscreen={newSettings.Fullscreen}");
             }
         }
     }
