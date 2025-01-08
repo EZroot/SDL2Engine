@@ -67,7 +67,7 @@ namespace SDL2Engine.Core.GuiRenderer
             if (ImGuiInternal.DockBuilderGetNode(m_dockSpaceMainID) == IntPtr.Zero)
             {
                 ImGuiInternal.DockBuilderRemoveNode(m_dockSpaceMainID);
-                ImGuiInternal.DockBuilderAddNode(m_dockSpaceMainID, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar | ImGuiDockNodeFlags.NoDockingOverCentralNode);
+                ImGuiInternal.DockBuilderAddNode(m_dockSpaceMainID, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar);
                 ImGuiInternal.DockBuilderSetNodeSize(m_dockSpaceMainID, ImGui.GetIO().DisplaySize);
 
                 ImGuiInternal.DockBuilderSplitNode(m_dockSpaceMainID, ImGuiDir.Up, 0.15f, out m_dockSpaceTopID, out uint remainingID);
@@ -110,7 +110,7 @@ namespace SDL2Engine.Core.GuiRenderer
             ImGui.SetWindowSize(ImGui.GetIO().DisplaySize);
 
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
-            ImGui.DockSpace(m_dockSpaceMainID, Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar | ImGuiDockNodeFlags.NoDockingOverCentralNode);
+            ImGui.DockSpace(m_dockSpaceMainID, Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar);
             ImGui.PopStyleVar();
 
             ImGui.End();
@@ -128,7 +128,7 @@ namespace SDL2Engine.Core.GuiRenderer
             }
             ImGui.End();
 
-            if (ImGui.Begin("Bottom Window", ImGuiWindowFlags.MenuBar))
+            if (ImGui.Begin("Bottom Window", ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
             {
                 ImGui.Text("This is the bottom docked window.");
                 ImGui.BeginMenuBar();
@@ -137,12 +137,12 @@ namespace SDL2Engine.Core.GuiRenderer
             }
             ImGui.End();
 
-            if (ImGui.Begin("Left Window"))
+            if (ImGui.Begin("Left Window", ImGuiWindowFlags.NoMove))
             {
                 ImGui.Text("This is the left docked window.");
             }
             ImGui.End();
-            if (ImGui.Begin("Right Window"))
+            if (ImGui.Begin("Right Window", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove))
             {
                 ImGui.Text("This is the right docked window with a transparent background.");
             }
