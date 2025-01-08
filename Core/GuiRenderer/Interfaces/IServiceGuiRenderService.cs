@@ -1,5 +1,6 @@
 using ImGuiNET;
 using SDL2;
+using static SDL2Engine.Core.GuiRenderer.GuiStyles.StyleHelper;
 
 namespace SDL2Engine.Core.GuiRenderer
 {
@@ -11,7 +12,7 @@ namespace SDL2Engine.Core.GuiRenderer
         public uint DockSpaceRightID { get; }
         public uint DockSpaceBottomID { get; }
         public uint DockSpaceCenterID { get; }
-        void CreateGuiRender(IntPtr window, IntPtr renderer, int width, int height);
+        public void CreateGuiRender(IntPtr window, IntPtr renderer, int width, int height, DefaultGuiStyle defaultStyle = DefaultGuiStyle.None);
         void SetupIO(int windowWidth, int windowHeight);
         void RenderFullScreenDockSpace();
         void RenderDrawData(ImDrawDataPtr drawData);

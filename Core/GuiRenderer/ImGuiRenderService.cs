@@ -5,6 +5,7 @@ using SDL2Engine.Core.GuiRenderer.Converters;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Utils;
 using System.Numerics;
+using static SDL2Engine.Core.GuiRenderer.GuiStyles.StyleHelper;
 namespace SDL2Engine.Core.GuiRenderer
 {
     public class ImGuiRenderService : IServiceGuiRenderService
@@ -31,12 +32,24 @@ namespace SDL2Engine.Core.GuiRenderer
         public uint DockSpaceBottomID => m_dockSpaceBottomID;
         public uint DockSpaceCenterID => m_dockSpaceCenterID;
 
+
+
+        /********************************************************
+        *********************************************************
+                REMOVE THIS - DEBUG TOP MENU WINDOW VARIABLES
+        *******************************************************
+        *******************************************************/
+        int selectedItem = 0;
+        string[] items = { "Item 1", "Item 2", "Item 3", "Item 4" };
+        bool test = false;
+        bool isChecked = true;
+
         public ImGuiRenderService()
         {
 
         }
 
-        public void CreateGuiRender(IntPtr window, IntPtr renderer, int width, int height)
+        public void CreateGuiRender(IntPtr window, IntPtr renderer, int width, int height, DefaultGuiStyle defaultStyle = DefaultGuiStyle.Dark)
         {
             m_window = window;
             m_renderer = renderer;
@@ -45,6 +58,21 @@ namespace SDL2Engine.Core.GuiRenderer
 
             m_fontTextureLoader = new FontTextureLoader(renderer);
             m_fontTextureLoader.LoadFontTexture();
+
+            switch (defaultStyle)
+            {
+                case DefaultGuiStyle.Classic:
+                    ImGui.StyleColorsClassic();
+                    break;
+                case DefaultGuiStyle.Light:
+                    ImGui.StyleColorsLight();
+                    break;
+                case DefaultGuiStyle.Dark:
+                    ImGui.StyleColorsDark();
+                    break;
+                case DefaultGuiStyle.None:
+                    break;
+            }
         }
 
         public void SetupIO(int windowWidth, int windowHeight)
@@ -59,9 +87,8 @@ namespace SDL2Engine.Core.GuiRenderer
         /// <summary>
         /// Initializes the dock space layout. Should be called once during application setup.
         /// </summary>
-        public void InitializeDockSpace()
+        private void InitializeDockSpace()
         {
-
             m_dockSpaceMainID = ImGui.GetID("MainDockSpace");
 
             if (ImGuiInternal.DockBuilderGetNode(m_dockSpaceMainID) == IntPtr.Zero)
@@ -95,6 +122,7 @@ namespace SDL2Engine.Core.GuiRenderer
             ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
             ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+            ImGui.PushStyleVar(ImGuiStyleVar.DockingSeparatorSize, 1.0f);
 
             ImGui.Begin("DockSpace Window", ImGuiWindowFlags.NoTitleBar
             | ImGuiWindowFlags.NoCollapse
@@ -109,45 +137,110 @@ namespace SDL2Engine.Core.GuiRenderer
             ImGui.SetWindowPos(Vector2.Zero);
             ImGui.SetWindowSize(ImGui.GetIO().DisplaySize);
 
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+            // Fully transparent background for docked windows that use NoBackground flag!
+            ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0, 0, 0, 0));
             ImGui.DockSpace(m_dockSpaceMainID, Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar);
-            ImGui.PopStyleVar();
+            ImGui.PopStyleColor();
 
             ImGui.End();
-            ImGui.PopStyleVar(3);
+            ImGui.PopStyleVar(4);
 
-            // Docking windows
+
             if (ImGui.Begin("Top Window", ImGuiWindowFlags.MenuBar))
             {
-                ImGui.BeginMainMenuBar();
-                ImGui.Button("Test A");
-                ImGui.Button("Test B");
-                ImGui.Button("Test C");
+                if (ImGui.BeginMainMenuBar())
+                {
+                    if (ImGui.Button("File"))
+                    {
+                        ImGui.OpenPopup("MoreActionsPopup");
+                    }
+                    if (ImGui.BeginCombo("Options", items[selectedItem], ImGuiComboFlags.NoPreview))
+                    {
+                        for (int n = 0; n < items.Length; n++)
+                        {
+                            bool isSelected = (selectedItem == n);
+                            if (ImGui.Selectable(items[n], isSelected))
+                            {
+                                selectedItem = n;
+                            }
+                            if (isSelected)
+                                ImGui.SetItemDefaultFocus();
+                        }
+                        ImGui.EndCombo();
+                    }
+
+                    if (ImGui.BeginPopup("MoreActionsPopup"))
+                    {
+                        if (ImGui.Button("Action 1"))
+                        {
+                            Console.WriteLine("Action 1 Triggered");
+                            ImGui.CloseCurrentPopup();
+                        }
+                        if (ImGui.SmallButton("Smoll"))
+                        {
+
+                        }
+                        if (ImGui.Button("Action 2"))
+                        {
+                            Console.WriteLine("Action 2 Triggered");
+                            ImGui.CloseCurrentPopup();
+                        }
+
+                        if (ImGui.Checkbox("Test", ref test))
+                        {
+
+                        }
+                        if (ImGui.Button("Smoll"))
+                        {
+
+                        }
+                        if (ImGui.ArrowButton("Arrowed", ImGuiDir.Down))
+                        {
+
+                        }
+
+                        if (ImGui.MenuItem("Enable Feature2", "", isChecked))
+                        {
+                            isChecked = !isChecked;
+                        }
+                        if (ImGui.MenuItem("Enable Feature3", "", isChecked))
+                        {
+                            isChecked = !isChecked;
+                        }
+                        if (ImGui.MenuItem("Enable Feature4", "", isChecked))
+                        {
+                            isChecked = !isChecked;
+                        }
+
+                        ImGui.EndPopup();
+                    }
+
+                    ImGui.EndMainMenuBar();
+                }
+
                 ImGui.Text("This is the top docked window menu bar.");
-                ImGui.EndMainMenuBar();
             }
             ImGui.End();
+
 
             if (ImGui.Begin("Bottom Window", ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
             {
-                ImGui.Text("This is the bottom docked window.");
+                ImGui.Text("BOTTOM dock");
                 ImGui.BeginMenuBar();
-                ImGui.Text("This is the bottom docked window.");
+                ImGui.Text("BOTTOM MENU BAR");
                 ImGui.EndMenuBar();
             }
             ImGui.End();
-
             if (ImGui.Begin("Left Window", ImGuiWindowFlags.NoMove))
             {
-                ImGui.Text("This is the left docked window.");
+                ImGui.Text("LEFT WINDOW BABY");
             }
             ImGui.End();
             if (ImGui.Begin("Right Window", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove))
             {
-                ImGui.Text("This is the right docked window with a transparent background.");
+                ImGui.Text("AYOOOO");
             }
             ImGui.End();
-
         }
 
         public unsafe void RenderDrawData(ImDrawDataPtr drawData)
@@ -169,7 +262,6 @@ namespace SDL2Engine.Core.GuiRenderer
 
             SDL.SDL_RenderSetClipRect(m_renderer, IntPtr.Zero);
         }
-
 
         private unsafe void RenderCommandList(ImDrawListPtr cmdList, float scaleX, float scaleY)
         {
@@ -204,8 +296,9 @@ namespace SDL2Engine.Core.GuiRenderer
             SDL.SDL_Rect viewport = new SDL.SDL_Rect { x = 0, y = 0, w = width, h = height };
             SDL.SDL_RenderSetViewport(m_renderer, ref viewport);
 
-            Debug.Log($"Dock builder Set to {width} {height}");
-            ImGuiInternal.DockBuilderSetNodeSize(m_dockSpaceMainID, new Vector2(width, height));
+            // Below code no longer needed, DockingSpace does it automatically
+            // Debug.Log($"<color=yellow>DockBuilderSetNodeSize:</color><color=white> {width} {height}</color>");
+            // ImGuiInternal.DockBuilderSetNodeSize(m_dockSpaceMainID, new Vector2(width, height));
         }
 
         public void Dispose()
