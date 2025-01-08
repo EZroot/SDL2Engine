@@ -11,6 +11,7 @@ using SDL2Engine.Core.Configuration.Components;
 using SDL2Engine.Core.GuiRenderer.Helpers;
 using System.Drawing;
 using System.Numerics;
+using ImGuiNativeWrapper;
 
 namespace SDL2Engine.Core
 {
@@ -27,6 +28,8 @@ namespace SDL2Engine.Core
         private IntPtr m_window, m_renderer;
 
         private bool disposed = false;
+
+        private bool TEST_window_isopen = true;
 
         public Engine
         (
@@ -115,12 +118,12 @@ namespace SDL2Engine.Core
                 new ImGuiColumnData("Ocupation", tableInputData6, tableInputData7, tableInputData8)
             );
 
-            ImGuiCellData someCell = new ImGuiCellData("First","a","b","c");
-            ImGuiCellData someCell1 = new ImGuiCellData("Second", "d","e","f");
-            ImGuiCellData someCell2 = new ImGuiCellData("Third", "g","h","i");
+            ImGuiCellData someCell = new ImGuiCellData("First", "a", "b", "c");
+            ImGuiCellData someCell1 = new ImGuiCellData("Second", "d", "e", "f");
+            ImGuiCellData someCell2 = new ImGuiCellData("Third", "g", "h", "i");
             ImGuiCellTableData cellTable = new ImGuiCellTableData(someCell, someCell1, someCell2);
 
-            Action action = () => {Debug.Log("Button pressed");};
+            Action action = () => { Debug.Log("Button pressed"); TEST_window_isopen = !TEST_window_isopen; };
 
             m_guiVariableBinder.BindVariable("Integer", someInteger);
             m_guiVariableBinder.BindVariable("Float", someFloat);
@@ -179,32 +182,70 @@ namespace SDL2Engine.Core
 
                 ImGui.NewFrame();
 
+                // Render the dockspace
                 m_guiRenderService.RenderFullScreenDockSpace();
-                
-                m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.AlwaysVerticalScrollbar);
-                m_guiWindowBuilder.Draw("Integer");
-                m_guiWindowBuilder.Draw("Float");
-                m_guiWindowBuilder.Draw("Double");
-                m_guiWindowBuilder.Draw("Long");
-                m_guiWindowBuilder.Draw("Short");
-                m_guiWindowBuilder.Draw("Byte");
-                m_guiWindowBuilder.Draw("UInt");
-                m_guiWindowBuilder.Draw("ULong");
-                m_guiWindowBuilder.Draw("UShort");
-                m_guiWindowBuilder.Draw("SByte");
-                m_guiWindowBuilder.Draw("Bool");
-                m_guiWindowBuilder.Draw("String");
-                m_guiWindowBuilder.Draw("Enum");
-                m_guiWindowBuilder.Draw("Vector2");
-                m_guiWindowBuilder.Draw("Vector3");
-                m_guiWindowBuilder.Draw("Vector4");
-                m_guiWindowBuilder.Draw("Table");
-                m_guiWindowBuilder.Draw("CellTable");
-                m_guiWindowBuilder.Draw("Action");
-                m_guiWindowBuilder.EndWindow();
 
-                ImGui.ShowDebugLogWindow();
-                ImGui.ShowIDStackToolWindow();
+                // // Render the right window
+                // if (ImGui.Begin("Right Window"))
+                // {
+                //     ImGui.Text("This is the Right Window!");
+                // }
+                // ImGui.End();
+
+                // // Render the top window
+                // if (ImGui.Begin("Top Window"))
+                // {
+                //     ImGui.Text("This is the Top Window!");
+                // }
+                // ImGui.End();
+
+                // // Render the bottom window
+                // if (ImGui.Begin("Bottom Window"))
+                // {
+                //     ImGui.Text("This is the Bottom Window!");
+                // }
+                // ImGui.End();
+
+
+
+                // ImGui.SetNextWindowDockID(m_guiRenderService.DockSpaceID, ImGuiCond.FirstUseEver);
+                //                 if(TEST_window_isopen){
+                //                 if (ImGui.Begin("New Docked Window", ref TEST_window_isopen))
+                //                 {
+                //                     ImGui.Text("This window starts docked!");
+                //                 }
+                //                 ImGui.End();
+                //                 }
+                //                 ImGui.SetNextWindowDockID(m_guiRenderService.DockSpaceID, ImGuiCond.FirstUseEver);
+                // if (ImGui.Begin("New Dossscked Window", ref TEST_window_isopen, ImGuiWindowFlags.NoTitleBar ))
+                //                 {
+                //                     ImGui.Text("This window starts docked!");
+                //                 }
+                //                 ImGui.End();
+                // m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.AlwaysVerticalScrollbar);
+                // m_guiWindowBuilder.Draw("Integer");
+                // m_guiWindowBuilder.Draw("Float");
+                // m_guiWindowBuilder.Draw("Double");
+                // m_guiWindowBuilder.Draw("Long");
+                // m_guiWindowBuilder.Draw("Short");
+                // m_guiWindowBuilder.Draw("Byte");
+                // m_guiWindowBuilder.Draw("UInt");
+                // m_guiWindowBuilder.Draw("ULong");
+                // m_guiWindowBuilder.Draw("UShort");
+                // m_guiWindowBuilder.Draw("SByte");
+                // m_guiWindowBuilder.Draw("Bool");
+                // m_guiWindowBuilder.Draw("String");
+                // m_guiWindowBuilder.Draw("Enum");
+                // m_guiWindowBuilder.Draw("Vector2");
+                // m_guiWindowBuilder.Draw("Vector3");
+                // m_guiWindowBuilder.Draw("Vector4");
+                // m_guiWindowBuilder.Draw("Table");
+                // m_guiWindowBuilder.Draw("CellTable");
+                // m_guiWindowBuilder.Draw("Action");
+                // m_guiWindowBuilder.EndWindow();
+
+                // ImGui.ShowDebugLogWindow();
+                // ImGui.ShowIDStackToolWindow();
 
                 ImGui.Render();
 
