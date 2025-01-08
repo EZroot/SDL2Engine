@@ -7,11 +7,6 @@ using ImGuiNET;
 /// The cimgui-native.h wasnt unwrapped in the original repo, very annoying ):<
 /// There are better forks but this should do fine for now
 /// </summary>
-using System;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using ImGuiNET;
-
 namespace ImGuiNativeWrapper
 {
     internal static class ImGuiInternalWrapper
