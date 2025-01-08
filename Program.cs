@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using SDL2Engine.Core;
-using SDL2Engine.Core.Configuration;
+using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.Rendering;
 using SDL2Engine.Core.Windowing;
 using SDL2Engine.Core.Windowing.Interfaces;
@@ -17,6 +17,8 @@ class Program
             var services = new ServiceCollection();
 
             services.AddSingleton<IServiceWindowConfig, WindowConfig>();
+            services.AddSingleton<IServiceSysInfo, SysInfo>();
+
             services.AddSingleton<IServiceWindowService, WindowService>();
             services.AddSingleton<IServiceRenderService, RenderService>();
 

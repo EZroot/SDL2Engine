@@ -1,4 +1,4 @@
-using SDL2Engine.Core.Configuration.Components;
+using SDL2Engine.Core.CoreSystem.Configuration.Components;
 
 public class OnWindowResized : EventArgs
 {

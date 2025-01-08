@@ -7,11 +7,11 @@ using SDL2Engine.Core.GuiRenderer;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.GuiRenderer.Interfaces;
 using SDL2Engine.Events;
-using SDL2Engine.Core.Configuration.Components;
+using SDL2Engine.Core.CoreSystem.Configuration.Components;
 using SDL2Engine.Core.GuiRenderer.Helpers;
 using System.Drawing;
 using System.Numerics;
-using ImGuiNativeWrapper;
+using SDL2Engine.Core.CoreSystem.Configuration;
 
 namespace SDL2Engine.Core
 {
@@ -33,12 +33,12 @@ namespace SDL2Engine.Core
 
         public Engine
         (
-            IServiceWindowService? windowService,
-            IServiceRenderService? renderService,
-            IServiceGuiRenderService? guiRenderService,
-            IServiceImageLoader? imageLoader,
-            IServiceGuiWindowService? guiWindowBuilder,
-            IVariableBinder? guiVariableBinder
+            IServiceWindowService windowService,
+            IServiceRenderService renderService,
+            IServiceGuiRenderService guiRenderService,
+            IServiceImageLoader imageLoader,
+            IServiceGuiWindowService guiWindowBuilder,
+            IVariableBinder guiVariableBinder
         )
         {
             m_windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));

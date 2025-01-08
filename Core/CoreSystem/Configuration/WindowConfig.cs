@@ -1,8 +1,8 @@
 // File: Source/Engine/Core/Configuration/WindowConfig.cs
 using System.Diagnostics;
-using SDL2Engine.Core.Configuration.Components;
+using SDL2Engine.Core.CoreSystem.Configuration.Components;
 
-namespace SDL2Engine.Core.Configuration
+namespace SDL2Engine.Core.CoreSystem.Configuration
 {
     internal sealed class WindowConfig : IServiceWindowConfig
     {

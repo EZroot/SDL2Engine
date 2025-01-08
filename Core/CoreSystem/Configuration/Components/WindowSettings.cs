@@ -1,4 +1,4 @@
-namespace SDL2Engine.Core.Configuration.Components
+namespace SDL2Engine.Core.CoreSystem.Configuration.Components
 {
     public struct WindowSettings
     {

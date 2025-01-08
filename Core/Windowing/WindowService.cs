@@ -1,6 +1,6 @@
 using SDL2;
 using SDL2Engine.Core.Windowing.Interfaces;
-using SDL2Engine.Core.Configuration;
+using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.Utils;
 using SDL2Engine.Core.Addressables;
 using SDL2Engine.Core.Addressables.Interfaces;
@@ -14,8 +14,8 @@ namespace SDL2Engine.Core.Windowing
         private readonly IServiceImageLoader m_imageLoader;
 
         public WindowService(
-            IServiceWindowConfig? windowConfig,
-            IServiceImageLoader? imageLoader
+            IServiceWindowConfig windowConfig,
+            IServiceImageLoader imageLoader
             )
         {
             m_windowConfig = windowConfig ?? throw new ArgumentNullException(nameof(windowConfig));

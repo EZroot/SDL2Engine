@@ -1,10 +1,10 @@
+using System.Numerics;
 using ImGuiNativeWrapper;
 using ImGuiNET;
 using SDL2;
+using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.GuiRenderer.Converters;
 using SDL2Engine.Core.Input;
-using SDL2Engine.Core.Utils;
-using System.Numerics;
 using static SDL2Engine.Core.GuiRenderer.GuiStyles.StyleHelper;
 namespace SDL2Engine.Core.GuiRenderer
 {
@@ -15,6 +15,7 @@ namespace SDL2Engine.Core.GuiRenderer
         private int m_width;
         private int m_height;
         private FontTextureLoader m_fontTextureLoader;
+        private IServiceSysInfo m_sysInfo;
         private bool m_disposed;
 
         // ew - format plz
@@ -44,9 +45,9 @@ namespace SDL2Engine.Core.GuiRenderer
         bool test = false;
         bool isChecked = true;
 
-        public ImGuiRenderService()
+        public ImGuiRenderService(IServiceSysInfo sysInfo)
         {
-
+            m_sysInfo = sysInfo ?? throw new ArgumentNullException(nameof(sysInfo));
         }
 
         public void CreateGuiRender(IntPtr window, IntPtr renderer, int width, int height, DefaultGuiStyle defaultStyle = DefaultGuiStyle.Dark)
@@ -146,7 +147,7 @@ namespace SDL2Engine.Core.GuiRenderer
             ImGui.PopStyleVar(4);
 
 
-            if (ImGui.Begin("Top Window", ImGuiWindowFlags.MenuBar))
+            if (ImGui.Begin("Top Window", ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.AlwaysAutoResize))
             {
                 if (ImGui.BeginMainMenuBar())
                 {
@@ -215,12 +216,11 @@ namespace SDL2Engine.Core.GuiRenderer
 
                         ImGui.EndPopup();
                     }
-
                     var fps = $"Fps: {Time.Fps:F2} (delta: {Time.DeltaTime:F2})";
                     var windowWidth = ImGui.GetWindowWidth();
                     var textWidth = ImGui.CalcTextSize(fps).X;
                     ImGui.SameLine(windowWidth - textWidth - ImGui.GetStyle().ItemSpacing.X * 2);
-                    ImGui.Text(fps);
+                    ImGui.Text($"Driver: {m_sysInfo.SDLRenderInfo.CurrentRenderDriver} {fps}");
                     ImGui.EndMainMenuBar();
                 }
 
