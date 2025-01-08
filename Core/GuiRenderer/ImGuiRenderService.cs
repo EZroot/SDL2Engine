@@ -154,7 +154,8 @@ namespace SDL2Engine.Core.GuiRenderer
                     {
                         ImGui.OpenPopup("MoreActionsPopup");
                     }
-                    if (ImGui.BeginCombo("Options", items[selectedItem], ImGuiComboFlags.NoPreview))
+
+                    if (ImGui.BeginCombo("Options", items[selectedItem], ImGuiComboFlags.WidthFitPreview))
                     {
                         for (int n = 0; n < items.Length; n++)
                         {
@@ -215,10 +216,14 @@ namespace SDL2Engine.Core.GuiRenderer
                         ImGui.EndPopup();
                     }
 
+                    var fps = $"Fps: {Time.Fps:F2} (delta: {Time.DeltaTime:F2})";
+                    var windowWidth = ImGui.GetWindowWidth();
+                    var textWidth = ImGui.CalcTextSize(fps).X;
+                    ImGui.SameLine(windowWidth - textWidth - ImGui.GetStyle().ItemSpacing.X * 2);
+                    ImGui.Text(fps);
                     ImGui.EndMainMenuBar();
                 }
 
-                ImGui.Text("This is the top docked window menu bar.");
             }
             ImGui.End();
 

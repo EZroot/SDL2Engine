@@ -146,11 +146,10 @@ namespace SDL2Engine.Core
             m_guiVariableBinder.BindVariable("CellTable", cellTable);
             m_guiVariableBinder.BindVariable("Action", action);
 
-
-
             bool running = true;
             while (running)
             {
+                Time.Update();
                 while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
                 {
                     Debug.LogPollEvents(e);
@@ -184,7 +183,6 @@ namespace SDL2Engine.Core
 
                 // Render the dockspace
                 m_guiRenderService.RenderFullScreenDockSpace();
-
                 // m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.AlwaysVerticalScrollbar);
                 //     m_guiWindowBuilder.Draw("Integer");
                 //     m_guiWindowBuilder.Draw("Float");
@@ -207,8 +205,8 @@ namespace SDL2Engine.Core
                 //     m_guiWindowBuilder.Draw("Action");
                 // m_guiWindowBuilder.EndWindow();
 
-                // ImGui.ShowDebugLogWindow();
-                // ImGui.ShowIDStackToolWindow();
+                ImGui.ShowDebugLogWindow();
+                ImGui.ShowIDStackToolWindow();
 
                 ImGui.Render();
 
