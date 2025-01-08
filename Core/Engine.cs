@@ -205,9 +205,6 @@ namespace SDL2Engine.Core
                 //     m_guiWindowBuilder.Draw("Action");
                 // m_guiWindowBuilder.EndWindow();
 
-                ImGui.ShowDebugLogWindow();
-                ImGui.ShowIDStackToolWindow();
-
                 ImGui.Render();
 
                 var drawData = ImGui.GetDrawData();

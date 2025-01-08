@@ -9,11 +9,11 @@ namespace SDL2Engine.Core.Utils
 {
     public static class Debug
     {
-        private static bool IsDebugMode = true;
-        private static bool IsDebugModePollEvents = false;
-        private static bool IsDebugModeEventHub = true;
-        private static bool IsShowingMethodNames = true;
-
+        public static bool IsDebugMode = true;
+        public static bool IsDebugModePollEvents = false;
+        public static bool IsDebugModeEventHub = true;
+        public static bool IsShowingMethodNames = true;
+        public static string ConsoleText { get; private set; }
         public static void LogEvents(string msg)
         {
             if (!IsDebugModeEventHub) return;
@@ -87,6 +87,8 @@ namespace SDL2Engine.Core.Utils
 
         public static void Log(string input)
         {
+            string cleanInput = RemoveColorTags(input);
+            ConsoleText += $"{cleanInput}\n";
             var timeStamp = DateTime.Now.ToString("h:mm tt").Replace(" ", "");
 
             var stackTrace = new StackTrace();
@@ -183,11 +185,15 @@ namespace SDL2Engine.Core.Utils
                 eventArgsDetails.Append($"{prop.Name}: {value}, ");
             }
 
-            // Remove the last comma and space
             if (eventArgsDetails.Length > 0)
                 eventArgsDetails.Length -= 2;
 
             return eventArgsDetails.ToString();
+        }
+
+        private static string RemoveColorTags(string input)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(input, @"<color=.*?>|<\/color>", string.Empty);
         }
 
     }
