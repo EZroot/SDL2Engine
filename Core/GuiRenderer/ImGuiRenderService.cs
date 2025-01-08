@@ -56,138 +56,99 @@ namespace SDL2Engine.Core.GuiRenderer
             io.ConfigFlags |= ImGuiConfigFlags.ViewportsEnable;
         }
 
-    /// <summary>
-    /// Initializes the dock space layout. Should be called once during application setup.
-    /// </summary>
-    public void InitializeDockSpace()
-    {
-        m_dockSpaceMainID = ImGui.GetID("MainDockSpace");
-
-        // Check if the dock node is already initialized
-        if (ImGuiInternal.DockBuilderGetNode(m_dockSpaceMainID) == IntPtr.Zero)
+        /// <summary>
+        /// Initializes the dock space layout. Should be called once during application setup.
+        /// </summary>
+        public void InitializeDockSpace()
         {
-            // Remove any existing layout for this dock space
-            ImGuiInternal.DockBuilderRemoveNode(m_dockSpaceMainID);
 
-            // Add a new node with the PassthruCentralNode flag to allow the background to be visible
-            ImGuiInternal.DockBuilderAddNode(m_dockSpaceMainID, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar | ImGuiDockNodeFlags.NoUndocking);
+            m_dockSpaceMainID = ImGui.GetID("MainDockSpace");
 
-            // Set the size of the dock space to the current display size
-            ImGuiInternal.DockBuilderSetNodeSize(m_dockSpaceMainID, ImGui.GetIO().DisplaySize);
+            if (ImGuiInternal.DockBuilderGetNode(m_dockSpaceMainID) == IntPtr.Zero)
+            {
+                ImGuiInternal.DockBuilderRemoveNode(m_dockSpaceMainID);
+                ImGuiInternal.DockBuilderAddNode(m_dockSpaceMainID, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar | ImGuiDockNodeFlags.NoDockingOverCentralNode);
+                ImGuiInternal.DockBuilderSetNodeSize(m_dockSpaceMainID, ImGui.GetIO().DisplaySize);
 
-            // Split the dock space into a left and right node
-            uint dockSpaceLeftID, dockSpaceRightID;
-            ImGuiInternal.DockBuilderSplitNode(
-                m_dockSpaceMainID,
-                ImGuiDir.Left,
-                0.25f, // 25% of the width for the left pane
-                out dockSpaceLeftID,
-                out dockSpaceRightID
-            );
+                ImGuiInternal.DockBuilderSplitNode(m_dockSpaceMainID, ImGuiDir.Up, 0.15f, out m_dockSpaceTopID, out uint remainingID);
+                ImGuiInternal.DockBuilderSplitNode(remainingID, ImGuiDir.Down, 0.15f, out m_dockSpaceBottomID, out m_dockSpaceCenterID);
+                ImGuiInternal.DockBuilderSplitNode(m_dockSpaceCenterID, ImGuiDir.Left, 0.25f, out m_dockSpaceLeftID, out m_dockSpaceRightID);
 
-            // Dock the left and right windows into their respective nodes
-            ImGuiInternal.DockBuilderDockWindow("Left Window", dockSpaceLeftID);
-            ImGuiInternal.DockBuilderDockWindow("Right Window", dockSpaceRightID);
+                ImGuiInternal.DockBuilderDockWindow("Left Window", m_dockSpaceLeftID);
+                ImGuiInternal.DockBuilderDockWindow("Right Window", m_dockSpaceRightID);
+                ImGuiInternal.DockBuilderDockWindow("Top Window", m_dockSpaceTopID);
+                ImGuiInternal.DockBuilderDockWindow("Bottom Window", m_dockSpaceBottomID);
 
-            // Optionally, dock a central window if needed
-            // ImGuiInternal.DockBuilderDockWindow("Central Window", dockSpaceMainID);
-
-            // Finalize the dock builder to apply the layout
-            ImGuiInternal.DockBuilderFinish(m_dockSpaceMainID);
-
-            isDockInitialized = true;
-        }
-    }
-
-    /// <summary>
-    /// Renders the full-screen dock space. Should be called every frame.
-    /// </summary>
-    public void RenderFullScreenDockSpace()
-    {
-        // Initialize the dock space layout once
-        if (!isDockInitialized)
-        {
-            InitializeDockSpace();
+                ImGuiInternal.DockBuilderFinish(m_dockSpaceMainID);
+                isDockInitialized = true;
+            }
         }
 
-        // Set style variables to make the dock space window borderless and full-screen
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
-
-        // Begin the DockSpace window
-        ImGui.Begin("DockSpace Window",
-            ImGuiWindowFlags.NoTitleBar |
-            ImGuiWindowFlags.NoCollapse |
-            ImGuiWindowFlags.NoResize |
-            ImGuiWindowFlags.NoMove |
-            ImGuiWindowFlags.NoBringToFrontOnFocus |
-            ImGuiWindowFlags.NoDocking |
-            ImGuiWindowFlags.NoScrollbar |
-            ImGuiWindowFlags.NoScrollWithMouse
-        );
-
-        // Ensure the DockSpace window covers the entire viewport
-        ImGui.SetWindowPos(Vector2.Zero);
-        ImGui.SetWindowSize(ImGui.GetIO().DisplaySize);
-
-        // Remove window padding to make the dock space fill the window
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
-
-        // Create the dock space
-        ImGui.DockSpace(m_dockSpaceMainID, Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode);
-
-        // Restore the window padding
-        ImGui.PopStyleVar();
-
-        // End the DockSpace window
-        ImGui.End();
-
-        // Restore the style variables
-        ImGui.PopStyleVar(3);
-
-        // Render the Left Window
-        if (ImGui.Begin("Left Window",
-            ImGuiWindowFlags.NoTitleBar |
-            ImGuiWindowFlags.NoCollapse |
-            ImGuiWindowFlags.NoResize |
-            ImGuiWindowFlags.NoMove |
-            ImGuiWindowFlags.NoBringToFrontOnFocus |
-            ImGuiWindowFlags.NoScrollbar |
-            ImGuiWindowFlags.NoScrollWithMouse
-        ))
+        /// <summary>
+        /// Renders the full-screen dock space. Should be called every frame.
+        /// </summary>
+        public void RenderFullScreenDockSpace()
         {
-            ImGui.Text("Hello, bottom!");
-        }
-        ImGui.End();
+            if (!isDockInitialized)
+                InitializeDockSpace();
 
-        // Render the Right Window
-        if (ImGui.Begin("Right Window",
-            ImGuiWindowFlags.NoTitleBar |
-            ImGuiWindowFlags.NoCollapse |
-            ImGuiWindowFlags.NoResize |
-            ImGuiWindowFlags.NoMove |
-            ImGuiWindowFlags.NoBringToFrontOnFocus |
-            ImGuiWindowFlags.NoScrollbar |
-            ImGuiWindowFlags.NoScrollWithMouse
-        ))
-        {
-            ImGui.Text("Haaaaaaaaaom!");
-        }
-        ImGui.End();
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
 
-        // Optionally, render the Central Window if you have one
-        /*
-        if (ImGui.Begin("Central Window",
-            ImGuiWindowFlags.NoCollapse |
-            ImGuiWindowFlags.NoBringToFrontOnFocus
-        ))
-        {
-            ImGui.Text("This is the central window.");
+            ImGui.Begin("DockSpace Window", ImGuiWindowFlags.NoTitleBar
+            | ImGuiWindowFlags.NoCollapse
+            | ImGuiWindowFlags.NoResize
+            | ImGuiWindowFlags.NoMove
+            | ImGuiWindowFlags.NoBringToFrontOnFocus
+            | ImGuiWindowFlags.NoDocking
+            | ImGuiWindowFlags.NoScrollbar
+            | ImGuiWindowFlags.NoScrollWithMouse
+            | ImGuiWindowFlags.NoBackground);
+
+            ImGui.SetWindowPos(Vector2.Zero);
+            ImGui.SetWindowSize(ImGui.GetIO().DisplaySize);
+
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+            ImGui.DockSpace(m_dockSpaceMainID, Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar | ImGuiDockNodeFlags.NoDockingOverCentralNode);
+            ImGui.PopStyleVar();
+
+            ImGui.End();
+            ImGui.PopStyleVar(3);
+
+            // Docking windows
+            if (ImGui.Begin("Top Window", ImGuiWindowFlags.MenuBar))
+            {
+                ImGui.BeginMainMenuBar();
+                ImGui.Button("Test A");
+                ImGui.Button("Test B");
+                ImGui.Button("Test C");
+                ImGui.Text("This is the top docked window menu bar.");
+                ImGui.EndMainMenuBar();
+            }
+            ImGui.End();
+
+            if (ImGui.Begin("Bottom Window", ImGuiWindowFlags.MenuBar))
+            {
+                ImGui.Text("This is the bottom docked window.");
+                ImGui.BeginMenuBar();
+                ImGui.Text("This is the bottom docked window.");
+                ImGui.EndMenuBar();
+            }
+            ImGui.End();
+
+            if (ImGui.Begin("Left Window"))
+            {
+                ImGui.Text("This is the left docked window.");
+            }
+            ImGui.End();
+            if (ImGui.Begin("Right Window"))
+            {
+                ImGui.Text("This is the right docked window with a transparent background.");
+            }
+            ImGui.End();
+
         }
-        ImGui.End();
-        */
-    }
 
         public unsafe void RenderDrawData(ImDrawDataPtr drawData)
         {

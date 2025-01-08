@@ -177,7 +177,7 @@ namespace SDL2Engine.Core
                     m_guiRenderService.ProcessEvent(e);
                 }
 
-                SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 80, 255);
+                SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 255, 255);
                 SDL.SDL_RenderClear(m_renderer);
 
                 ImGui.NewFrame();
@@ -185,30 +185,30 @@ namespace SDL2Engine.Core
                 // Render the dockspace
                 m_guiRenderService.RenderFullScreenDockSpace();
 
-                m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.AlwaysVerticalScrollbar);
-                    m_guiWindowBuilder.Draw("Integer");
-                    m_guiWindowBuilder.Draw("Float");
-                    m_guiWindowBuilder.Draw("Double");
-                    m_guiWindowBuilder.Draw("Long");
-                    m_guiWindowBuilder.Draw("Short");
-                    m_guiWindowBuilder.Draw("Byte");
-                    m_guiWindowBuilder.Draw("UInt");
-                    m_guiWindowBuilder.Draw("ULong");
-                    m_guiWindowBuilder.Draw("UShort");
-                    m_guiWindowBuilder.Draw("SByte");
-                    m_guiWindowBuilder.Draw("Bool");
-                    m_guiWindowBuilder.Draw("String");
-                    m_guiWindowBuilder.Draw("Enum");
-                    m_guiWindowBuilder.Draw("Vector2");
-                    m_guiWindowBuilder.Draw("Vector3");
-                    m_guiWindowBuilder.Draw("Vector4");
-                    m_guiWindowBuilder.Draw("Table");
-                    m_guiWindowBuilder.Draw("CellTable");
-                    m_guiWindowBuilder.Draw("Action");
-                m_guiWindowBuilder.EndWindow();
+                // m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.AlwaysVerticalScrollbar);
+                //     m_guiWindowBuilder.Draw("Integer");
+                //     m_guiWindowBuilder.Draw("Float");
+                //     m_guiWindowBuilder.Draw("Double");
+                //     m_guiWindowBuilder.Draw("Long");
+                //     m_guiWindowBuilder.Draw("Short");
+                //     m_guiWindowBuilder.Draw("Byte");
+                //     m_guiWindowBuilder.Draw("UInt");
+                //     m_guiWindowBuilder.Draw("ULong");
+                //     m_guiWindowBuilder.Draw("UShort");
+                //     m_guiWindowBuilder.Draw("SByte");
+                //     m_guiWindowBuilder.Draw("Bool");
+                //     m_guiWindowBuilder.Draw("String");
+                //     m_guiWindowBuilder.Draw("Enum");
+                //     m_guiWindowBuilder.Draw("Vector2");
+                //     m_guiWindowBuilder.Draw("Vector3");
+                //     m_guiWindowBuilder.Draw("Vector4");
+                //     m_guiWindowBuilder.Draw("Table");
+                //     m_guiWindowBuilder.Draw("CellTable");
+                //     m_guiWindowBuilder.Draw("Action");
+                // m_guiWindowBuilder.EndWindow();
 
-                ImGui.ShowDebugLogWindow();
-                ImGui.ShowIDStackToolWindow();
+                // ImGui.ShowDebugLogWindow();
+                // ImGui.ShowIDStackToolWindow();
 
                 ImGui.Render();
 
