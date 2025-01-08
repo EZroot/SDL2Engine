@@ -27,7 +27,10 @@ public class ImageLoader : IServiceImageLoader
         if (surface == IntPtr.Zero)
         {
             Debug.LogError("IMG_Load: Failed to load image! SDL_Error: " + SDL.SDL_GetError());
+            return IntPtr.Zero;
         }
+        Debug.Log("<color=green> SDL Image Loaded:</color> "+path);
+
         return surface;
     }
 

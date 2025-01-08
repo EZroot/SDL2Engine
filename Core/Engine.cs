@@ -146,6 +146,15 @@ namespace SDL2Engine.Core
             m_guiVariableBinder.BindVariable("CellTable", cellTable);
             m_guiVariableBinder.BindVariable("Action", action);
 
+            //Sprite Test
+            IntPtr spriteTexture = m_imageLoader.LoadImage("resources/ashh.png");
+            IntPtr texture = SDL.SDL_CreateTextureFromSurface(m_renderer, spriteTexture);  // Create texture from surface
+            SDL.SDL_FreeSurface(spriteTexture);  // Free the surface after creating texture
+            int texWidth, texHeight;
+            SDL.SDL_QueryTexture(texture, out _, out _, out texWidth, out texHeight);
+            SDL.SDL_Rect srcRect = new SDL.SDL_Rect { x = 0, y = 0, w = texWidth, h = texHeight };
+            SDL.SDL_Rect dstRect = new SDL.SDL_Rect { x = 450, y = 50, w = texWidth, h = texHeight };
+
             bool running = true;
             while (running)
             {
@@ -178,28 +187,13 @@ namespace SDL2Engine.Core
 
                 SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 255, 255);
                 SDL.SDL_RenderClear(m_renderer);
+                SDL.SDL_RenderCopy(m_renderer, texture, ref srcRect, ref dstRect); // Render the texture
 
                 ImGui.NewFrame();
 
                 // Render the dockspace
                 m_guiRenderService.RenderFullScreenDockSpace();
                 // m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.AlwaysVerticalScrollbar);
-                //     m_guiWindowBuilder.Draw("Integer");
-                //     m_guiWindowBuilder.Draw("Float");
-                //     m_guiWindowBuilder.Draw("Double");
-                //     m_guiWindowBuilder.Draw("Long");
-                //     m_guiWindowBuilder.Draw("Short");
-                //     m_guiWindowBuilder.Draw("Byte");
-                //     m_guiWindowBuilder.Draw("UInt");
-                //     m_guiWindowBuilder.Draw("ULong");
-                //     m_guiWindowBuilder.Draw("UShort");
-                //     m_guiWindowBuilder.Draw("SByte");
-                //     m_guiWindowBuilder.Draw("Bool");
-                //     m_guiWindowBuilder.Draw("String");
-                //     m_guiWindowBuilder.Draw("Enum");
-                //     m_guiWindowBuilder.Draw("Vector2");
-                //     m_guiWindowBuilder.Draw("Vector3");
-                //     m_guiWindowBuilder.Draw("Vector4");
                 //     m_guiWindowBuilder.Draw("Table");
                 //     m_guiWindowBuilder.Draw("CellTable");
                 //     m_guiWindowBuilder.Draw("Action");
@@ -222,7 +216,11 @@ namespace SDL2Engine.Core
 
                 SDL.SDL_RenderPresent(m_renderer);
             }
-
+            // Clean up
+            if (spriteTexture != IntPtr.Zero)
+            {
+                SDL.SDL_DestroyTexture(spriteTexture);
+            }
             Dispose();
         }
 

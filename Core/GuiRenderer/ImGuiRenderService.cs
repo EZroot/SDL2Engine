@@ -164,20 +164,20 @@ namespace SDL2Engine.Core.GuiRenderer
 
             if (ImGui.Begin("Bottom Dock", ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
             {
-                ImGui.Text("BOTTOM dock");
+                ImGui.Text("Bottom docker window");
                 ImGui.BeginMenuBar();
-                ImGui.Text("BOTTOM MENU BAR");
+                ImGui.Text("Bottom menu bar");
                 ImGui.EndMenuBar();
             }
             ImGui.End();
             if (ImGui.Begin("Left Dock", ImGuiWindowFlags.NoMove))
             {
-                ImGui.Text("LEFT WINDOW BABY");
+                ImGui.Text("Left docker window");
             }
             ImGui.End();
             if (ImGui.Begin("Right Dock", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove))
             {
-                ImGui.Text("AYOOOO");
+                ImGui.Text("Game Screen");
             }
             ImGui.End();
         }
@@ -341,17 +341,6 @@ namespace SDL2Engine.Core.GuiRenderer
                 ImGui.SameLine(windowWidth - textWidth - ImGui.GetStyle().ItemSpacing.X * 2);
                 ImGui.Text(fullHeader);
                 ImGui.EndMainMenuBar();
-                // Vector2 availableSize = ImGui.GetContentRegionAvail();
-                // ImGui.BeginChild("ConsoleRegion", availableSize, ImGuiChildFlags.None);
-                // ImGui.PushStyleColor(ImGuiCol.Text, ColorHelper.GetColor(255,0,0));
-                // ImGui.TextUnformatted(Utils.Debug.ConsoleText);
-                // ImGui.PopStyleColor();
-                // ImGui.SetScrollHereY(1.0f);
-                // ImGui.EndChild();
-
-
-                // ImGuiDebugConsoleWindow.ShowDebugConsole(ref m_isDebugConsoleOpen);
-
             }
             if (m_isDebugConsoleOpen)
                 Utils.Debug.RenderDebugConsole(ref m_isDebugConsoleOpen);
