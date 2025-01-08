@@ -173,7 +173,7 @@ namespace SDL2Engine.Core
                         var windowSettings = new WindowSettings(title, newWidth, newHeight, isFullscreen);
                         EventHub.Raise(this, new OnWindowResized(windowSettings));
                     }
-                    m_guiRenderService.ProcessEvent(e);
+                    m_guiRenderService.ProcessGuiEvent(e);
                 }
 
                 SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 255, 255);

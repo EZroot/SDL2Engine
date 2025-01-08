@@ -70,7 +70,7 @@ namespace SDL2Engine.Core.CoreSystem.Configuration
                 Fullscreen = bool.TryParse(m_settings.GetValueOrDefault("fullscreen", "false"), out var fullscreen) && fullscreen
             };
 
-            Utils.Debug.Log($"<color=magenta>Applied Windows Setting:></color> <color=blue>{Settings.WindowName} {Settings.Width}x{Settings.Height} Fullscreen: {Settings.Fullscreen}");
+            Utils.Debug.Log($"<color=magenta>Applied Windows Setting:</color> <color=blue>{Settings.WindowName} {Settings.Width}x{Settings.Height} Fullscreen: {Settings.Fullscreen}");
         }
 
         public void Save()

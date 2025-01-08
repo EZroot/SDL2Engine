@@ -2,31 +2,42 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using OpenTK.Graphics.OpenGL;
 using SDL2;
+using ImGuiNET;
+using System.Numerics;
+using System.Drawing;
 
 namespace SDL2Engine.Core.Utils
 {
     public static class Debug
     {
+        private const int MAX_LOG_ENTRIES = 1000;
+
         public static bool IsDebugMode = true;
         public static bool IsDebugModePollEvents = false;
         public static bool IsDebugModeEventHub = true;
         public static bool IsShowingMethodNames = true;
-        public static string ConsoleText { get; private set; }
+
+        private static readonly List<LogEntry> _logEntries = new List<LogEntry>();
+        private static readonly object _logLock = new object();
+        private static string m_searchFilter = "";
+
+        public static IReadOnlyList<LogEntry> LogEntries
+        {
+            get
+            {
+                lock (_logLock)
+                {
+                    return _logEntries.AsReadOnly();
+                }
+            }
+        }
+
         public static void LogEvents(string msg)
         {
             if (!IsDebugModeEventHub) return;
-            Log($"<color=darkyellow>{msg}</color>");
+            Log($"<color=DarkYellow>{msg}</color>",2);
         }
-
-        // No worky ):
-        // public static void LogEvents<TEventArgs>(TEventArgs e) where TEventArgs : EventArgs
-        // {
-        //     if (!IsDebugModeEventHub) return;
-        //     var details = GetEventArgsDetails(e);
-        //     Log($"<color=darkyellow>{details}</color>");
-        // }
 
         public static void LogPollEvents(SDL.SDL_Event e)
         {
@@ -35,40 +46,37 @@ namespace SDL2Engine.Core.Utils
             {
                 case SDL.SDL_EventType.SDL_KEYDOWN:
                 case SDL.SDL_EventType.SDL_KEYUP:
-                    Debug.Log($"Key event: {e.key.keysym.sym}, State: {e.key.state}");
+                    Log($"<color=DarkYellow>Key event: {e.key.keysym.sym}, State: {e.key.state}</color>",2);
                     break;
 
                 case SDL.SDL_EventType.SDL_MOUSEMOTION:
-                    Debug.Log($"Mouse motion: X={e.motion.x}, Y={e.motion.y}, DX={e.motion.xrel}, DY={e.motion.yrel}");
+                    Log($"<color=DarkYellow>Mouse motion: X={e.motion.x}, Y={e.motion.y}, DX={e.motion.xrel}, DY={e.motion.yrel}</color>",2);
                     break;
 
                 case SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN:
                 case SDL.SDL_EventType.SDL_MOUSEBUTTONUP:
-                    Debug.Log($"Mouse button event: Button={e.button.button}, X={e.button.x}, Y={e.button.y}, State={e.button.state}");
+                    Log($"<color=DarkYellow>Mouse button event: Button={e.button.button}, X={e.button.x}, Y={e.button.y}, State={e.button.state}</color>",2);
                     break;
 
                 case SDL.SDL_EventType.SDL_MOUSEWHEEL:
-                    Debug.Log($"Mouse wheel event: X={e.wheel.x}, Y={e.wheel.y}");
+                    Log($"<color=DarkYellow>Mouse wheel event: X={e.wheel.x}, Y={e.wheel.y}</color>",2);
                     break;
 
                 case SDL.SDL_EventType.SDL_QUIT:
-                    Debug.Log("Quit event triggered.");
+                    Log($"<color=DarkYellow>Quit event triggered.</color>",2);
                     break;
 
                 case SDL.SDL_EventType.SDL_WINDOWEVENT:
-                    Debug.Log($"Window event: {e.window.windowEvent}");
+                    Log($"<color=DarkYellow>Window event: {e.window.windowEvent}</color>",2);
                     break;
 
-                // case SDL.SDL_EventType.SDL_TEXTINPUT:
-                //     Debug.Log($"Text input event: {System.Text.Encoding.UTF8.GetString(e.text.)}");
-                //     break;
-
                 default:
-                    Debug.Log($"Unhandled event type: {e.type}");
+                    Log($"<color=DarkYellow>Unhandled event type: {e.type}</color>",2);
                     break;
             }
         }
-        public static T Throw<T>(Exception exception, string message = "")
+
+        public static T Throw<T>(Exception exception, string message = "") where T : Exception
         {
             LogError(message);
             throw exception;
@@ -76,24 +84,79 @@ namespace SDL2Engine.Core.Utils
 
         public static void LogError(string message)
         {
-            Log($"<color=red>Error: {message}</color>");
+            Log($"<color=Red>Error: {message}</color>",2);
         }
 
         public static void LogException(string message, Exception ex)
         {
-            Log($"<color=red>Exception: {message} - {ex.Message}</color>");
+            Log($"<color=Red>Exception: {message} - {ex.Message}</color>",2);
             throw ex;
         }
 
-        public static void Log(string input)
+        /// <summary>
+        /// Log Console Input
+        /// Format with <color=value></color>
+        /// </summary>
+        /// <param name="input"></param>
+        public static void Log(string input, int stackFrameIndex = 1)
         {
-            string cleanInput = RemoveColorTags(input);
-            ConsoleText += $"{cleanInput}\n";
-            var timeStamp = DateTime.Now.ToString("h:mm tt").Replace(" ", "");
-
             var stackTrace = new StackTrace();
-            var frame = stackTrace.GetFrame(1);
-            var method = frame?.GetMethod();
+            var frame = stackTrace.GetFrame(stackFrameIndex);
+            WriteToConsole(input, frame);
+        }
+
+        private static List<(string text, Color color)> ParseColorTags(string input)
+        {
+            var spans = new List<(string text, Color color)>();
+            string pattern = @"<color=(?<color>[a-zA-Z]+)>(?<text>.*?)<\/color>";
+            var matches = Regex.Matches(input, pattern);
+
+            int lastIndex = 0;
+            foreach (Match match in matches)
+            {
+                if (match.Index > lastIndex)
+                {
+                    string beforeText = input.Substring(lastIndex, match.Index - lastIndex);
+                    if (!string.IsNullOrWhiteSpace(beforeText))
+                        spans.Add((beforeText, Color.White));
+                }
+
+                string colorName = match.Groups["color"].Value;
+                string text = match.Groups["text"].Value;
+                Color color = GetColorFromName(colorName);
+                if (!string.IsNullOrWhiteSpace(text))
+                    spans.Add((text, color));
+
+                lastIndex = match.Index + match.Length;
+            }
+
+            if (lastIndex < input.Length)
+            {
+                string remainingText = input.Substring(lastIndex);
+                if (!string.IsNullOrWhiteSpace(remainingText))
+                    spans.Add((remainingText, Color.White));
+            }
+
+            return spans;
+        }
+
+        private static Color GetColorFromName(string colorName)
+        {
+            try
+            {
+                return Color.FromName(colorName);
+            }
+            catch
+            {
+                return Color.White;
+            }
+        }
+
+        private static void WriteToConsole(string input, StackFrame? trace)
+        {
+            var timeStamp = DateTime.Now.ToString("h:mm tt").Replace(" ", "");
+            var method = trace?.GetMethod();
+
             var callerClassName = "";
             var callerMethodName = "";
 
@@ -106,12 +169,27 @@ namespace SDL2Engine.Core.Utils
             if (IsDebugMode)
             {
                 if (IsShowingMethodNames)
-                    input = $"<color=magenta>{timeStamp}</color> <color=yellow>[{callerClassName}.{callerMethodName}]</color> " + input;
+                    input = $"<color=Magenta>{timeStamp}</color> <color=Yellow>[{callerClassName}.{callerMethodName}]</color> " + input;
                 else
-                    input = $"<color=magenta>{timeStamp}</color> <color=yellow>[{callerClassName}]</color> " + input;
+                    input = $"<color=Magenta>{timeStamp}</color> <color=Yellow>[{callerClassName}]</color> " + input;
             }
             else
-                input = $"<color=magenta>{timeStamp}</color> " + input;
+                input = $"<color=Magenta>{timeStamp}</color> " + input;
+
+            List<(string text, Color color)> parsedSpans = ParseColorTags(input);
+            lock (_logLock)
+            {
+                var logEntry = new LogEntry();
+                foreach (var span in parsedSpans)
+                {
+                    logEntry.Spans.Add(span);
+                }
+                _logEntries.Add(logEntry);
+                while (_logEntries.Count > MAX_LOG_ENTRIES)
+                {
+                    _logEntries.RemoveAt(0);
+                }
+            }
 
             int currentIndex = 0;
 
@@ -153,6 +231,11 @@ namespace SDL2Engine.Core.Utils
             Console.WriteLine();
         }
 
+        private static string RemoveColorTags(string input)
+        {
+            return Regex.Replace(input, @"<color=.*?>|<\/color>", string.Empty);
+        }
+
         private static string CleanGeneratedNames(string name)
         {
             int genericIndex = name.IndexOf('`');
@@ -191,10 +274,121 @@ namespace SDL2Engine.Core.Utils
             return eventArgsDetails.ToString();
         }
 
-        private static string RemoveColorTags(string input)
+        /// <summary>
+        /// Create a IMGUI Debug Console
+        /// </summary>
+        public static void RenderDebugConsole(ref bool isOpen)
         {
-            return System.Text.RegularExpressions.Regex.Replace(input, @"<color=.*?>|<\/color>", string.Empty);
+            if (ImGui.Begin("Debug Console", ref isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.MenuBar))
+            {
+                bool shouldScrollToMatch = false;
+
+                if (ImGui.BeginMenuBar())
+                {
+                    if (ImGui.Button("Options"))
+                    {
+                        ImGui.OpenPopup("MoreOptionsPopup");
+                    }
+
+                    ImGui.Separator();
+                    ImGui.Text("Search");
+                    if (ImGui.InputText("##Search", ref m_searchFilter, 1024))
+                    {
+                        shouldScrollToMatch = true;
+                        if (ImGui.IsItemFocused())
+                        {
+                            Utils.Debug.Log("Input is focused");
+                        }
+                    }
+
+                    if (ImGui.BeginPopup("MoreOptionsPopup"))
+                    {
+                        if (ImGui.Checkbox("Show Method Names", ref IsShowingMethodNames))
+                        {
+                            Log($"Debug Method Names: {Utils.Debug.IsShowingMethodNames}");
+                        }
+                        ImGui.Separator();
+                        if (ImGui.Checkbox("InputDbg", ref IsDebugModePollEvents))
+                        {
+                            Log($"Debug Input Poll: {Utils.Debug.IsDebugModePollEvents}");
+                        }
+                        if (ImGui.Checkbox("EventDbg", ref IsDebugModeEventHub))
+                        {
+                            Log($"Debug EventHub: {Utils.Debug.IsDebugModeEventHub}");
+                        }
+                        ImGui.Separator();
+                        if (ImGui.Button("Clear Logs"))
+                        {
+                            ClearLogs();
+                        }
+                        ImGui.EndPopup();
+                    }
+                    ImGui.EndMenuBar();
+                }
+
+                Vector2 availableSize = new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y);
+                ImGui.BeginChild("ConsoleRegion", availableSize, ImGuiChildFlags.Borders);
+
+                int scrollToIndex = -1;
+                lock (_logLock)
+                {
+                    int index = 0;
+                    foreach (var entry in _logEntries)
+                    {
+                        bool matchesSearch = string.IsNullOrWhiteSpace(m_searchFilter) || entry.Spans.Any(span => span.Text.Contains(m_searchFilter, StringComparison.OrdinalIgnoreCase));
+                        if (matchesSearch)
+                        {
+                            if (scrollToIndex == -1 && shouldScrollToMatch)
+                            {
+                                scrollToIndex = index;
+                            }
+
+                            bool firstSpan = true;
+                            foreach (var span in entry.Spans)
+                            {
+                                if (!firstSpan)
+                                    ImGui.SameLine();
+                                firstSpan = false;
+
+                                Vector4 imguiColor = new Vector4(
+                                   span.Color.R / 255f,
+                                   span.Color.G / 255f,
+                                   span.Color.B / 255f,
+                                   1.0f
+                                );
+
+                                if (imguiColor.X == 0 && imguiColor.Y == 0 && imguiColor.Z == 0)
+                                {
+                                    imguiColor = new Vector4(1.0f, 0.5f, 0.0f, 1.0f);
+                                }
+
+                                ImGui.PushStyleColor(ImGuiCol.Text, imguiColor);
+                                var text = RemoveColorTags(Regex.Replace(span.Text, @"\s+", " "));
+                                ImGui.TextUnformatted(text.Trim());
+                                ImGui.PopStyleColor();
+                            }
+                        }
+                        index++;
+                    }
+                }
+
+                if (scrollToIndex != -1)
+                {
+                    ImGui.SetScrollHereY(1.0f);
+                }
+
+                ImGui.SetScrollHereY(1.0f);
+                ImGui.EndChild();
+                ImGui.End();
+            }
         }
 
+        public static void ClearLogs()
+        {
+            lock (_logLock)
+            {
+                _logEntries.Clear();
+            }
+        }
     }
 }

@@ -1,10 +1,11 @@
+using System.Diagnostics;
 using ImGuiNET;
 using SDL2;
 namespace SDL2Engine.Core.Input
 {
     public static class InputManager
     {
-        public static void ProcessEvent(SDL.SDL_Event e)
+        public static void ProcessGuiEvent(SDL.SDL_Event e)
         {
             ImGuiIOPtr io = ImGui.GetIO();
 
@@ -34,6 +35,13 @@ namespace SDL2Engine.Core.Input
                     int keyIndex = (int)e.key.keysym.sym;
                     bool down = e.type == SDL.SDL_EventType.SDL_KEYDOWN;
 
+                    // Hacky work around for backspaces in IMGUI because I'm retarded
+                    if(keyIndex == (int)SDL.SDL_Keycode.SDLK_BACKSPACE)
+                    {
+                        io.AddKeyEvent(ImGuiKey.Backspace, down);
+                        io.SetKeyEventNativeData(ImGuiKey.Backspace, (int)SDL.SDL_Keycode.SDLK_BACKSPACE, (int)SDL.SDL_GetScancodeFromKey(SDL.SDL_Keycode.SDLK_BACKSPACE));
+                    }
+                        
                     if (keyIndex >= 0 && keyIndex < io.KeysData.Count)
                     {
                         ImGuiKeyData keyData = io.KeysData[keyIndex];

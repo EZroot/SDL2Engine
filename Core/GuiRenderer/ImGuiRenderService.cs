@@ -19,6 +19,9 @@ namespace SDL2Engine.Core.GuiRenderer
         private IServiceSysInfo m_sysInfo;
         private bool m_disposed;
 
+        // more ew
+        private bool m_isDebugConsoleOpen;
+
         // ew - format plz
         private bool isDockInitialized;
         private uint m_dockSpaceMainID;
@@ -41,7 +44,6 @@ namespace SDL2Engine.Core.GuiRenderer
                 REMOVE THIS - DEBUG TOP MENU WINDOW VARIABLES
         *******************************************************
         *******************************************************/
-        private static string _consoleText = Utils.Debug.ConsoleText;
         int selectedItem = 0;
         string[] items = { "Item 1", "Item 2", "Item 3", "Item 4" };
         bool test = false;
@@ -152,7 +154,7 @@ namespace SDL2Engine.Core.GuiRenderer
 
             RenderFileMenu();
 
-            // Just uncomment this if we want a top window back
+            // Just uncomment this if we want a top window dock back
             // Leaving here for now
             // if (ImGui.Begin("Top Dock", ImGuiWindowFlags.MenuBar ))
             // {
@@ -216,9 +218,9 @@ namespace SDL2Engine.Core.GuiRenderer
             }
         }
 
-        public void ProcessEvent(SDL.SDL_Event e)
+        public void ProcessGuiEvent(SDL.SDL_Event e)
         {
-            InputManager.ProcessEvent(e);
+            InputManager.ProcessGuiEvent(e);
         }
 
         public void OnWindowResize(int width, int height)
@@ -253,74 +255,81 @@ namespace SDL2Engine.Core.GuiRenderer
                     ImGui.OpenPopup("MoreActionsPopup");
                 }
 
-                if (ImGui.BeginPopup("MoreActionsPopup"))
-                {
-                    if (ImGui.Button("Action 1"))
-                    {
-                        Console.WriteLine("Action 1 Triggered");
-                        ImGui.CloseCurrentPopup();
-                    }
-                    if (ImGui.SmallButton("Smoll"))
-                    {
-
-                    }
-                    if (ImGui.Button("Action 2"))
-                    {
-                        Console.WriteLine("Action 2 Triggered");
-                        ImGui.CloseCurrentPopup();
-                    }
-
-                    if (ImGui.Checkbox("Test", ref test))
-                    {
-
-                    }
-                    if (ImGui.Button("Smoll"))
-                    {
-
-                    }
-                    if (ImGui.ArrowButton("Arrowed", ImGuiDir.Down))
-                    {
-
-                    }
-                    if (ImGui.MenuItem("Enable Feature2", "", isChecked))
-                    {
-                        isChecked = !isChecked;
-                    }
-                    if (ImGui.MenuItem("Enable Feature3", "", isChecked))
-                    {
-                        isChecked = !isChecked;
-                    }
-                    if (ImGui.MenuItem("Enable Feature4", "", isChecked))
-                    {
-                        isChecked = !isChecked;
-                    }
-                    if (ImGui.BeginCombo("Options", items[selectedItem], ImGuiComboFlags.WidthFitPreview))
-                    {
-                        for (int n = 0; n < items.Length; n++)
-                        {
-                            bool isSelected = (selectedItem == n);
-                            if (ImGui.Selectable(items[n], isSelected))
-                            {
-                                selectedItem = n;
-                            }
-                            if (isSelected)
-                                ImGui.SetItemDefaultFocus();
-                        }
-                        ImGui.EndCombo();
-                    }
-
-                    ImGui.EndPopup();
-                }
                 if (ImGui.Button("Debug"))
                 {
                     ImGui.OpenPopup("DebugWindowPopup");
                 }
 
+                // if (ImGui.BeginPopup("MoreActionsPopup"))
+                // {
+                //     if (ImGui.Button("Action 1"))
+                //     {
+                //         Console.WriteLine("Action 1 Triggered");
+                //         // ImGui.CloseCurrentPopup();
+                //     }
+                //     ImGui.Separator();
+                //     if (ImGui.SmallButton("Smoll"))
+                //     {
+
+                //     }
+                //     ImGui.Separator();
+
+                //     if (ImGui.Button("Action 2"))
+                //     {
+                //         Console.WriteLine("Action 2 Triggered");
+                //         // ImGui.CloseCurrentPopup();
+                //     }
+                //     ImGui.Separator();
+
+                //     if (ImGui.Checkbox("Test", ref test))
+                //     {
+
+                //     }
+                //     ImGui.Separator();
+
+                //     if (ImGui.ArrowButton("Arrowed", ImGuiDir.Down))
+                //     {
+
+                //     }
+                //     ImGui.Separator();
+
+                //     if (ImGui.MenuItem("Enable Feature2", "", isChecked))
+                //     {
+                //         isChecked = !isChecked;
+                //     }
+                //     if (ImGui.MenuItem("Enable Feature3", "", isChecked))
+                //     {
+                //         isChecked = !isChecked;
+                //     }
+                //     if (ImGui.MenuItem("Enable Feature4", "", isChecked))
+                //     {
+                //         isChecked = !isChecked;
+                //     }
+                //     ImGui.Separator();
+
+                //     if (ImGui.BeginCombo("Options", items[selectedItem], ImGuiComboFlags.WidthFitPreview))
+                //     {
+                //         for (int n = 0; n < items.Length; n++)
+                //         {
+                //             bool isSelected = (selectedItem == n);
+                //             if (ImGui.Selectable(items[n], isSelected))
+                //             {
+                //                 selectedItem = n;
+                //             }
+                //             if (isSelected)
+                //                 ImGui.SetItemDefaultFocus();
+                //         }
+                //         ImGui.EndCombo();
+                //     }
+
+                //     ImGui.EndPopup();
+                // }
+
                 if (ImGui.BeginPopup("DebugWindowPopup"))
                 {
                     if (ImGui.Button("Show Console Output"))
                     {
-                        ImGui.OpenPopup("ConsoleOutput");
+                        m_isDebugConsoleOpen = !m_isDebugConsoleOpen;
                     }
                     ImGui.EndPopup();
                 }
@@ -332,31 +341,20 @@ namespace SDL2Engine.Core.GuiRenderer
                 ImGui.SameLine(windowWidth - textWidth - ImGui.GetStyle().ItemSpacing.X * 2);
                 ImGui.Text(fullHeader);
                 ImGui.EndMainMenuBar();
+                // Vector2 availableSize = ImGui.GetContentRegionAvail();
+                // ImGui.BeginChild("ConsoleRegion", availableSize, ImGuiChildFlags.None);
+                // ImGui.PushStyleColor(ImGuiCol.Text, ColorHelper.GetColor(255,0,0));
+                // ImGui.TextUnformatted(Utils.Debug.ConsoleText);
+                // ImGui.PopStyleColor();
+                // ImGui.SetScrollHereY(1.0f);
+                // ImGui.EndChild();
 
 
-                if (ImGui.Begin("Console Output", ImGuiWindowFlags.AlwaysVerticalScrollbar | ImGuiWindowFlags.AlwaysHorizontalScrollbar | ImGuiWindowFlags.MenuBar ))
-                {
-                    ImGui.BeginMenuBar();
-                    if (ImGui.Button("Input"))
-                    {
-                        Utils.Debug.IsDebugModePollEvents = !Utils.Debug.IsDebugModePollEvents;
-                        Utils.Debug.Log($"Debug Input Poll: {Utils.Debug.IsDebugModePollEvents}");
-                    }
-                    if (ImGui.Button("EventHub"))
-                    {
-                        Utils.Debug.IsDebugModeEventHub = !Utils.Debug.IsDebugModeEventHub;
-                        Utils.Debug.Log($"Debug EventHub: {Utils.Debug.IsDebugModeEventHub}");
-                    }
-                    ImGui.EndMenuBar();
+                // ImGuiDebugConsoleWindow.ShowDebugConsole(ref m_isDebugConsoleOpen);
 
-                    _consoleText = Utils.Debug.ConsoleText;
-                    Vector2 availableSize = ImGui.GetContentRegionAvail();
-                    ImGui.InputTextMultiline("##ConsoleText", ref _consoleText, 65536, availableSize, ImGuiInputTextFlags.ReadOnly);
-
-                    ImGui.End();
-                }
             }
-
+            if (m_isDebugConsoleOpen)
+                Utils.Debug.RenderDebugConsole(ref m_isDebugConsoleOpen);
         }
 
         public void Dispose()
