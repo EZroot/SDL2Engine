@@ -70,7 +70,7 @@ namespace SDL2Engine.Core.GuiRenderer
             ImGuiInternal.DockBuilderRemoveNode(m_dockSpaceMainID);
 
             // Add a new node with the PassthruCentralNode flag to allow the background to be visible
-            ImGuiInternal.DockBuilderAddNode(m_dockSpaceMainID, ImGuiDockNodeFlags.PassthruCentralNode);
+            ImGuiInternal.DockBuilderAddNode(m_dockSpaceMainID, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar | ImGuiDockNodeFlags.NoUndocking);
 
             // Set the size of the dock space to the current display size
             ImGuiInternal.DockBuilderSetNodeSize(m_dockSpaceMainID, ImGui.GetIO().DisplaySize);
@@ -148,8 +148,13 @@ namespace SDL2Engine.Core.GuiRenderer
 
         // Render the Left Window
         if (ImGui.Begin("Left Window",
+            ImGuiWindowFlags.NoTitleBar |
             ImGuiWindowFlags.NoCollapse |
-            ImGuiWindowFlags.NoBringToFrontOnFocus
+            ImGuiWindowFlags.NoResize |
+            ImGuiWindowFlags.NoMove |
+            ImGuiWindowFlags.NoBringToFrontOnFocus |
+            ImGuiWindowFlags.NoScrollbar |
+            ImGuiWindowFlags.NoScrollWithMouse
         ))
         {
             ImGui.Text("Hello, bottom!");
@@ -158,8 +163,13 @@ namespace SDL2Engine.Core.GuiRenderer
 
         // Render the Right Window
         if (ImGui.Begin("Right Window",
+            ImGuiWindowFlags.NoTitleBar |
             ImGuiWindowFlags.NoCollapse |
-            ImGuiWindowFlags.NoBringToFrontOnFocus
+            ImGuiWindowFlags.NoResize |
+            ImGuiWindowFlags.NoMove |
+            ImGuiWindowFlags.NoBringToFrontOnFocus |
+            ImGuiWindowFlags.NoScrollbar |
+            ImGuiWindowFlags.NoScrollWithMouse
         ))
         {
             ImGui.Text("Haaaaaaaaaom!");
