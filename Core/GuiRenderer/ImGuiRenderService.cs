@@ -140,7 +140,6 @@ namespace SDL2Engine.Core.GuiRenderer
             | ImGuiWindowFlags.NoBackground
             | ImGuiWindowFlags.MenuBar);
 
-
             ImGui.SetWindowPos(Vector2.Zero);
             ImGui.SetWindowSize(ImGui.GetIO().DisplaySize);
 
@@ -180,6 +179,9 @@ namespace SDL2Engine.Core.GuiRenderer
                 ImGui.Text("Game Screen");
             }
             ImGui.End();
+
+            if (m_isDebugConsoleOpen)
+                Utils.Debug.RenderDebugConsole(ref m_isDebugConsoleOpen);
         }
 
         public unsafe void RenderDrawData(ImDrawDataPtr drawData)
@@ -342,8 +344,6 @@ namespace SDL2Engine.Core.GuiRenderer
                 ImGui.Text(fullHeader);
                 ImGui.EndMainMenuBar();
             }
-            if (m_isDebugConsoleOpen)
-                Utils.Debug.RenderDebugConsole(ref m_isDebugConsoleOpen);
         }
 
         public void Dispose()

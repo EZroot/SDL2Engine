@@ -36,7 +36,7 @@ namespace SDL2Engine.Core.Utils
         public static void LogEvents(string msg)
         {
             if (!IsDebugModeEventHub) return;
-            Log($"<color=DarkYellow>{msg}</color>",2);
+            Log($"<color=DarkYellow>{msg}</color>", 2);
         }
 
         public static void LogPollEvents(SDL.SDL_Event e)
@@ -46,32 +46,32 @@ namespace SDL2Engine.Core.Utils
             {
                 case SDL.SDL_EventType.SDL_KEYDOWN:
                 case SDL.SDL_EventType.SDL_KEYUP:
-                    Log($"<color=DarkYellow>Key event: {e.key.keysym.sym}, State: {e.key.state}</color>",2);
+                    Log($"<color=DarkYellow>Key event: {e.key.keysym.sym}, State: {e.key.state}</color>", 2);
                     break;
 
                 case SDL.SDL_EventType.SDL_MOUSEMOTION:
-                    Log($"<color=DarkYellow>Mouse motion: X={e.motion.x}, Y={e.motion.y}, DX={e.motion.xrel}, DY={e.motion.yrel}</color>",2);
+                    Log($"<color=DarkYellow>Mouse motion: X={e.motion.x}, Y={e.motion.y}, DX={e.motion.xrel}, DY={e.motion.yrel}</color>", 2);
                     break;
 
                 case SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN:
                 case SDL.SDL_EventType.SDL_MOUSEBUTTONUP:
-                    Log($"<color=DarkYellow>Mouse button event: Button={e.button.button}, X={e.button.x}, Y={e.button.y}, State={e.button.state}</color>",2);
+                    Log($"<color=DarkYellow>Mouse button event: Button={e.button.button}, X={e.button.x}, Y={e.button.y}, State={e.button.state}</color>", 2);
                     break;
 
                 case SDL.SDL_EventType.SDL_MOUSEWHEEL:
-                    Log($"<color=DarkYellow>Mouse wheel event: X={e.wheel.x}, Y={e.wheel.y}</color>",2);
+                    Log($"<color=DarkYellow>Mouse wheel event: X={e.wheel.x}, Y={e.wheel.y}</color>", 2);
                     break;
 
                 case SDL.SDL_EventType.SDL_QUIT:
-                    Log($"<color=DarkYellow>Quit event triggered.</color>",2);
+                    Log($"<color=DarkYellow>Quit event triggered.</color>", 2);
                     break;
 
                 case SDL.SDL_EventType.SDL_WINDOWEVENT:
-                    Log($"<color=DarkYellow>Window event: {e.window.windowEvent}</color>",2);
+                    Log($"<color=DarkYellow>Window event: {e.window.windowEvent}</color>", 2);
                     break;
 
                 default:
-                    Log($"<color=DarkYellow>Unhandled event type: {e.type}</color>",2);
+                    Log($"<color=DarkYellow>Unhandled event type: {e.type}</color>", 2);
                     break;
             }
         }
@@ -84,12 +84,12 @@ namespace SDL2Engine.Core.Utils
 
         public static void LogError(string message)
         {
-            Log($"<color=Red>Error: {message}</color>",2);
+            Log($"<color=Red>Error: {message}</color>", 2);
         }
 
         public static void LogException(string message, Exception ex)
         {
-            Log($"<color=Red>Exception: {message} - {ex.Message}</color>",2);
+            Log($"<color=Red>Exception: {message} - {ex.Message}</color>", 2);
             throw ex;
         }
 
@@ -279,7 +279,7 @@ namespace SDL2Engine.Core.Utils
         /// </summary>
         public static void RenderDebugConsole(ref bool isOpen)
         {
-            if (ImGui.Begin("Debug Console", ref isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.MenuBar))
+            if (ImGui.Begin("Debug Console", ref isOpen, ImGuiWindowFlags.MenuBar))
             {
                 bool shouldScrollToMatch = false;
 
@@ -327,60 +327,62 @@ namespace SDL2Engine.Core.Utils
                 }
 
                 Vector2 availableSize = new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y);
-                ImGui.BeginChild("ConsoleRegion", availableSize, ImGuiChildFlags.Borders);
-
-                int scrollToIndex = -1;
-                lock (_logLock)
+                if (ImGui.BeginChild("ConsoleRegion", availableSize, ImGuiChildFlags.Borders))
                 {
-                    int index = 0;
-                    foreach (var entry in _logEntries)
+                    int scrollToIndex = -1;
+                    lock (_logLock)
                     {
-                        bool matchesSearch = string.IsNullOrWhiteSpace(m_searchFilter) || entry.Spans.Any(span => span.Text.Contains(m_searchFilter, StringComparison.OrdinalIgnoreCase));
-                        if (matchesSearch)
+                        int index = 0;
+                        foreach (var entry in _logEntries)
                         {
-                            if (scrollToIndex == -1 && shouldScrollToMatch)
+                            bool matchesSearch = string.IsNullOrWhiteSpace(m_searchFilter) || entry.Spans.Any(span => span.Text.Contains(m_searchFilter, StringComparison.OrdinalIgnoreCase));
+                            if (matchesSearch)
                             {
-                                scrollToIndex = index;
-                            }
-
-                            bool firstSpan = true;
-                            foreach (var span in entry.Spans)
-                            {
-                                if (!firstSpan)
-                                    ImGui.SameLine();
-                                firstSpan = false;
-
-                                Vector4 imguiColor = new Vector4(
-                                   span.Color.R / 255f,
-                                   span.Color.G / 255f,
-                                   span.Color.B / 255f,
-                                   1.0f
-                                );
-
-                                if (imguiColor.X == 0 && imguiColor.Y == 0 && imguiColor.Z == 0)
+                                if (scrollToIndex == -1 && shouldScrollToMatch)
                                 {
-                                    imguiColor = new Vector4(1.0f, 0.5f, 0.0f, 1.0f);
+                                    scrollToIndex = index;
                                 }
 
-                                ImGui.PushStyleColor(ImGuiCol.Text, imguiColor);
-                                var text = RemoveColorTags(Regex.Replace(span.Text, @"\s+", " "));
-                                ImGui.TextUnformatted(text.Trim());
-                                ImGui.PopStyleColor();
-                            }
-                        }
-                        index++;
-                    }
-                }
+                                bool firstSpan = true;
+                                foreach (var span in entry.Spans)
+                                {
+                                    if (!firstSpan)
+                                        ImGui.SameLine();
+                                    firstSpan = false;
 
-                if (scrollToIndex != -1)
-                {
+                                    Vector4 imguiColor = new Vector4(
+                                       span.Color.R / 255f,
+                                       span.Color.G / 255f,
+                                       span.Color.B / 255f,
+                                       1.0f
+                                    );
+
+                                    if (imguiColor.X == 0 && imguiColor.Y == 0 && imguiColor.Z == 0)
+                                    {
+                                        imguiColor = new Vector4(1.0f, 0.5f, 0.0f, 1.0f);
+                                    }
+
+                                    ImGui.PushStyleColor(ImGuiCol.Text, imguiColor);
+                                    var text = RemoveColorTags(Regex.Replace(span.Text, @"\s+", " "));
+                                    ImGui.TextUnformatted(text.Trim());
+                                    ImGui.PopStyleColor();
+                                }
+                            }
+                            index++;
+                        }
+                    }
+
+                    if (scrollToIndex != -1)
+                    {
+                        ImGui.SetScrollHereY(1.0f);
+                    }
+
                     ImGui.SetScrollHereY(1.0f);
                 }
+                    ImGui.EndChild();
 
-                ImGui.SetScrollHereY(1.0f);
-                ImGui.EndChild();
-                ImGui.End();
             }
+            ImGui.End();
         }
 
         public static void ClearLogs()
