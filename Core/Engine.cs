@@ -13,6 +13,7 @@ using System.Drawing;
 using System.Numerics;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.Input;
+using static SDL2Engine.Core.Addressables.AssetManager;
 
 namespace SDL2Engine.Core
 {
@@ -25,6 +26,7 @@ namespace SDL2Engine.Core
         private readonly IServiceGuiWindowService m_guiWindowBuilder;
         private readonly IVariableBinder m_guiVariableBinder;
         private readonly IServiceAssetManager m_assetManager;
+        private readonly IServiceAudioLoader m_audioLoader;
 
         private IntPtr m_window, m_renderer;
 
@@ -39,7 +41,8 @@ namespace SDL2Engine.Core
             IServiceGuiRenderService guiRenderService,
             IServiceAssetManager assetManager,
             IServiceGuiWindowService guiWindowBuilder,
-            IVariableBinder guiVariableBinder
+            IVariableBinder guiVariableBinder,
+            IServiceAudioLoader audioLoader
         )
         {
             m_windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
@@ -48,6 +51,7 @@ namespace SDL2Engine.Core
             m_guiWindowBuilder = guiWindowBuilder ?? throw new ArgumentNullException(nameof(guiWindowBuilder));
             m_assetManager = assetManager ?? throw new ArgumentNullException(nameof(assetManager));
             m_guiVariableBinder = guiVariableBinder ?? throw new ArgumentNullException(nameof(guiVariableBinder));
+            m_audioLoader = audioLoader ?? throw new ArgumentNullException(nameof(audioLoader));
         }
 
         public unsafe void Run()
@@ -76,18 +80,114 @@ namespace SDL2Engine.Core
 
             //Sprite Test
             var spriteTexture = m_assetManager.LoadTexture(m_renderer, "resources/ashh.png");
-            SDL.SDL_Rect dstRect = new SDL.SDL_Rect { x = 0, y = 0, w = spriteTexture.Width, h = spriteTexture.Height };
-            var startPosition = new Vector2(0,600);
+            SDL.SDL_Rect dstRectAsh = new SDL.SDL_Rect { x = 0, y = 0, w = spriteTexture.Width, h = spriteTexture.Height };
+            var startPosition = new Vector2(48, 174);
+            var originalScale = new Vector2(spriteTexture.Width, spriteTexture.Height);
             var position = startPosition;//new Vector2();
+            var currentScale = 1.0f;
 
-            //Audio test
+            //Lil pokemans
+            var spriteTexturePokemans = new TextureData[] { 
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/charizard.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/gengar.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/jigglypuff.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/moltres.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/poliwhirl.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/squirtle.png"),
+                m_assetManager.LoadTexture(m_renderer, "resources/ninetales.png"),
+                };
+
+            var originalScales = new List<Vector2>();
+            var currScales = new List<float>();
+            var dstRects = new List<SDL.SDL_Rect>();
+            for(var i = 0; i < spriteTexturePokemans.Length; i++)
+            {
+                var width = spriteTexturePokemans[i].Width;
+                var height = spriteTexturePokemans[i].Height;
+                int row = i / 10;
+                int col = i % 10;
+                var spacing = -20;
+                var startPos = new Vector2(330 + (col * (width + spacing)), 0 + (row * (height + spacing)));
+
+                // var startPos = new Vector2(150 + (i*width + width + 64), 60 * j+i);
+                var rec =  new SDL.SDL_Rect { x = (int)startPos.X, y = (int)startPos.Y, w = width, h = height };
+                dstRects.Add(rec);
+                currScales.Add(1.0f);
+                originalScales.Add(new Vector2(width,height));
+            }
+
             var songPath = "/home/anon/Music/pokemon.wav"; //"resources/sound/skidrow-portal.wav"
-            var song = m_assetManager.LoadSound(songPath, Addressables.AudioLoader.AudioType.Music);
-            m_assetManager.PlaySound(song, 16, true);
 
-            // Sound effect example
-            // var song = m_assetManager.LoadSound("resources/sound/pokemon.wav");
-            // m_assetManager.PlaySound(song, 16);
+            // Music Test
+            // var song = m_assetManager.LoadSound(songPath, Addressables.AudioLoader.AudioType.Music);
+            // m_assetManager.PlaySound(song, 16, true);
+
+            // Soundfx Test
+            var song = m_assetManager.LoadSound(songPath);
+            m_assetManager.PlaySound(song, 16);
 
             bool running = true;
             while (running)
@@ -99,7 +199,6 @@ namespace SDL2Engine.Core
                     Debug.LogPollEvents(e);
                     HandleWindowEvents(e, ref running);
                 }
-
                 // Multiplying by 60 because we want to account for the game running at 60 fps
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_w))
                     position.Y -= 20f * Time.DeltaTime;
@@ -110,13 +209,45 @@ namespace SDL2Engine.Core
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_d))
                     position.X += 20f * Time.DeltaTime;
 
-                dstRect.x = (int)position.X;
-                dstRect.y = (int)position.Y;
+                if (dstRectAsh.x != (int)position.X || dstRectAsh.y != (int)position.Y)
+                {
+                    // Debug.Log($"X:{position.X} Y:{position.Y}");
+                    dstRectAsh.x = (int)(position.X);
+                    dstRectAsh.y = (int)(position.Y);
+                }
 
-                SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 255, 255);
+                var baseScale = 0.75f;
+                var scaleFactor = baseScale + m_audioLoader.PlayingSongMidFreqBand;
+                currentScale = MathHelper.Lerp(currentScale, scaleFactor, 0.1f);
+                var maxScale = 3f;
+                currentScale = Math.Min(currentScale, maxScale);
+                dstRectAsh.w = (int)(originalScale.X * currentScale);
+                dstRectAsh.h = (int)(originalScale.Y * currentScale);
+
+                SDL.SDL_SetRenderDrawColor(m_renderer, 25, 25, 25, 255);
                 SDL.SDL_RenderClear(m_renderer);
 
-                m_assetManager.DrawTexture(m_renderer, spriteTexture.Id, ref dstRect);
+                var pokemansBaseScale = 0.5f;
+                var pokemansMaxScale = 5f;
+
+                for (var i = 0; i < spriteTexturePokemans.Length; i++)
+                {
+                    var pulseOffset = (i * 0.5f) % MathHelper.TwoPi;  
+                    var dynamicScaleFactor = pokemansBaseScale + m_audioLoader.PlayingSongLowFreqBand * (5f + (float)Math.Sin(Time.TotalTime + pulseOffset));
+                    currScales[i] = MathHelper.Lerp(currScales[i], dynamicScaleFactor, 0.1f );
+                    currScales[i] = Math.Min(currScales[i], pokemansMaxScale);
+                    var ogScale = originalScales[i];
+                    var bounceX = 10f * (float)Math.Sin(Time.TotalTime * 2f + i * 0.5f); 
+                    var bounceY = 5f * (float)Math.Cos(Time.TotalTime * 3f + i * 0.3f);  
+                    var rec = dstRects[i];
+                    rec.w = (int)(ogScale.X * currScales[i]);
+                    rec.h = (int)(ogScale.Y * currScales[i]);
+                    rec.x += (int)bounceX;
+                    rec.y += (int)bounceY;
+                    m_assetManager.DrawTexture(m_renderer, spriteTexturePokemans[i].Id, ref rec);
+                }
+
+                m_assetManager.DrawTexture(m_renderer, spriteTexture.Id, ref dstRectAsh);
 
                 ImGui.NewFrame();
 
@@ -147,6 +278,10 @@ namespace SDL2Engine.Core
             }
 
             m_assetManager.UnloadTexture(spriteTexture.Id);
+            for(var i = 0; i < spriteTexturePokemans.Length; i++)
+            {
+                m_assetManager.UnloadTexture(spriteTexturePokemans[i].Id);
+            }
 
             Dispose();
         }

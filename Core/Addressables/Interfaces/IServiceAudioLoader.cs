@@ -4,6 +4,9 @@ namespace SDL2Engine.Core.Addressables.Interfaces
 {
     public interface IServiceAudioLoader
     {
+        float PlayingSongLowFreqBand { get; }
+        float PlayingSongMidFreqBand { get; }
+        float PlayingSongHighFreqBand { get; }
         IntPtr LoadAudio(string path, AudioType audioType = AudioType.Wave);
 
         void PlaySoundEffect(IntPtr soundEffect, int channel = -1, int loops = 0, int volume = 128);

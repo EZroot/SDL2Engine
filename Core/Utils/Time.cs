@@ -12,6 +12,7 @@ public static class Time
     public static float DeltaTime { get; private set; }
     public static float Fps { get; private set; }
     public static float DeltaFps => 1f / DeltaTime;
+    public static double TotalTime => _stopwatch.Elapsed.TotalSeconds;
 
     private static int _frameCount = 0;
     private static float _fpsTimer = 0f;
