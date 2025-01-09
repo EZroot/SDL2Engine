@@ -89,16 +89,16 @@ namespace SDL2Engine.Core
                     Debug.LogPollEvents(e);
                     HandleWindowEvents(e, ref running);
                 }
-                
+
                 // Multiplying by 60 because we want to account for the game running at 60 fps
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_w))
-                    position.Y -= 10f * 60f * Time.DeltaTime;
+                    position.Y -= 5f * Time.DeltaTime;
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_a))
-                    position.X -= 10f * 60f * Time.DeltaTime;
+                    position.X -= 5f * Time.DeltaTime;
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_s))
-                    position.Y += 10f * 60f * Time.DeltaTime;
+                    position.Y += 5f * Time.DeltaTime;
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_d))
-                    position.X += 10f * 60f * Time.DeltaTime;
+                    position.X += 5f * Time.DeltaTime;
 
                 dstRect.x = (int)position.X;
                 dstRect.y = (int)position.Y;
