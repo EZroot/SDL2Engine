@@ -79,6 +79,10 @@ namespace SDL2Engine.Core
             SDL.SDL_Rect dstRect = new SDL.SDL_Rect { x = 450, y = 50, w = spriteTexture.Width, h = spriteTexture.Height };
             Vector2 position = new Vector2();
 
+            //Audio test
+            var song = m_assetManager.LoadSound("resources/sound/pokemon.wav");
+            m_assetManager.PlaySound(song);
+            
             bool running = true;
             while (running)
             {

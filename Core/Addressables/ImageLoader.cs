@@ -21,7 +21,7 @@ namespace SDL2Engine.Core.Addressables
             }
             else
             {
-                Debug.Log("<color=green> Successfully initialized IMG_Init()");
+                Debug.Log("<color=green> Successfully initialized IMG_Init()</color>");
             }
         }
 

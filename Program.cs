@@ -26,6 +26,7 @@ class Program
             services.AddSingleton<IServiceGuiWindowService, ImGuiWindowBuilder>();
             services.AddSingleton<IVariableBinder, ImGuiVariableBinder>();
             
+            services.AddSingleton<IServiceAudioLoader, AudioLoader>();
             services.AddSingleton<IServiceImageLoader, ImageLoader>();
             services.AddSingleton<IServiceAssetManager, AssetManager>();
 

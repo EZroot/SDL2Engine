@@ -7,17 +7,44 @@ namespace SDL2Engine.Core.Addressables
     public class AssetManager : IServiceAssetManager
     {
         private readonly IServiceImageLoader m_imageLoader;
+        private readonly IServiceAudioLoader m_audioLoader;
         private readonly Dictionary<int, TextureData> _idToTexture;
         private readonly Dictionary<string, int> _pathToId;
         private int _nextId;
 
-        public AssetManager(IServiceImageLoader imageLoader)
+        public AssetManager(IServiceImageLoader imageLoader, IServiceAudioLoader audioLoader)
         {
             _idToTexture = new Dictionary<int, TextureData>();
             _pathToId = new Dictionary<string, int>();
             _nextId = 1;
 
             m_imageLoader = imageLoader;
+            m_audioLoader = audioLoader;
+        }
+        
+        /// <summary>
+        /// Load and return a sound by PATH
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="audioType"></param>
+        /// <returns></returns>
+        public IntPtr LoadSound(string path, AudioLoader.AudioType audioType = AudioLoader.AudioType.Wave)
+        {
+            return m_audioLoader.LoadAudio(path, audioType);
+        }
+
+        /// <summary>
+        /// Play a given sound
+        /// </summary>
+        /// <param name="soundEffect"></param>
+        public void PlaySound(IntPtr soundEffect)
+        {
+            SDL_mixer.Mix_PlayChannel(-1, soundEffect, 0);
+        }
+
+        public void UnloadSound(IntPtr soundEffect)
+        {
+            SDL_mixer.Mix_FreeChunk(soundEffect);
         }
 
         /// <summary>
@@ -102,6 +129,8 @@ namespace SDL2Engine.Core.Addressables
             }
             _idToTexture.Clear();
             _pathToId.Clear();
+
+            SDL_mixer.Mix_CloseAudio();
         }
 
         public class TextureData
