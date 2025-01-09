@@ -86,8 +86,8 @@ namespace SDL2Engine.Core.Windowing
             }
 
             IntPtr iconSurface = m_imageLoader.LoadImage(iconPath);
-
             SDL.SDL_SetWindowIcon(window, iconSurface);
+            Debug.Log($"Window Icon Set: {iconPath}");
             SDL.SDL_FreeSurface(iconSurface); 
         }
 

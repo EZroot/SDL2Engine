@@ -23,9 +23,9 @@ namespace SDL2Engine.Core.Addressables
         }
         
         /// <summary>
-        /// Load and return a sound by PATH
+        /// Load and return a sound pointer
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="path">File path to sound eg: resources/sound/song.wav</param>
         /// <param name="audioType"></param>
         /// <returns></returns>
         public IntPtr LoadSound(string path, AudioLoader.AudioType audioType = AudioLoader.AudioType.Wave)
@@ -37,9 +37,12 @@ namespace SDL2Engine.Core.Addressables
         /// Play a given sound
         /// </summary>
         /// <param name="soundEffect"></param>
-        public void PlaySound(IntPtr soundEffect)
+        public void PlaySound(IntPtr soundEffect, int volume = 128, bool isMusic = false)
         {
-            SDL_mixer.Mix_PlayChannel(-1, soundEffect, 0);
+            if(isMusic)
+                m_audioLoader.PlayMusic(soundEffect, volume: volume);
+            else
+                m_audioLoader.PlaySoundEffect(soundEffect, volume: volume);
         }
 
         public void UnloadSound(IntPtr soundEffect)
@@ -61,10 +64,7 @@ namespace SDL2Engine.Core.Addressables
                 return _idToTexture[existingId];
             }
 
-            IntPtr surface = SDL_image.IMG_Load(path);
-            if (surface == IntPtr.Zero)
-                Debug.Throw<ArgumentNullException>(new ArgumentNullException(), $"Failed to load image: {path} | {SDL.SDL_GetError()}");
-
+            IntPtr surface = m_imageLoader.LoadImage(path);
             IntPtr texture = SDL.SDL_CreateTextureFromSurface(renderer, surface);
             SDL.SDL_FreeSurface(surface);
 
@@ -80,7 +80,7 @@ namespace SDL2Engine.Core.Addressables
             _idToTexture[id] = textureData;
             _pathToId[path] = id;
 
-            Debug.Log($"<color=green>Loaded: </color> Id:{textureData.Id} Size:{textureData.Width}x{textureData.Height} Path:{path}");
+            Debug.Log($"<color=green>Texture Created: </color> Id:{textureData.Id} Size:{textureData.Width}x{textureData.Height} Path:{path}");
             return textureData;
         }
 

@@ -76,13 +76,19 @@ namespace SDL2Engine.Core
 
             //Sprite Test
             var spriteTexture = m_assetManager.LoadTexture(m_renderer, "resources/ashh.png");
-            SDL.SDL_Rect dstRect = new SDL.SDL_Rect { x = 450, y = 50, w = spriteTexture.Width, h = spriteTexture.Height };
-            Vector2 position = new Vector2();
+            SDL.SDL_Rect dstRect = new SDL.SDL_Rect { x = 0, y = 0, w = spriteTexture.Width, h = spriteTexture.Height };
+            var startPosition = new Vector2(0,600);
+            var position = startPosition;//new Vector2();
 
             //Audio test
-            var song = m_assetManager.LoadSound("resources/sound/pokemon.wav");
-            m_assetManager.PlaySound(song);
-            
+            var songPath = "/home/anon/Music/pokemon.wav"; //"resources/sound/skidrow-portal.wav"
+            var song = m_assetManager.LoadSound(songPath, Addressables.AudioLoader.AudioType.Music);
+            m_assetManager.PlaySound(song, 16, true);
+
+            // Sound effect example
+            // var song = m_assetManager.LoadSound("resources/sound/pokemon.wav");
+            // m_assetManager.PlaySound(song, 16);
+
             bool running = true;
             while (running)
             {
@@ -96,13 +102,13 @@ namespace SDL2Engine.Core
 
                 // Multiplying by 60 because we want to account for the game running at 60 fps
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_w))
-                    position.Y -= 5f * Time.DeltaTime;
+                    position.Y -= 20f * Time.DeltaTime;
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_a))
-                    position.X -= 5f * Time.DeltaTime;
+                    position.X -= 20f * Time.DeltaTime;
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_s))
-                    position.Y += 5f * Time.DeltaTime;
+                    position.Y += 20f * Time.DeltaTime;
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_d))
-                    position.X += 5f * Time.DeltaTime;
+                    position.X += 20f * Time.DeltaTime;
 
                 dstRect.x = (int)position.X;
                 dstRect.y = (int)position.Y;

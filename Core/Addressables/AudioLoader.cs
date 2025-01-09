@@ -7,7 +7,8 @@ namespace SDL2Engine.Core.Addressables
     {
         public enum AudioType 
         {
-            Wave
+            Wave,
+            Music
         }
 
         public AudioLoader()
@@ -22,10 +23,8 @@ namespace SDL2Engine.Core.Addressables
                 Debug.LogError("SDL_mixer could not initialize! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
                 return;
             }
-            else
-            {
-                Debug.Log("<color=green> Successfully initialized MIX_OPENAUDIO()</color>");
-            }
+            SDL_mixer.Mix_AllocateChannels(16);
+            Debug.Log("<color=green> Successfully initialized MIX_OPENAUDIO() with (16) Channels</color>");
         }
 
         public IntPtr LoadAudio(string path, AudioType audioType = AudioType.Wave)
@@ -34,23 +33,44 @@ namespace SDL2Engine.Core.Addressables
             switch(audioType)
             {
                 case AudioType.Wave:
-                Debug.Log($"Trying to load wav {path}");
                     soundEffect = SDL_mixer.Mix_LoadWAV(path);
+                break;
+                case AudioType.Music:
+                    soundEffect = SDL_mixer.Mix_LoadMUS(path);
                 break;
             }
 
             if (soundEffect == IntPtr.Zero)
             {
                 Debug.LogError("Failed to load sound effect! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
+                return IntPtr.Zero;
             }
 
+            Debug.Log("<color=green>Raw Audio Loaded:</color> " + path);
             return soundEffect;
+        }
+
+        public void PlaySoundEffect(IntPtr soundEffect, int channel = -1, int loops = 0, int volume = 128)
+        {
+            SDL_mixer.Mix_VolumeChunk(soundEffect, volume);
+            SDL_mixer.Mix_PlayChannel(channel, soundEffect, loops);
+        }
+
+        /// <summary>
+        /// Play a music file. (Wave files specifically can't be played this way!)
+        /// </summary>
+        /// <param name="music"></param>
+        /// <param name="loops"></param>
+        /// <param name="volume"></param>
+        public void PlayMusic(IntPtr music, int loops = -1, int volume = 128)
+        {
+            SDL_mixer.Mix_VolumeMusic(volume);
+            SDL_mixer.Mix_PlayMusic(music, loops);
         }
 
         public void CleanUp()
         {
-            SDL_image.IMG_Quit();
-            SDL.SDL_Quit();
+            SDL_mixer.Mix_CloseAudio();
         }
     }
 }

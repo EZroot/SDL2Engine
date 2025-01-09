@@ -20,7 +20,7 @@ namespace SDL2Engine.Core.GuiRenderer
         private bool m_disposed;
 
         // more ew
-        private bool m_isDebugConsoleOpen;
+        private bool m_isDebugConsoleOpen = true;
 
         // ew - format plz
         private bool isDockInitialized;
