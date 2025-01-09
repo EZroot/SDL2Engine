@@ -220,11 +220,6 @@ namespace SDL2Engine.Core.GuiRenderer
             }
         }
 
-        public void ProcessGuiEvent(SDL.SDL_Event e)
-        {
-            InputManager.ProcessGuiEvent(e);
-        }
-
         public void OnWindowResize(int width, int height)
         {
             m_width = width;

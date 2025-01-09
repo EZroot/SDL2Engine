@@ -2,42 +2,23 @@ using System.Diagnostics;
 
 public static class Time
 {
-    private static Stopwatch _fpsStopwatch;
-    private static int _frameCount;
-    private static float _currentFps;
+    private static Stopwatch _stopwatch = Stopwatch.StartNew();
+    private static float _lastFrameTime;
 
-    private static Stopwatch _deltaStopwatch;
-    private static float _deltaTime;
-
-    public static float Fps => _currentFps;
-    public static float DeltaTime => _deltaTime;
-
-    static Time()
-    {
-        _fpsStopwatch = new Stopwatch();
-        _fpsStopwatch.Start();
-        _frameCount = 0;
-        _currentFps = 0f;
-        _deltaStopwatch = new Stopwatch();
-        _deltaStopwatch.Start();
-        _deltaTime = 0f;
-    }
+    public static float DeltaTime { get; private set; }
+    public static float Fps => 1f / DeltaTime;
 
     /// <summary>
-    /// Call this method once per frame to update FPS and DeltaTime.
+    /// Call this once per frame to update time values.
     /// </summary>
     public static void Update()
     {
-        _frameCount++;
+        float currentTime = (float)_stopwatch.Elapsed.TotalSeconds;
+        DeltaTime = currentTime - _lastFrameTime;
+        _lastFrameTime = currentTime;
 
-        _deltaTime = (float)_deltaStopwatch.Elapsed.TotalSeconds;
-        _deltaStopwatch.Restart();
-
-        if (_fpsStopwatch.ElapsedMilliseconds >= 1000)
-        {
-            _currentFps = _frameCount / (_fpsStopwatch.ElapsedMilliseconds / 1000f);
-            _frameCount = 0;
-            _fpsStopwatch.Restart();
-        }
+        // Cap DeltaTime to avoid huge jumps (e.g., when pausing the debugger)
+        if (DeltaTime > 0.1f)
+            DeltaTime = 0.1f;
     }
 }

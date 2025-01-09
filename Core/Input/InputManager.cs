@@ -1,11 +1,18 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using ImGuiNET;
 using SDL2;
 namespace SDL2Engine.Core.Input
 {
     public static class InputManager
     {
-        public static void ProcessGuiEvent(SDL.SDL_Event e)
+        private static HashSet<SDL.SDL_Keycode> _keysPressed = new();
+        public static bool IsKeyPressed(SDL.SDL_Keycode key)
+        {
+            return _keysPressed.Contains(key);
+        }
+
+        public static void Update(SDL.SDL_Event e)
         {
             ImGuiIOPtr io = ImGui.GetIO();
 
@@ -25,35 +32,17 @@ namespace SDL2Engine.Core.Input
                 case SDL.SDL_EventType.SDL_TEXTINPUT:
                     unsafe
                     {
-                        byte* textPtr = e.text.text;
-                        string text = System.Text.Encoding.UTF8.GetString(textPtr, 32).TrimEnd('\0');
+                        string text = Marshal.PtrToStringUTF8((IntPtr)e.text.text);
                         io.AddInputCharactersUTF8(text);
                     }
                     break;
                 case SDL.SDL_EventType.SDL_KEYDOWN:
+                    _keysPressed.Add(e.key.keysym.sym);
+                    UpdateImGuiIO(io, e);
+                    break;
                 case SDL.SDL_EventType.SDL_KEYUP:
-                    int keyIndex = (int)e.key.keysym.sym;
-                    bool down = e.type == SDL.SDL_EventType.SDL_KEYDOWN;
-
-                    // Hacky work around for backspaces in IMGUI because I'm retarded
-                    if(keyIndex == (int)SDL.SDL_Keycode.SDLK_BACKSPACE)
-                    {
-                        io.AddKeyEvent(ImGuiKey.Backspace, down);
-                        io.SetKeyEventNativeData(ImGuiKey.Backspace, (int)SDL.SDL_Keycode.SDLK_BACKSPACE, (int)SDL.SDL_GetScancodeFromKey(SDL.SDL_Keycode.SDLK_BACKSPACE));
-                    }
-                        
-                    if (keyIndex >= 0 && keyIndex < io.KeysData.Count)
-                    {
-                        ImGuiKeyData keyData = io.KeysData[keyIndex];
-                        keyData.Down = (byte)(down ? 1 : 0);
-                        keyData.DownDuration = down ? 0 : -1;
-                        io.KeysData[keyIndex] = keyData;
-                    }
-
-                    io.KeyCtrl = (SDL.SDL_GetModState() & SDL.SDL_Keymod.KMOD_CTRL) != 0;
-                    io.KeyShift = (SDL.SDL_GetModState() & SDL.SDL_Keymod.KMOD_SHIFT) != 0;
-                    io.KeyAlt = (SDL.SDL_GetModState() & SDL.SDL_Keymod.KMOD_ALT) != 0;
-                    io.KeySuper = (SDL.SDL_GetModState() & SDL.SDL_Keymod.KMOD_GUI) != 0;
+                    _keysPressed.Remove(e.key.keysym.sym);
+                    UpdateImGuiIO(io, e);
                     break;
             }
 
@@ -64,6 +53,32 @@ namespace SDL2Engine.Core.Input
             io.MouseDown[0] = (mouseState & SDL.SDL_BUTTON(SDL.SDL_BUTTON_LEFT)) != 0;
             io.MouseDown[1] = (mouseState & SDL.SDL_BUTTON(SDL.SDL_BUTTON_RIGHT)) != 0;
             io.MouseDown[2] = (mouseState & SDL.SDL_BUTTON(SDL.SDL_BUTTON_MIDDLE)) != 0;
+        }
+
+        private static void UpdateImGuiIO(ImGuiIOPtr io, SDL.SDL_Event e)
+        {
+            int keyIndex = (int)e.key.keysym.sym;
+            bool down = e.type == SDL.SDL_EventType.SDL_KEYDOWN;
+
+            // Hacky work around for backspaces in IMGUI because I'm retarded
+            if (keyIndex == (int)SDL.SDL_Keycode.SDLK_BACKSPACE)
+            {
+                io.AddKeyEvent(ImGuiKey.Backspace, down);
+                io.SetKeyEventNativeData(ImGuiKey.Backspace, (int)SDL.SDL_Keycode.SDLK_BACKSPACE, (int)SDL.SDL_GetScancodeFromKey(SDL.SDL_Keycode.SDLK_BACKSPACE));
+            }
+
+            if (keyIndex >= 0 && keyIndex < io.KeysData.Count)
+            {
+                ImGuiKeyData keyData = io.KeysData[keyIndex];
+                keyData.Down = (byte)(down ? 1 : 0);
+                keyData.DownDuration = down ? 0 : -1;
+                io.KeysData[keyIndex] = keyData;
+            }
+
+            io.KeyCtrl = (SDL.SDL_GetModState() & SDL.SDL_Keymod.KMOD_CTRL) != 0;
+            io.KeyShift = (SDL.SDL_GetModState() & SDL.SDL_Keymod.KMOD_SHIFT) != 0;
+            io.KeyAlt = (SDL.SDL_GetModState() & SDL.SDL_Keymod.KMOD_ALT) != 0;
+            io.KeySuper = (SDL.SDL_GetModState() & SDL.SDL_Keymod.KMOD_GUI) != 0;
         }
     }
 }

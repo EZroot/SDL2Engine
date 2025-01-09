@@ -12,6 +12,7 @@ using SDL2Engine.Core.GuiRenderer.Helpers;
 using System.Drawing;
 using System.Numerics;
 using SDL2Engine.Core.CoreSystem.Configuration;
+using SDL2Engine.Core.Input;
 
 namespace SDL2Engine.Core
 {
@@ -76,6 +77,7 @@ namespace SDL2Engine.Core
             //Sprite Test
             var spriteTexture = m_assetManager.LoadTexture(m_renderer, "resources/ashh.png");
             SDL.SDL_Rect dstRect = new SDL.SDL_Rect { x = 450, y = 50, w = spriteTexture.Width, h = spriteTexture.Height };
+            Vector2 position = new Vector2();
 
             bool running = true;
             while (running)
@@ -83,29 +85,23 @@ namespace SDL2Engine.Core
                 Time.Update();
                 while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
                 {
+                    InputManager.Update(e);
                     Debug.LogPollEvents(e);
-                    if (e.type == SDL.SDL_EventType.SDL_QUIT ||
-                        (e.type == SDL.SDL_EventType.SDL_KEYDOWN && e.key.keysym.sym == SDL.SDL_Keycode.SDLK_ESCAPE))
-                    {
-                        running = false;
-                        break;
-                    }
-                    if (e.type == SDL.SDL_EventType.SDL_WINDOWEVENT && e.window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED)
-                    {
-                        string title = SDL.SDL_GetWindowTitle(m_window);
-                        uint flags = SDL.SDL_GetWindowFlags(m_window);
-                        bool isFullscreen = (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0 ||
-                                            (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
-
-                        int newWidth = e.window.data1;
-                        int newHeight = e.window.data2;
-                        m_guiRenderService.OnWindowResize(newWidth, newHeight);
-
-                        var windowSettings = new WindowSettings(title, newWidth, newHeight, isFullscreen);
-                        EventHub.Raise(this, new OnWindowResized(windowSettings));
-                    }
-                    m_guiRenderService.ProcessGuiEvent(e);
+                    HandleWindowEvents(e, ref running);
                 }
+                
+                // Multiplying by 60 because we want to account for the game running at 60 fps
+                if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_w))
+                    position.Y -= 10f * 60f * Time.DeltaTime;
+                if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_a))
+                    position.X -= 10f * 60f * Time.DeltaTime;
+                if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_s))
+                    position.Y += 10f * 60f * Time.DeltaTime;
+                if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_d))
+                    position.X += 10f * 60f * Time.DeltaTime;
+
+                dstRect.x = (int)position.X;
+                dstRect.y = (int)position.Y;
 
                 SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 255, 255);
                 SDL.SDL_RenderClear(m_renderer);
@@ -141,13 +137,37 @@ namespace SDL2Engine.Core
             }
 
             m_assetManager.UnloadTexture(spriteTexture.Id);
-            
+
             Dispose();
+        }
+
+        private void HandleWindowEvents(SDL.SDL_Event e, ref bool isRunning)
+        {
+            if (e.type == SDL.SDL_EventType.SDL_QUIT ||
+                      (e.type == SDL.SDL_EventType.SDL_KEYDOWN && e.key.keysym.sym == SDL.SDL_Keycode.SDLK_ESCAPE))
+            {
+                isRunning = false;
+            }
+
+            if (e.type == SDL.SDL_EventType.SDL_WINDOWEVENT && e.window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED)
+            {
+                string title = SDL.SDL_GetWindowTitle(m_window);
+                uint flags = SDL.SDL_GetWindowFlags(m_window);
+                bool isFullscreen = (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0 ||
+                                    (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
+
+                int newWidth = e.window.data1;
+                int newHeight = e.window.data2;
+                m_guiRenderService.OnWindowResize(newWidth, newHeight);
+
+                var windowSettings = new WindowSettings(title, newWidth, newHeight, isFullscreen);
+                EventHub.Raise(this, new OnWindowResized(windowSettings));
+            }
         }
 
         private void CustomBindTesting()
         {
-                        // Numeric types
+            // Numeric types
             int someInteger = 42;
             float someFloat = 3.14f;
             double someDouble = 2.71828;
