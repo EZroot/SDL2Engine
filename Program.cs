@@ -27,6 +27,7 @@ class Program
             services.AddSingleton<IVariableBinder, ImGuiVariableBinder>();
             
             services.AddSingleton<IServiceImageLoader, ImageLoader>();
+            services.AddSingleton<IServiceAssetManager, AssetManager>();
 
             services.AddSingleton<Engine>();
 

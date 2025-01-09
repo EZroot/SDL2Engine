@@ -23,7 +23,7 @@ namespace SDL2Engine.Core
         private readonly IServiceGuiRenderService m_guiRenderService;
         private readonly IServiceGuiWindowService m_guiWindowBuilder;
         private readonly IVariableBinder m_guiVariableBinder;
-        private readonly IServiceImageLoader m_imageLoader;
+        private readonly IServiceAssetManager m_assetManager;
 
         private IntPtr m_window, m_renderer;
 
@@ -36,7 +36,7 @@ namespace SDL2Engine.Core
             IServiceWindowService windowService,
             IServiceRenderService renderService,
             IServiceGuiRenderService guiRenderService,
-            IServiceImageLoader imageLoader,
+            IServiceAssetManager assetManager,
             IServiceGuiWindowService guiWindowBuilder,
             IVariableBinder guiVariableBinder
         )
@@ -45,7 +45,7 @@ namespace SDL2Engine.Core
             m_renderService = renderService ?? throw new ArgumentNullException(nameof(renderService));
             m_guiRenderService = guiRenderService ?? throw new ArgumentNullException(nameof(guiRenderService));
             m_guiWindowBuilder = guiWindowBuilder ?? throw new ArgumentNullException(nameof(guiWindowBuilder));
-            m_imageLoader = imageLoader ?? throw new ArgumentNullException(nameof(imageLoader));
+            m_assetManager = assetManager ?? throw new ArgumentNullException(nameof(assetManager));
             m_guiVariableBinder = guiVariableBinder ?? throw new ArgumentNullException(nameof(guiVariableBinder));
         }
 
@@ -57,7 +57,6 @@ namespace SDL2Engine.Core
                 return;
             }
 
-            m_imageLoader.Initialize();
             m_window = m_windowService.CreateWindowSDL();
             m_windowService.SetWindowIcon(m_window, "resources/ashh.png");
 
@@ -72,7 +71,83 @@ namespace SDL2Engine.Core
             m_guiRenderService.SetupIO(windowWidth, windowHeight);
 
 
-            // Numeric types
+            CustomBindTesting();
+
+            //Sprite Test
+            var spriteTexture = m_assetManager.LoadTexture(m_renderer, "resources/ashh.png");
+            SDL.SDL_Rect dstRect = new SDL.SDL_Rect { x = 450, y = 50, w = spriteTexture.Width, h = spriteTexture.Height };
+
+            bool running = true;
+            while (running)
+            {
+                Time.Update();
+                while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
+                {
+                    Debug.LogPollEvents(e);
+                    if (e.type == SDL.SDL_EventType.SDL_QUIT ||
+                        (e.type == SDL.SDL_EventType.SDL_KEYDOWN && e.key.keysym.sym == SDL.SDL_Keycode.SDLK_ESCAPE))
+                    {
+                        running = false;
+                        break;
+                    }
+                    if (e.type == SDL.SDL_EventType.SDL_WINDOWEVENT && e.window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED)
+                    {
+                        string title = SDL.SDL_GetWindowTitle(m_window);
+                        uint flags = SDL.SDL_GetWindowFlags(m_window);
+                        bool isFullscreen = (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0 ||
+                                            (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
+
+                        int newWidth = e.window.data1;
+                        int newHeight = e.window.data2;
+                        m_guiRenderService.OnWindowResize(newWidth, newHeight);
+
+                        var windowSettings = new WindowSettings(title, newWidth, newHeight, isFullscreen);
+                        EventHub.Raise(this, new OnWindowResized(windowSettings));
+                    }
+                    m_guiRenderService.ProcessGuiEvent(e);
+                }
+
+                SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 255, 255);
+                SDL.SDL_RenderClear(m_renderer);
+
+                m_assetManager.DrawTexture(m_renderer, spriteTexture.Id, ref dstRect);
+
+                ImGui.NewFrame();
+
+                m_guiRenderService.RenderFullScreenDockSpace();
+
+                // m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.AlwaysVerticalScrollbar);
+                //     m_guiWindowBuilder.Draw("Table");
+                //     m_guiWindowBuilder.Draw("CellTable");
+                //     m_guiWindowBuilder.Draw("Action");
+                // m_guiWindowBuilder.EndWindow();
+
+                ImGui.Render();
+
+                var drawData = ImGui.GetDrawData();
+
+                if (drawData.CmdListsCount > 0)
+                {
+                    m_guiRenderService.RenderDrawData(drawData);
+                }
+
+                if ((ImGui.GetIO().ConfigFlags & ImGuiConfigFlags.ViewportsEnable) != 0)
+                {
+                    ImGui.UpdatePlatformWindows();
+                    ImGui.RenderPlatformWindowsDefault();
+                }
+
+                SDL.SDL_RenderPresent(m_renderer);
+            }
+
+            m_assetManager.UnloadTexture(spriteTexture.Id);
+            
+            Dispose();
+        }
+
+        private void CustomBindTesting()
+        {
+                        // Numeric types
             int someInteger = 42;
             float someFloat = 3.14f;
             double someDouble = 2.71828;
@@ -145,83 +220,6 @@ namespace SDL2Engine.Core
             m_guiVariableBinder.BindVariable("Table", table);
             m_guiVariableBinder.BindVariable("CellTable", cellTable);
             m_guiVariableBinder.BindVariable("Action", action);
-
-            //Sprite Test
-            IntPtr spriteTexture = m_imageLoader.LoadImage("resources/ashh.png");
-            IntPtr texture = SDL.SDL_CreateTextureFromSurface(m_renderer, spriteTexture);  // Create texture from surface
-            SDL.SDL_FreeSurface(spriteTexture);  // Free the surface after creating texture
-            int texWidth, texHeight;
-            SDL.SDL_QueryTexture(texture, out _, out _, out texWidth, out texHeight);
-            SDL.SDL_Rect srcRect = new SDL.SDL_Rect { x = 0, y = 0, w = texWidth, h = texHeight };
-            SDL.SDL_Rect dstRect = new SDL.SDL_Rect { x = 450, y = 50, w = texWidth, h = texHeight };
-
-            bool running = true;
-            while (running)
-            {
-                Time.Update();
-                while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
-                {
-                    Debug.LogPollEvents(e);
-                    if (e.type == SDL.SDL_EventType.SDL_QUIT ||
-                        (e.type == SDL.SDL_EventType.SDL_KEYDOWN && e.key.keysym.sym == SDL.SDL_Keycode.SDLK_ESCAPE))
-                    {
-                        running = false;
-                        break;
-                    }
-                    if (e.type == SDL.SDL_EventType.SDL_WINDOWEVENT && e.window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED)
-                    {
-                        string title = SDL.SDL_GetWindowTitle(m_window);
-                        uint flags = SDL.SDL_GetWindowFlags(m_window);
-                        bool isFullscreen = (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0 ||
-                                            (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
-
-                        int newWidth = e.window.data1;
-                        int newHeight = e.window.data2;
-                        m_guiRenderService.OnWindowResize(newWidth, newHeight);
-
-                        var windowSettings = new WindowSettings(title, newWidth, newHeight, isFullscreen);
-                        EventHub.Raise(this, new OnWindowResized(windowSettings));
-                    }
-                    m_guiRenderService.ProcessGuiEvent(e);
-                }
-
-                SDL.SDL_SetRenderDrawColor(m_renderer, 80, 80, 255, 255);
-                SDL.SDL_RenderClear(m_renderer);
-                SDL.SDL_RenderCopy(m_renderer, texture, ref srcRect, ref dstRect); // Render the texture
-
-                ImGui.NewFrame();
-
-                // Render the dockspace
-                m_guiRenderService.RenderFullScreenDockSpace();
-                // m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.AlwaysVerticalScrollbar);
-                //     m_guiWindowBuilder.Draw("Table");
-                //     m_guiWindowBuilder.Draw("CellTable");
-                //     m_guiWindowBuilder.Draw("Action");
-                // m_guiWindowBuilder.EndWindow();
-
-                ImGui.Render();
-
-                var drawData = ImGui.GetDrawData();
-
-                if (drawData.CmdListsCount > 0)
-                {
-                    m_guiRenderService.RenderDrawData(drawData);
-                }
-
-                if ((ImGui.GetIO().ConfigFlags & ImGuiConfigFlags.ViewportsEnable) != 0)
-                {
-                    ImGui.UpdatePlatformWindows();
-                    ImGui.RenderPlatformWindowsDefault();
-                }
-
-                SDL.SDL_RenderPresent(m_renderer);
-            }
-            // Clean up
-            if (spriteTexture != IntPtr.Zero)
-            {
-                SDL.SDL_DestroyTexture(spriteTexture);
-            }
-            Dispose();
         }
 
         public void Dispose()
@@ -231,6 +229,7 @@ namespace SDL2Engine.Core
 
             disposed = true;
 
+            m_assetManager.Cleanup();
             m_guiRenderService?.Dispose();
 
             if (m_renderer != IntPtr.Zero)
