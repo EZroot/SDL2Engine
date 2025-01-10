@@ -28,7 +28,7 @@ namespace SDL2Engine.Core.Addressables
         /// <param name="path">File path to sound eg: resources/sound/song.wav</param>
         /// <param name="audioType"></param>
         /// <returns></returns>
-        public IntPtr LoadSound(string path, AudioLoader.AudioType audioType = AudioLoader.AudioType.Wave)
+        public IntPtr LoadSound(string path, AudioType audioType = AudioType.Wave)
         {
             return m_audioLoader.LoadAudio(path, audioType);
         }

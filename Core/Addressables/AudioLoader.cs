@@ -9,25 +9,43 @@ namespace SDL2Engine.Core.Addressables
 {
     public class AudioLoader : IServiceAudioLoader
     {
-        private const int LOW_BAND_FREQ = 40;
-        private const int MID_BAND_FREQ = 4000;
-        public enum AudioType
+        public class FrequencyBand
         {
-            Wave,
-            Music
+            public double LowerBound { get; }
+            public double UpperBound { get; }
+            public float Amplitude { get; set; }
+
+            public FrequencyBand(double lowerBound, double upperBound)
+            {
+                LowerBound = lowerBound;
+                UpperBound = upperBound;
+                Amplitude = 0f;
+            }
         }
+
+        private readonly Dictionary<string, FrequencyBand> _frequencyBands;
 
         private SDL_mixer.Mix_EffectFunc_t _audioEffectDelegate;
         private SDL_mixer.Mix_EffectDone_t _effectDoneDelegate;
 
-        public float PlayingSongLowFreqBand { get;  private set; }
-        public float PlayingSongMidFreqBand { get;  private set; }
-        public float PlayingSongHighFreqBand { get;  private set; }
+        public IReadOnlyDictionary<string, FrequencyBand> FrequencyBands => _frequencyBands;
+
+        private readonly object _lock = new object();
 
         public AudioLoader()
         {
-            _audioEffectDelegate = AudoProcessor;
-            _effectDoneDelegate = AudoProcessorDone;
+            _frequencyBands = new Dictionary<string, FrequencyBand>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Bass", new FrequencyBand(20, 50) },
+                { "LowMid", new FrequencyBand(250, 500) },
+                { "Mid", new FrequencyBand(500, 2000) },
+                { "HighMid", new FrequencyBand(2000, 4000) },
+                { "Presence", new FrequencyBand(4000, 6000) },
+                { "Brilliance", new FrequencyBand(6000, 20000) }
+            };
+
+            _audioEffectDelegate = AudioProcessor;
+            _effectDoneDelegate = AudioProcessorDone;
             Initialize();
         }
 
@@ -53,6 +71,9 @@ namespace SDL2Engine.Core.Addressables
                 case AudioType.Music:
                     soundEffect = SDL_mixer.Mix_LoadMUS(path);
                     break;
+                default:
+                    Debug.LogError("Unsupported AudioType: " + audioType);
+                    break;
             }
 
             if (soundEffect == IntPtr.Zero)
@@ -76,14 +97,17 @@ namespace SDL2Engine.Core.Addressables
             }
             else
             {
-                Debug.LogError("Failed to play sound effect!");
+                Debug.LogError("Failed to play sound effect! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
             }
         }
 
         public void PlayMusic(IntPtr music, int loops = -1, int volume = 128)
         {
             SDL_mixer.Mix_VolumeMusic(volume);
-            SDL_mixer.Mix_PlayMusic(music, loops);
+            if (SDL_mixer.Mix_PlayMusic(music, loops) == -1)
+            {
+                Debug.LogError("Failed to play music! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
+            }
         }
 
         public void RegisterAudioEffect(int channel)
@@ -99,12 +123,41 @@ namespace SDL2Engine.Core.Addressables
             }
         }
 
-        private void AudoProcessor(int channel, IntPtr stream, int length, IntPtr userData)
+        /// <summary>
+        /// Retrieves the amplitude for a given frequency band type.
+        /// </summary>
+        /// <param name="freqType">The frequency band type.</param>
+        /// <returns>The amplitude of the specified frequency band.</returns>
+        public float GetAmplitudeByType(FreqBandType freqType)
+        {
+            string bandName = freqType.ToString();
+            return GetAmplitudeByName(bandName);
+        }
+
+        /// <summary>
+        /// Retrieves the amplitude for a given frequency band name.
+        /// </summary>
+        /// <param name="name">The name of the frequency band.</param>
+        /// <returns>The amplitude of the specified frequency band.</returns>
+        public float GetAmplitudeByName(string name)
+        {
+            lock (_lock) 
+            {
+                if (_frequencyBands.TryGetValue(name, out var band))
+                {
+                    return band.Amplitude;
+                }
+            }
+            Debug.Log($"Frequency band '{name}' not found.");
+            return 0f;
+        }
+
+        private void AudioProcessor(int channel, IntPtr stream, int length, IntPtr userData)
         {
             byte[] audioBytes = new byte[length];
             Marshal.Copy(stream, audioBytes, 0, length);
 
-            int sampleCount = length / 2;
+            int sampleCount = length / 2; // 16-bit audio
             Complex[] fftBuffer = new Complex[sampleCount];
 
             for (int i = 0; i < sampleCount; i++)
@@ -113,43 +166,67 @@ namespace SDL2Engine.Core.Addressables
                 fftBuffer[i] = new Complex(sample / 32768.0, 0);
             }
 
+            ApplyHannWindow(fftBuffer);
             Fourier.Forward(fftBuffer, FourierOptions.Matlab);
 
-            double bassAmplitude = 0;
-            double midAmplitude = 0;
-            double highAmplitude = 0;
-
-            int sampleRate = 44100;
-            for (int i = 0; i < fftBuffer.Length / 2; i++)
+            double sampleRate = 44100.0;
+            lock (_lock) 
             {
-                double magnitude = fftBuffer[i].Magnitude;
-                double frequency = i * sampleRate / fftBuffer.Length;
+                foreach (var band in _frequencyBands.Values)
+                {
+                    band.Amplitude = 0f;
+                }
 
-                if (frequency < LOW_BAND_FREQ)
-                    bassAmplitude += magnitude; // Bass freq
-                else if (frequency < MID_BAND_FREQ)
-                    midAmplitude += magnitude; // Mid freq (vocals, melodies)
-                else
-                    highAmplitude += magnitude; // High freq (whatever else)
+                double totalAmplitude = 0.0;
+
+                for (int i = 0; i < fftBuffer.Length / 2; i++)
+                {
+                    double magnitude = fftBuffer[i].Magnitude;
+                    double frequency = i * sampleRate / fftBuffer.Length;
+
+                    foreach (var kvp in _frequencyBands)
+                    {
+                        var band = kvp.Value;
+                        if (frequency >= band.LowerBound && frequency < band.UpperBound)
+                        {
+                            band.Amplitude += (float)magnitude;
+                            break;
+                        }
+                    }
+
+                    totalAmplitude += magnitude;
+                }
+
+                if (totalAmplitude > 0)
+                {
+                    foreach (var band in _frequencyBands.Values)
+                    {
+                        band.Amplitude = (float)(band.Amplitude / totalAmplitude);
+                    }
+                }
+
+                // string amplitudeLog = "Frequency Amplitudes: ";
+                // foreach (var kvp in _frequencyBands)
+                // {
+                //     amplitudeLog += $"{kvp.Key}: {kvp.Value.Amplitude:F2} ";
+                // }
+                // Debug.Log(amplitudeLog);
             }
-
-            double totalAmplitude = bassAmplitude + midAmplitude + highAmplitude;
-            if (totalAmplitude > 0)
-            {
-                bassAmplitude /= totalAmplitude;
-                midAmplitude /= totalAmplitude;
-                highAmplitude /= totalAmplitude;
-            }
-
-            // Debug.Log($"Total: {totalAmplitude} bass{bassAmplitude} mid{midAmplitude} high{highAmplitude}");
-            PlayingSongLowFreqBand = (float)bassAmplitude;
-            PlayingSongMidFreqBand = (float)midAmplitude;
-            PlayingSongHighFreqBand = (float)highAmplitude;
         }
 
-
-        private void AudoProcessorDone(int channel, IntPtr userData)
+        private void AudioProcessorDone(int channel, IntPtr userData)
         {
+            Debug.Log($"Audio processing done on channel {channel}.");
+        }
+
+        private void ApplyHannWindow(Complex[] buffer)
+        {
+            int N = buffer.Length;
+            for (int n = 0; n < N; n++)
+            {
+                double hann = 0.5 * (1 - Math.Cos(2 * Math.PI * n / (N - 1)));
+                buffer[n] *= hann;
+            }
         }
 
         public void CleanUp()

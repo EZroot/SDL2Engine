@@ -83,7 +83,7 @@ namespace SDL2Engine.Core
             SDL.SDL_Rect dstRectAsh = new SDL.SDL_Rect { x = 0, y = 0, w = spriteTexture.Width, h = spriteTexture.Height };
             var startPosition = new Vector2(48, 174);
             var originalScale = new Vector2(spriteTexture.Width, spriteTexture.Height);
-            var position = startPosition;//new Vector2();
+            var position = startPosition;
             var currentScale = 1.0f;
 
             //Lil pokemans
@@ -217,7 +217,9 @@ namespace SDL2Engine.Core
                 }
 
                 var baseScale = 0.75f;
-                var scaleFactor = baseScale + m_audioLoader.PlayingSongMidFreqBand;
+                var amplitude = m_audioLoader.GetAmplitudeByType(FreqBandType.Presence);
+                Debug.Log("AMP"+amplitude);
+                var scaleFactor = baseScale + amplitude; // A highre freq band, to hopefully grab vocals
                 currentScale = MathHelper.Lerp(currentScale, scaleFactor, 0.1f);
                 var maxScale = 3f;
                 currentScale = Math.Min(currentScale, maxScale);
@@ -233,7 +235,11 @@ namespace SDL2Engine.Core
                 for (var i = 0; i < spriteTexturePokemans.Length; i++)
                 {
                     var pulseOffset = (i * 0.5f) % MathHelper.TwoPi;  
-                    var dynamicScaleFactor = pokemansBaseScale + m_audioLoader.PlayingSongLowFreqBand * (5f + (float)Math.Sin(Time.TotalTime + pulseOffset));
+                    // Grab low freq band for the bass
+                    var dynamicScaleFactor = pokemansBaseScale 
+                    +  m_audioLoader.GetAmplitudeByType(FreqBandType.Bass) 
+                    * (5f + (float)Math.Sin(Time.TotalTime + pulseOffset));
+
                     currScales[i] = MathHelper.Lerp(currScales[i], dynamicScaleFactor, 0.1f );
                     currScales[i] = Math.Min(currScales[i], pokemansMaxScale);
                     var ogScale = originalScales[i];
