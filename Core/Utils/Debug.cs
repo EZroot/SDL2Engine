@@ -12,7 +12,8 @@ namespace SDL2Engine.Core.Utils
     public static class Debug
     {
         private const int MAX_LOG_ENTRIES = 1000;
-
+        private const float CONSOLE_BRIGHTNESS_MOD = 0.45f;
+        
         public static bool IsDebugMode = true;
         public static bool IsDebugModePollEvents = false;
         public static bool IsDebugModeEventHub = true;
@@ -356,12 +357,16 @@ namespace SDL2Engine.Core.Utils
                                        span.Color.B / 255f,
                                        1.0f
                                     );
-
+                                    
+                                    //Orange edgecase
                                     if (imguiColor.X == 0 && imguiColor.Y == 0 && imguiColor.Z == 0)
                                     {
                                         imguiColor = new Vector4(1.0f, 0.5f, 0.0f, 1.0f);
                                     }
 
+                                    imguiColor = new Vector4(imguiColor.X + CONSOLE_BRIGHTNESS_MOD, 
+                                        imguiColor.Y + CONSOLE_BRIGHTNESS_MOD,
+                                        imguiColor.Z + CONSOLE_BRIGHTNESS_MOD, 1.0f);
                                     ImGui.PushStyleColor(ImGuiCol.Text, imguiColor);
                                     var text = RemoveColorTags(Regex.Replace(span.Text, @"\s+", " "));
                                     ImGui.TextUnformatted(text.Trim());

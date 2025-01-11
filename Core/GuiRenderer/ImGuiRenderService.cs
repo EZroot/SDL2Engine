@@ -344,6 +344,7 @@ namespace SDL2Engine.Core.GuiRenderer
         public void Dispose()
         {
             if (m_disposed) return;
+            ImGui.DestroyContext();
             m_fontTextureLoader.Dispose();
             m_disposed = true;
         }

@@ -37,7 +37,7 @@ namespace SDL2Engine.Core.Addressables
             _frequencyBands = new Dictionary<string, FrequencyBand>(StringComparer.OrdinalIgnoreCase)
             {
                 { "Bass", new FrequencyBand(20, 50) },
-                { "LowMid", new FrequencyBand(250, 500) },
+                { "LowMid", new FrequencyBand(80, 250) }, //vocals hopefully
                 { "Mid", new FrequencyBand(500, 2000) },
                 { "HighMid", new FrequencyBand(2000, 4000) },
                 { "Presence", new FrequencyBand(4000, 6000) },
@@ -227,11 +227,6 @@ namespace SDL2Engine.Core.Addressables
                 double hann = 0.5 * (1 - Math.Cos(2 * Math.PI * n / (N - 1)));
                 buffer[n] *= hann;
             }
-        }
-
-        public void CleanUp()
-        {
-            SDL_mixer.Mix_CloseAudio();
         }
     }
 }

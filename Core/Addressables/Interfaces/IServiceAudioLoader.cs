@@ -10,6 +10,5 @@ namespace SDL2Engine.Core.Addressables.Interfaces
         void PlayMusic(IntPtr music, int loops = -1, int volume = 128);
         float GetAmplitudeByType(FreqBandType freqType);
         float GetAmplitudeByName(string name);
-        void CleanUp();
     }
 }

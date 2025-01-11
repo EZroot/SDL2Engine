@@ -33,15 +33,9 @@ namespace SDL2Engine.Core.Addressables
                 Debug.LogError("IMG_Load: Failed to load image! SDL_Error: " + SDL.SDL_GetError());
                 return IntPtr.Zero;
             }
-            Debug.Log("<color=green>Raw Image Loaded:</color> " + path);
+            Debug.Log("<color=green>Image Loaded:</color> " + path);
 
             return surface;
-        }
-
-        public void CleanUp()
-        {
-            SDL_image.IMG_Quit();
-            SDL.SDL_Quit();
         }
     }
 }

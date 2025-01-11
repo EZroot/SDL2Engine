@@ -5,9 +5,9 @@ namespace SDL2Engine.Core.Addressables.Interfaces
 {
     public interface IServiceAssetManager
     {
-        IntPtr LoadSound(string path, AudioType audioType = AudioType.Wave);
-        void PlaySound(IntPtr soundEffect, int volume = 128, bool isMusic = false);
-        void UnloadSound(IntPtr soundEffect);
+        int LoadSound(string path, AudioType audioType = AudioType.Wave);
+        void PlaySound(int soundId, int volume = 128, bool isMusic = false);
+        void UnloadSound(int soundId);
         TextureData LoadTexture(IntPtr renderer, string path);
         void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect);
         void UnloadTexture(int id);
