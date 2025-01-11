@@ -1,6 +1,6 @@
 # SDL2Engine
 
-SDL2Engine is a robust rendering engine built using C# that leverages the power of SDL2 and ImGui for rendering and GUI functionality. It includes a custom C# wrapper for IMGui native DLL calls, providing smooth integration not automatically available through ImGui.NET automatic unwrapping. Super annoying. >:(
+SDL2Engine is a robust rendering engine built using C# that leverages the power of SDL2 and ImGui for rendering and GUI functionality. 
 
 ![SDL Engine Screenshot](screenshottys/sdlscreenshot2.png)
 
