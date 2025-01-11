@@ -86,8 +86,6 @@ namespace SDL2Engine.Core
             m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
             m_guiRenderService.SetupIO(windowWidth, windowHeight);
 
-            CustomBindTesting();
-
             //Camera test
             m_camera = m_cameraService.CreateCamera(Vector2.One);
             m_cameraService.SetActiveCamera(m_camera);
@@ -192,6 +190,10 @@ namespace SDL2Engine.Core
                     Debug.LogPollEvents(e);
                     HandleWindowEvents(e, ref running);
                 }
+                
+                SDL.SDL_SetRenderDrawColor(m_renderer, 25, 25, 45, 255);
+                SDL.SDL_RenderClear(m_renderer);
+                
                 var camera = m_cameraService.GetCamera(m_camera);
                 HandleCameraInput(camera);
 
@@ -220,9 +222,6 @@ namespace SDL2Engine.Core
                 dstRectAsh.w = (int)(originalScale.X * currentScale);
                 dstRectAsh.h = (int)(originalScale.Y * currentScale);
 
-                SDL.SDL_SetRenderDrawColor(m_renderer, 25, 25, 25, 255);
-                SDL.SDL_RenderClear(m_renderer);
-
                 var pokemansBaseScale = 0.5f;
                 var pokemansMaxScale = 5f;
                 
@@ -248,33 +247,12 @@ namespace SDL2Engine.Core
                 }
 
                 m_assetManager.DrawTexture(m_renderer, spriteTexture.Id, ref dstRectAsh);
-                // m_assetManager.DrawTexture(m_renderer, spriteTexture.Id, ref dstRectAsh, camera);
                 
                 ImGui.NewFrame();
-
+                
                 m_guiRenderService.RenderFullScreenDockSpace();
-
-                // m_guiWindowBuilder.BeginWindow("Test Window", ImGuiWindowFlags.AlwaysVerticalScrollbar);
-                //     m_guiWindowBuilder.Draw("Table");
-                //     m_guiWindowBuilder.Draw("CellTable");
-                //     m_guiWindowBuilder.Draw("Action");
-                // m_guiWindowBuilder.EndWindow();
-
-                ImGui.Render();
-
-                var drawData = ImGui.GetDrawData();
-
-                if (drawData.CmdListsCount > 0)
-                {
-                    m_guiRenderService.RenderDrawData(drawData);
-                }
-
-                if ((ImGui.GetIO().ConfigFlags & ImGuiConfigFlags.ViewportsEnable) != 0)
-                {
-                    ImGui.UpdatePlatformWindows();
-                    ImGui.RenderPlatformWindowsDefault();
-                }
-
+                
+                RenderGUI();
                 SDL.SDL_RenderPresent(m_renderer);
             }
 
@@ -285,6 +263,23 @@ namespace SDL2Engine.Core
             }
 
             Dispose();
+        }
+
+        private void RenderGUI()
+        {
+            ImGui.Render();
+
+            var drawData = ImGui.GetDrawData();
+            if (drawData.CmdListsCount > 0)
+            {
+                m_guiRenderService.RenderDrawData(drawData);
+            }
+
+            if ((ImGui.GetIO().ConfigFlags & ImGuiConfigFlags.ViewportsEnable) != 0)
+            {
+                ImGui.UpdatePlatformWindows();
+                ImGui.RenderPlatformWindowsDefault();
+            }
         }
 
         private void HandleWindowEvents(SDL.SDL_Event e, ref bool isRunning)
@@ -309,83 +304,6 @@ namespace SDL2Engine.Core
                 var windowSettings = new WindowSettings(title, newWidth, newHeight, isFullscreen);
                 EventHub.Raise(this, new OnWindowResized(windowSettings));
             }
-        }
-
-        private void CustomBindTesting()
-        {
-            // Numeric types
-            int someInteger = 42;
-            float someFloat = 3.14f;
-            double someDouble = 2.71828;
-            long someLong = 1234567890;
-            short someShort = 32000;
-            byte someByte = 255;
-            uint someUInt = 123456u;
-            ulong someULong = 12345678901234567890ul;
-            ushort someUShort = 65000;
-            sbyte someSByte = -100;
-
-            bool someBool = true;
-
-            string someString = "Initial Text";
-            string[] someTabs = { "Tab 1", "Tab 2", "Tab 3" };
-
-            ExampleEnum someEnum = ExampleEnum.OptionA;
-
-            Vector2 someVector2 = new Vector2(1.0f, 2.0f);
-            Vector3 someVector3 = new Vector3(1.0f, 2.0f, 3.0f);
-            Vector4 someVector4 = new Vector4(1.0f, 2.0f, 3.0f, 4.0f);
-
-            Color someColor = Color.Aqua;
-
-            // Table
-            var tableInputData = new ImGuiInputData("Alice", "Alice");
-            var tableInputData1 = new ImGuiInputData("Bob", "Bob");
-            var tableInputData2 = new ImGuiInputData("Charlie", "Charlie");
-            var tableInputData3 = new ImGuiInputData("30", "30", true);
-            var tableInputData4 = new ImGuiInputData("25", "25", true);
-            var tableInputData5 = new ImGuiInputData("22", "22", true);
-            var tableInputData6 = new ImGuiInputData("Engineer", "Engineer");
-            var tableInputData7 = new ImGuiInputData("Designer", "Designer", true);
-            var tableInputData8 = new ImGuiInputData("Manager", "Manager");
-
-            var tableFlags = ImGuiTableFlags.None;
-            var labelOnRight = true;
-            var table = new ImGuiTableData(
-                tableFlags,
-                labelOnRight,
-                new ImGuiColumnData("Name", tableInputData, tableInputData1, tableInputData2),
-                new ImGuiColumnData("Age", tableInputData3, tableInputData4, tableInputData5),
-                new ImGuiColumnData("Ocupation", tableInputData6, tableInputData7, tableInputData8)
-            );
-
-            ImGuiCellData someCell = new ImGuiCellData("First", "a", "b", "c");
-            ImGuiCellData someCell1 = new ImGuiCellData("Second", "d", "e", "f");
-            ImGuiCellData someCell2 = new ImGuiCellData("Third", "g", "h", "i");
-            ImGuiCellTableData cellTable = new ImGuiCellTableData(someCell, someCell1, someCell2);
-
-            Action action = () => { Debug.Log("Button pressed"); TEST_window_isopen = !TEST_window_isopen; };
-
-            m_guiVariableBinder.BindVariable("Integer", someInteger);
-            m_guiVariableBinder.BindVariable("Float", someFloat);
-            m_guiVariableBinder.BindVariable("Double", someDouble);
-            m_guiVariableBinder.BindVariable("Long", someLong);
-            m_guiVariableBinder.BindVariable("Short", someShort);
-            m_guiVariableBinder.BindVariable("Byte", someByte);
-            m_guiVariableBinder.BindVariable("UInt", someUInt);
-            m_guiVariableBinder.BindVariable("ULong", someULong);
-            m_guiVariableBinder.BindVariable("UShort", someUShort);
-            m_guiVariableBinder.BindVariable("SByte", someSByte);
-            m_guiVariableBinder.BindVariable("Bool", someBool);
-            m_guiVariableBinder.BindVariable("String", someString);
-            // m_guiVariableBinder.BindVariable("Tabs", someTabs);
-            m_guiVariableBinder.BindVariable("Enum", someEnum);
-            m_guiVariableBinder.BindVariable("Vector2", someVector2);
-            m_guiVariableBinder.BindVariable("Vector3", someVector3);
-            m_guiVariableBinder.BindVariable("Vector4", someVector4);
-            m_guiVariableBinder.BindVariable("Table", table);
-            m_guiVariableBinder.BindVariable("CellTable", cellTable);
-            m_guiVariableBinder.BindVariable("Action", action);
         }
         
         /// <summary>
