@@ -23,7 +23,7 @@ namespace SDL2Engine.Core.Addressables
             }
         }
 
-        private readonly Dictionary<string, FrequencyBand> _frequencyBands;
+        private readonly Dictionary<string, FrequencyBand> _frequencyBands = new();
 
         private SDL_mixer.Mix_EffectFunc_t _audioEffectDelegate;
         private SDL_mixer.Mix_EffectDone_t _effectDoneDelegate;
@@ -34,16 +34,20 @@ namespace SDL2Engine.Core.Addressables
 
         public AudioLoader()
         {
-            _frequencyBands = new Dictionary<string, FrequencyBand>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "Bass", new FrequencyBand(20, 50) },
-                { "LowMid", new FrequencyBand(80, 250) }, //vocals hopefully
-                { "Mid", new FrequencyBand(500, 2000) },
-                { "HighMid", new FrequencyBand(2000, 4000) },
-                { "Presence", new FrequencyBand(4000, 6000) },
-                { "Brilliance", new FrequencyBand(6000, 20000) }
-            };
+            var startFrequency = -200;
+            var frequencyStep = 100;
 
+            for (var i = 0; i < 25; i++)
+            {
+                var lowerBound = startFrequency + i * frequencyStep;
+                var upperBound = lowerBound + frequencyStep - 1;
+
+                FrequencyBand band = new FrequencyBand(lowerBound, upperBound); 
+                _frequencyBands.Add(i.ToString(), band);
+                Debug.Log($"BOUND {lowerBound},{upperBound}");
+                frequencyStep += 25;
+            }
+            
             _audioEffectDelegate = AudioProcessor;
             _effectDoneDelegate = AudioProcessorDone;
             Initialize();
@@ -128,11 +132,11 @@ namespace SDL2Engine.Core.Addressables
         /// </summary>
         /// <param name="freqType">The frequency band type.</param>
         /// <returns>The amplitude of the specified frequency band.</returns>
-        public float GetAmplitudeByType(FreqBandType freqType)
-        {
-            string bandName = freqType.ToString();
-            return GetAmplitudeByName(bandName);
-        }
+        // public float GetAmplitudeByType(FreqBandType freqType)
+        // {
+        //     string bandName = freqType.ToString();
+        //     return GetAmplitudeByName(bandName);
+        // }
 
         /// <summary>
         /// Retrieves the amplitude for a given frequency band name.

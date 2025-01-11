@@ -37,6 +37,7 @@ namespace SDL2Engine.Core
         private readonly IServiceCameraService m_cameraService;
 
         private IntPtr m_window, m_renderer;
+        private int m_windowWidth, m_windowHeight;
         private int m_camera;
         
         private bool disposed = false;
@@ -82,7 +83,9 @@ namespace SDL2Engine.Core
             ImGui.SetCurrentContext(imguiContext);
 
             SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
-
+            m_windowWidth = windowWidth;
+            m_windowHeight = windowHeight;
+            
             m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
             m_guiRenderService.SetupIO(windowWidth, windowHeight);
 
@@ -170,7 +173,7 @@ namespace SDL2Engine.Core
                 originalScales.Add(new Vector2(width,height));
             }
 
-            var songPath = SOUND_FOLDER + "/skidrow-portal.wav";//pokemon.wav";
+            var songPath = SOUND_FOLDER + "/pokemon.wav";//"/skidrow-portal.wav"; 
 
             // Music Test
             // var song = m_assetManager.LoadSound(songPath, Addressables.AudioLoader.AudioType.Music);
@@ -179,6 +182,17 @@ namespace SDL2Engine.Core
             // Soundfx Test
             var song = m_assetManager.LoadSound(songPath);
             m_assetManager.PlaySound(song, ENGINE_VOLUME);
+
+            // Audio player rects
+            var bandIntensityMod = 1.75f;
+            var rectSpacing = 1;
+            var maxRectHeight = 40;
+            var rectWidth = 3;
+
+            var maxAmplitude = 0f;
+            var previousHeights = new float[m_audioLoader.FrequencyBands.Count];
+            var smoothingFactor = .3f;  // Smoothing factor between 0.1 and 0.3
+            var initialRectStartY = (int)(maxRectHeight/1.75f + maxRectHeight/2);
 
             bool running = true;
             while (running)
@@ -190,10 +204,10 @@ namespace SDL2Engine.Core
                     Debug.LogPollEvents(e);
                     HandleWindowEvents(e, ref running);
                 }
-                
+
                 SDL.SDL_SetRenderDrawColor(m_renderer, 25, 25, 45, 255);
                 SDL.SDL_RenderClear(m_renderer);
-                
+
                 var camera = m_cameraService.GetCamera(m_camera);
                 HandleCameraInput(camera);
 
@@ -213,8 +227,18 @@ namespace SDL2Engine.Core
                     dstRectAsh.y = (int)(position.Y);
                 }
 
+                #region DrawPokemons
+
                 var baseScale = 0.75f;
-                var amplitude = m_audioLoader.GetAmplitudeByType(FreqBandType.LowMid);
+                var amplitude = 0f;
+
+                // Trying to grab some vocals here
+                for (var i = 4; i < 16; i++)
+                {
+                    var index = i.ToString();
+                    amplitude += m_audioLoader.GetAmplitudeByName(index);
+                }
+
                 var scaleFactor = baseScale + amplitude; // A highre freq band, to hopefully grab vocals
                 currentScale = MathHelper.Lerp(currentScale, scaleFactor, 0.1f);
                 var maxScale = 3f;
@@ -224,20 +248,20 @@ namespace SDL2Engine.Core
 
                 var pokemansBaseScale = 0.5f;
                 var pokemansMaxScale = 5f;
-                
+
                 for (var i = 0; i < spriteTexturePokemans.Length; i++)
                 {
-                    var pulseOffset = (i * 0.5f) % MathHelper.TwoPi;  
+                    var pulseOffset = (i * 0.5f) % MathHelper.TwoPi;
                     // Grab low freq band for the bass
-                    var dynamicScaleFactor = pokemansBaseScale 
-                    +  m_audioLoader.GetAmplitudeByType(FreqBandType.Bass) 
-                    * (5f + (float)Math.Sin(Time.TotalTime + pulseOffset));
+                    var dynamicScaleFactor = pokemansBaseScale
+                                             + m_audioLoader.GetAmplitudeByName("1")
+                                             * (5f + (float)Math.Sin(Time.TotalTime + pulseOffset));
 
-                    currScales[i] = MathHelper.Lerp(currScales[i], dynamicScaleFactor, 0.1f );
+                    currScales[i] = MathHelper.Lerp(currScales[i], dynamicScaleFactor, 0.1f);
                     currScales[i] = Math.Min(currScales[i], pokemansMaxScale);
                     var ogScale = originalScales[i];
-                    var bounceX = 10f * (float)Math.Sin(Time.TotalTime * 2f + i * 0.5f); 
-                    var bounceY = 5f * (float)Math.Cos(Time.TotalTime * 3f + i * 0.3f);  
+                    var bounceX = 10f * (float)Math.Sin(Time.TotalTime * 2f + i * 0.5f);
+                    var bounceY = 5f * (float)Math.Cos(Time.TotalTime * 3f + i * 0.3f);
                     var rec = dstRects[i];
                     rec.w = (int)(ogScale.X * currScales[i]);
                     rec.h = (int)(ogScale.Y * currScales[i]);
@@ -247,12 +271,75 @@ namespace SDL2Engine.Core
                 }
 
                 m_assetManager.DrawTexture(m_renderer, spriteTexture.Id, ref dstRectAsh);
-                
+
+                #endregion
+
                 ImGui.NewFrame();
-                
+
                 m_guiRenderService.RenderFullScreenDockSpace();
-                
+
                 RenderGUI();
+
+                #region DrawAudioSynth
+
+                // Audio synthesizer
+                var frequencyBands = m_audioLoader.FrequencyBands;
+                var bandRectSize = (rectWidth + rectSpacing) * frequencyBands.Count;
+                var initialRectStartX = m_windowWidth - bandRectSize - 6;
+                // initialRectStartX -= m_windowWidth - bandRectSize / 2;
+
+                foreach (var bandPair in m_audioLoader.FrequencyBands)
+                {
+                    var bandAmplitude = m_audioLoader.GetAmplitudeByName(bandPair.Key);
+                    if (bandAmplitude > maxAmplitude)
+                    {
+                        maxAmplitude = bandAmplitude;
+                    }
+                }
+
+                foreach (var bandPair in frequencyBands)
+                {
+                    var amp = m_audioLoader.GetAmplitudeByName(bandPair.Key);
+                    var bandIndex = int.Parse(bandPair.Key);
+                    var bandAmplitude = amp * bandIntensityMod;
+                    var targetHeight = (int)((bandAmplitude / maxAmplitude) * maxRectHeight);
+                    targetHeight = Math.Clamp(targetHeight, 0, maxRectHeight);
+
+                    var smoothedHeight = (int)(previousHeights[bandIndex] * (1 - smoothingFactor) +
+                                               targetHeight * smoothingFactor);
+                    previousHeights[bandIndex] = smoothedHeight;
+                    var currentRectX = initialRectStartX + (bandIndex * (rectWidth + rectSpacing));
+
+                    var ratio = smoothedHeight / (float)maxRectHeight;
+                    var minHue = 0.7f;//0.45f;
+                    var maxHue = 0.85f;//0.7f;
+                    var hue = (minHue + (maxHue - minHue) * ratio) * 360;
+                    var (red, green, blue) = ColorHelper.HsvToRgb(hue, 1f, 1.0f);
+
+                    SDL.SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
+                    SDL.SDL_Rect backgroundRect = new SDL.SDL_Rect
+                    {
+                        x = currentRectX - rectSpacing / 2,
+                        y = initialRectStartY - (smoothedHeight / 2) -
+                            (rectSpacing / 2),
+                        w = rectWidth + rectSpacing,
+                        h = smoothedHeight + rectSpacing
+                    };
+                    SDL.SDL_RenderFillRect(m_renderer, ref backgroundRect);
+
+                    SDL.SDL_Rect rect = new SDL.SDL_Rect
+                    {
+                        x = currentRectX,
+                        y = initialRectStartY - (smoothedHeight / 2),
+                        w = rectWidth,
+                        h = smoothedHeight
+                    };
+                    SDL.SDL_SetRenderDrawColor(m_renderer, red, green, blue, 255);
+                    SDL.SDL_RenderFillRect(m_renderer, ref rect);
+                }
+
+                #endregion
+
                 SDL.SDL_RenderPresent(m_renderer);
             }
 
@@ -297,11 +384,11 @@ namespace SDL2Engine.Core
                 bool isFullscreen = (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0 ||
                                     (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
 
-                int newWidth = e.window.data1;
-                int newHeight = e.window.data2;
-                m_guiRenderService.OnWindowResize(newWidth, newHeight);
+                m_windowWidth = e.window.data1;
+                m_windowHeight = e.window.data2;
+                m_guiRenderService.OnWindowResize(m_windowWidth, m_windowHeight);
 
-                var windowSettings = new WindowSettings(title, newWidth, newHeight, isFullscreen);
+                var windowSettings = new WindowSettings(title, m_windowWidth, m_windowHeight, isFullscreen);
                 EventHub.Raise(this, new OnWindowResized(windowSettings));
             }
         }
@@ -311,7 +398,7 @@ namespace SDL2Engine.Core
         /// </summary>
         private void HandleCameraInput(ICamera camera)
         {
-            float cameraSpeed = 50f * Time.DeltaTime; // Adjust speed as needed
+            float cameraSpeed = 50f * Time.DeltaTime;
             Vector2 movement = Vector2.Zero;
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_UP))
                 movement.Y -= cameraSpeed;
@@ -325,9 +412,9 @@ namespace SDL2Engine.Core
             camera.Move(movement);
             
             // Zoom controls
-            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_EQUALS)) // '+' key
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_EQUALS))
                 camera.SetZoom(camera.Zoom + 0.1f);
-            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_MINUS)) // '-' key
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_MINUS))
                 camera.SetZoom(camera.Zoom - 0.1f);
         }
         

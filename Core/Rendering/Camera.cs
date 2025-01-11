@@ -24,7 +24,6 @@ namespace SDL2Engine.Core.Rendering
         public void Move(Vector2 delta)
         {
             Position += delta;
-            Console.WriteLine($"Camera Moved: New Position={Position}");
         }
 
         /// <summary>
@@ -34,7 +33,6 @@ namespace SDL2Engine.Core.Rendering
         public void SetPosition(Vector2 newPosition)
         {
             Position = newPosition;
-            Console.WriteLine($"Camera Position Set: Position={Position}");
         }
 
         /// <summary>
@@ -44,7 +42,6 @@ namespace SDL2Engine.Core.Rendering
         public void SetZoom(float newZoom)
         {
             Zoom = Math.Clamp(newZoom, 0.1f, 10.0f); // Clamp to reasonable zoom levels
-            Console.WriteLine($"Camera Zoom Set: Zoom={Zoom}");
         }
 
         /// <summary>
@@ -63,7 +60,6 @@ namespace SDL2Engine.Core.Rendering
         public void SetName(string name)
         {
             Name = name;
-            Console.WriteLine($"Camera Name Set: Name={Name}");
         }
     }
 }
