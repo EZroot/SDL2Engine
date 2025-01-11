@@ -13,6 +13,7 @@ using System.Drawing;
 using System.Numerics;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.Input;
+using SDL2Engine.Core.Rendering;
 using static SDL2Engine.Core.Addressables.AssetManager;
 
 namespace SDL2Engine.Core
@@ -25,6 +26,7 @@ namespace SDL2Engine.Core
         private const int ENGINE_VOLUME = 24; // 0 - 128
         
         public enum ExampleEnum { OptionA, OptionB, OptionC };
+        
         private readonly IServiceWindowService m_windowService;
         private readonly IServiceRenderService m_renderService;
         private readonly IServiceGuiRenderService m_guiRenderService;
@@ -32,9 +34,11 @@ namespace SDL2Engine.Core
         private readonly IVariableBinder m_guiVariableBinder;
         private readonly IServiceAssetManager m_assetManager;
         private readonly IServiceAudioLoader m_audioLoader;
+        private readonly IServiceCameraService m_cameraService;
 
         private IntPtr m_window, m_renderer;
-
+        private int m_camera;
+        
         private bool disposed = false;
 
         private bool TEST_window_isopen = true;
@@ -47,7 +51,8 @@ namespace SDL2Engine.Core
             IServiceAssetManager assetManager,
             IServiceGuiWindowService guiWindowBuilder,
             IVariableBinder guiVariableBinder,
-            IServiceAudioLoader audioLoader
+            IServiceAudioLoader audioLoader,
+            IServiceCameraService cameraService
         )
         {
             m_windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
@@ -57,6 +62,7 @@ namespace SDL2Engine.Core
             m_assetManager = assetManager ?? throw new ArgumentNullException(nameof(assetManager));
             m_guiVariableBinder = guiVariableBinder ?? throw new ArgumentNullException(nameof(guiVariableBinder));
             m_audioLoader = audioLoader ?? throw new ArgumentNullException(nameof(audioLoader));
+            m_cameraService = cameraService ?? throw new ArgumentNullException(nameof(cameraService));
         }
 
         public void Run()
@@ -80,9 +86,12 @@ namespace SDL2Engine.Core
             m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
             m_guiRenderService.SetupIO(windowWidth, windowHeight);
 
-
             CustomBindTesting();
 
+            //Camera test
+            m_camera = m_cameraService.CreateCamera(Vector2.One);
+            m_cameraService.SetActiveCamera(m_camera);
+                
             //Sprite Test
             var spriteTexture = m_assetManager.LoadTexture(m_renderer, RESOURCES_FOLDER+"/ashh.png");
             SDL.SDL_Rect dstRectAsh = new SDL.SDL_Rect { x = 0, y = 0, w = spriteTexture.Width, h = spriteTexture.Height };
@@ -183,6 +192,9 @@ namespace SDL2Engine.Core
                     Debug.LogPollEvents(e);
                     HandleWindowEvents(e, ref running);
                 }
+                var camera = m_cameraService.GetCamera(m_camera);
+                HandleCameraInput(camera);
+
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_w))
                     position.Y -= 20f * Time.DeltaTime;
                 if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_a))
@@ -213,7 +225,7 @@ namespace SDL2Engine.Core
 
                 var pokemansBaseScale = 0.5f;
                 var pokemansMaxScale = 5f;
-
+                
                 for (var i = 0; i < spriteTexturePokemans.Length; i++)
                 {
                     var pulseOffset = (i * 0.5f) % MathHelper.TwoPi;  
@@ -232,11 +244,12 @@ namespace SDL2Engine.Core
                     rec.h = (int)(ogScale.Y * currScales[i]);
                     rec.x += (int)bounceX;
                     rec.y += (int)bounceY;
-                    m_assetManager.DrawTexture(m_renderer, spriteTexturePokemans[i].Id, ref rec);
+                    m_assetManager.DrawTexture(m_renderer, spriteTexturePokemans[i].Id, ref rec, camera);
                 }
 
                 m_assetManager.DrawTexture(m_renderer, spriteTexture.Id, ref dstRectAsh);
-
+                // m_assetManager.DrawTexture(m_renderer, spriteTexture.Id, ref dstRectAsh, camera);
+                
                 ImGui.NewFrame();
 
                 m_guiRenderService.RenderFullScreenDockSpace();
@@ -374,7 +387,32 @@ namespace SDL2Engine.Core
             m_guiVariableBinder.BindVariable("CellTable", cellTable);
             m_guiVariableBinder.BindVariable("Action", action);
         }
-
+        
+        /// <summary>
+        /// Handles user input for camera movement and zoom.
+        /// </summary>
+        private void HandleCameraInput(ICamera camera)
+        {
+            float cameraSpeed = 50f * Time.DeltaTime; // Adjust speed as needed
+            Vector2 movement = Vector2.Zero;
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_UP))
+                movement.Y -= cameraSpeed;
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_DOWN))
+                movement.Y += cameraSpeed;
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_LEFT))
+                movement.X -= cameraSpeed;
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_RIGHT))
+                movement.X += cameraSpeed;
+            
+            camera.Move(movement);
+            
+            // Zoom controls
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_EQUALS)) // '+' key
+                camera.SetZoom(camera.Zoom + 0.1f);
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_MINUS)) // '-' key
+                camera.SetZoom(camera.Zoom - 0.1f);
+        }
+        
         public void Dispose()
         {
             if (disposed)
@@ -383,8 +421,9 @@ namespace SDL2Engine.Core
             disposed = true;
 
             m_assetManager.Cleanup();
-            m_guiRenderService?.Dispose();
-
+            m_cameraService.Cleanup();
+            m_guiRenderService.Dispose();
+            
             if (m_renderer != IntPtr.Zero)
             {
                 SDL.SDL_DestroyRenderer(m_renderer);

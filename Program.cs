@@ -29,6 +29,7 @@ class Program
             services.AddSingleton<IServiceAudioLoader, AudioLoader>();
             services.AddSingleton<IServiceImageLoader, ImageLoader>();
             services.AddSingleton<IServiceAssetManager, AssetManager>();
+            services.AddSingleton<IServiceCameraService, CameraService>();
 
             services.AddSingleton<Engine>();
 

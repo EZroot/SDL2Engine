@@ -3,6 +3,8 @@ using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using SDL2Engine.Core.Rendering.Interfaces;
 
 namespace SDL2Engine.Core.Addressables
 {
@@ -160,6 +162,30 @@ namespace SDL2Engine.Core.Addressables
             SDL.SDL_Rect srcRect = textureData.SrcRect;
             SDL.SDL_RenderCopy(renderer, textureData.Texture, ref srcRect, ref dstRect);
         }
+        
+        public void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect, ICamera camera)
+        {
+            if (!_idToTexture.TryGetValue(textureId, out var textureData))
+            {
+                Debug.LogError($"Texture ID {textureId} not found.");
+                return;
+            }
+
+            if (camera == null)
+            {
+                Debug.LogError("Camera provided is null.");
+                return;
+            }
+
+            // Apply camera transformations
+            SDL.SDL_Rect transformedDstRect = ApplyCameraTransform(dstRect, camera);
+
+            // Optionally, adjust source rectangle if needed
+            SDL.SDL_Rect srcRect = textureData.SrcRect;
+
+            // Render the texture with transformed destination rectangle
+            SDL.SDL_RenderCopy(renderer, textureData.Texture, ref srcRect, ref transformedDstRect);
+        }
 
         /// <summary>
         /// Unload a specific texture from asset manager
@@ -208,6 +234,37 @@ namespace SDL2Engine.Core.Addressables
             SDL_image.IMG_Quit();
 
             Debug.Log("AssetManager Cleanup Completed.");
+        }
+        
+        /// <summary>
+        /// Applies camera transformation to the destination rectangle.
+        /// </summary>
+        /// <param name="dstRect">Original destination rectangle in world coordinates.</param>
+        /// <param name="camera">Camera to apply transformation.</param>
+        /// <returns>Transformed destination rectangle in screen coordinates.</returns>
+        private SDL.SDL_Rect ApplyCameraTransform(SDL.SDL_Rect dstRect, ICamera camera)
+        {
+            // Calculate the offset based on camera position and zoom
+            Vector2 cameraOffset = camera.GetOffset();
+
+            // Apply zoom to the position and size
+            float zoom = camera.Zoom;
+
+            float transformedX = (dstRect.x - cameraOffset.X) * zoom;
+            float transformedY = (dstRect.y - cameraOffset.Y) * zoom;
+            float transformedW = dstRect.w * zoom;
+            float transformedH = dstRect.h * zoom;
+
+            // Create a new transformed SDL_Rect
+            SDL.SDL_Rect transformedRect = new SDL.SDL_Rect
+            {
+                x = (int)transformedX,
+                y = (int)transformedY,
+                w = (int)transformedW,
+                h = (int)transformedH
+            };
+
+            return transformedRect;
         }
 
         public class TextureData

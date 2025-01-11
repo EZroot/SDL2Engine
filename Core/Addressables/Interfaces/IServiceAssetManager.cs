@@ -1,4 +1,5 @@
 using SDL2;
+using SDL2Engine.Core.Rendering.Interfaces;
 using static SDL2Engine.Core.Addressables.AssetManager;
 
 namespace SDL2Engine.Core.Addressables.Interfaces
@@ -10,6 +11,7 @@ namespace SDL2Engine.Core.Addressables.Interfaces
         void UnloadSound(int soundId);
         TextureData LoadTexture(IntPtr renderer, string path);
         void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect);
+        void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect, ICamera camera);
         void UnloadTexture(int id);
         void Cleanup();
     }
