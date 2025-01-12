@@ -103,7 +103,7 @@ namespace SDL2Engine.Core
                     HandleWindowEvents(e, ref running);
                 }
                 
-                SDL.SDL_SetRenderDrawColor(m_renderer, 25, 25, 45, 255);
+                SDL.SDL_SetRenderDrawColor(m_renderer, 15, 15, 25, 255);
                 SDL.SDL_RenderClear(m_renderer);
 
                 var camera = m_cameraService.GetCamera(m_camera);
