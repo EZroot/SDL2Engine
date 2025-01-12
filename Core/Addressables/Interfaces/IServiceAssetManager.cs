@@ -12,6 +12,7 @@ namespace SDL2Engine.Core.Addressables.Interfaces
         TextureData LoadTexture(IntPtr renderer, string path);
         void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect);
         void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect, ICamera camera);
+        void DrawTextureWithRotation(nint renderer, int textureId, ref SDL.SDL_Rect destRect, float rotation, ref SDL.SDL_Point center);
         void UnloadTexture(int id);
         void Cleanup();
     }

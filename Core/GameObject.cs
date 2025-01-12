@@ -3,13 +3,13 @@ using Box2DSharp.Dynamics;
 using SDL2;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Utils;
 
 public class GameObject
 {
     // PPM: Pixels Per Meter. Assuming this is globally accessible or passed in.
     private const float PPM = 100f;
 
-    // Other properties...
     public Vector2 Position { get; set; }
     public float Rotation { get; set; }
     public Vector2 Scale { get; set; } = Vector2.One;
@@ -41,35 +41,49 @@ public class GameObject
     }
 
     /// <summary>
-    /// Example Render method. Uses your asset manager to draw.
+    /// Render Gameobject
     /// </summary>
     public virtual void Render(nint renderer, IServiceAssetManager assetManager, IServiceCameraService cameraService = null)
     {
-        if (TextureId == 0) return;
+        if (TextureId == 0)
+        {
+            Debug.LogError("TextureId is 0. Skipping render.");
+            return;
+        }
 
-        // Calculate scaled width/height (apply scaling)
         int scaledWidth = (int)(OriginalWidth * Scale.X);
         int scaledHeight = (int)(OriginalHeight * Scale.Y);
 
-        // Create an SDL rect for the destination
         var destRect = new SDL.SDL_Rect
         {
-            // Convert position to pixels (scaled from meters using PPM)
             x = (int)(Position.X),
             y = (int)(Position.Y),
             w = scaledWidth,
             h = scaledHeight
         };
 
-        // If you have a camera system, apply camera transformations
+        SDL.SDL_Point center = new SDL.SDL_Point
+        {
+            x = scaledWidth / 2,
+            y = scaledHeight / 2
+        };
+
         if (cameraService != null)
         {
             var camera = cameraService.GetActiveCamera();
-            assetManager.DrawTexture(renderer, TextureId, ref destRect, camera);
+            if (camera != null)
+            {
+                assetManager.DrawTexture(renderer, TextureId, ref destRect, camera);
+            }
+            else
+            {
+                Debug.LogError("Active camera is null.");
+            }
         }
         else
         {
-            assetManager.DrawTexture(renderer, TextureId, ref destRect);
+            assetManager.DrawTextureWithRotation(renderer, TextureId, ref destRect, Rotation, ref center);
         }
     }
+
 }

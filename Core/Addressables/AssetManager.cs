@@ -180,6 +180,23 @@ namespace SDL2Engine.Core.Addressables
             SDL.SDL_RenderCopy(renderer, textureData.Texture, ref srcRect, ref transformedDstRect);
         }
 
+        public void DrawTextureWithRotation(nint renderer, int textureId, ref SDL.SDL_Rect destRect, float rotation,
+            ref SDL.SDL_Point center)
+        {
+            if (!_idToTexture.TryGetValue(textureId, out var textureData))
+            {
+                Debug.LogError($"Texture ID {textureId} not found.");
+                return;
+            }
+
+            float angleInDegrees = rotation * (180f / (float)Math.PI);
+
+            var srcRec = textureData.SrcRect;
+            SDL.SDL_RenderCopyEx(renderer, textureData.Texture, ref srcRec, ref destRect, angleInDegrees, ref center,
+                SDL.SDL_RendererFlip.SDL_FLIP_NONE);
+        }
+
+
         /// <summary>
         /// Unload a specific texture from asset manager
         /// </summary>
