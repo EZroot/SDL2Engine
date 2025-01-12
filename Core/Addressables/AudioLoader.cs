@@ -44,7 +44,7 @@ namespace SDL2Engine.Core.Addressables
 
                 FrequencyBand band = new FrequencyBand(lowerBound, upperBound); 
                 _frequencyBands.Add(i.ToString(), band);
-                Debug.Log($"BOUND {lowerBound},{upperBound}");
+                // Debug.Log($"BOUND {lowerBound},{upperBound}");
                 frequencyStep += 25;
             }
             

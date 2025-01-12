@@ -11,6 +11,7 @@ using SDL2Engine.Core.CoreSystem.Configuration.Components;
 using SDL2Engine.Core.GuiRenderer.Helpers;
 using System.Drawing;
 using System.Numerics;
+using Microsoft.Extensions.DependencyInjection;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Rendering;
@@ -20,7 +21,7 @@ namespace SDL2Engine.Core
 {
     internal class Engine : IDisposable
     {
-        private const string RESOURCES_FOLDER = "/home/anon/Repos/SDL2Engine/resources";
+        private const string RESOURCES_FOLDER = "/home/anon/Repos/SDL_Engine/SDL2Engine/resources";
 
         public enum ExampleEnum { OptionA, OptionB, OptionC };
         
@@ -32,8 +33,9 @@ namespace SDL2Engine.Core
         private readonly IServiceAssetManager m_assetManager;
         private readonly IServiceAudioLoader m_audioLoader;
         private readonly IServiceCameraService m_cameraService;
-        private readonly IGame m_game;
 
+        private readonly IServiceProvider m_serviceProvider;
+        
         private IntPtr m_window, m_renderer;
         private int m_windowWidth, m_windowHeight;
         private int m_camera;
@@ -43,6 +45,19 @@ namespace SDL2Engine.Core
 
         private bool TEST_window_isopen = true;
 
+        public Engine(IServiceProvider serviceProvider)
+        {
+            m_serviceProvider = serviceProvider;
+            m_windowService = m_serviceProvider.GetService<IServiceWindowService>();
+            m_renderService = m_serviceProvider.GetService<IServiceRenderService>();
+            m_guiRenderService = m_serviceProvider.GetService<IServiceGuiRenderService>();
+            m_guiWindowBuilder = m_serviceProvider.GetService<IServiceGuiWindowService>();
+            m_assetManager = m_serviceProvider.GetService<IServiceAssetManager>();
+            m_guiVariableBinder = m_serviceProvider.GetService<IVariableBinder>();
+            m_audioLoader = m_serviceProvider.GetService<IServiceAudioLoader>();
+            m_cameraService = m_serviceProvider.GetService<IServiceCameraService>();
+        }
+        
         public Engine
         (
             IServiceWindowService windowService,
@@ -52,8 +67,7 @@ namespace SDL2Engine.Core
             IServiceGuiWindowService guiWindowBuilder,
             IVariableBinder guiVariableBinder,
             IServiceAudioLoader audioLoader,
-            IServiceCameraService cameraService,
-            IGame game
+            IServiceCameraService cameraService
         )
         {
             m_windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
@@ -64,13 +78,12 @@ namespace SDL2Engine.Core
             m_guiVariableBinder = guiVariableBinder ?? throw new ArgumentNullException(nameof(guiVariableBinder));
             m_audioLoader = audioLoader ?? throw new ArgumentNullException(nameof(audioLoader));
             m_cameraService = cameraService ?? throw new ArgumentNullException(nameof(cameraService));
-            m_game = game ?? throw new ArgumentNullException(nameof(game));
         }
 
-        public void Run()
+        public void Run(IGame game)
         {
             Initialize();
-            m_game.Initialize();
+            game.Initialize(m_serviceProvider);
 
             bool running = true;
             while (running)
@@ -96,8 +109,8 @@ namespace SDL2Engine.Core
                 var camera = m_cameraService.GetCamera(m_camera);
                 HandleCameraInput(camera);
                 
-                m_game.Update(Time.DeltaTime);
-                m_game.Render();
+                game.Update(Time.DeltaTime);
+                game.Render();
 
                 ImGui.NewFrame();
 

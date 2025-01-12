@@ -2,7 +2,7 @@ namespace SDL2Engine.Core;
 
 public interface IGame
 {
-    void Initialize();
+    void Initialize(IServiceProvider serviceProvider);
     void Update(float deltaTime);
     void Render();
     void Shutdown();

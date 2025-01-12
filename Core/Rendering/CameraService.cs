@@ -1,5 +1,6 @@
 using SDL2Engine.Core.Rendering.Interfaces;
 using System.Numerics;
+using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.Rendering
 {
@@ -25,7 +26,7 @@ namespace SDL2Engine.Core.Rendering
             var camera = new Camera(initialPosition, initialZoom);
             _idToCamera[cameraId] = camera;
 
-            Console.WriteLine($"Camera Created: ID={cameraId}, Position={camera.Position}, Zoom={camera.Zoom}");
+            Debug.Log($"<color=green>Camera Created:</color> ID={cameraId}, Position={camera.Position}, Zoom={camera.Zoom}");
             return cameraId;
         }
 
@@ -36,7 +37,7 @@ namespace SDL2Engine.Core.Rendering
             {
                 return camera;
             }
-            Console.WriteLine($"<color=orange>WARNING: Camera ID {cameraId} not found.</color>");
+            Debug.Log($"<color=orange>WARNING: Camera ID {cameraId} not found.</color>");
             return null;
         }
 
@@ -45,18 +46,18 @@ namespace SDL2Engine.Core.Rendering
         {
             if (_idToCamera.Remove(cameraId))
             {
-                Console.WriteLine($"Camera Removed: ID={cameraId}");
+                Debug.Log($"Camera Removed: ID={cameraId}");
 
                 if (_activeCameraId == cameraId)
                 {
                     _activeCameraId = null;
-                    Console.WriteLine($"Active Camera ID {cameraId} was removed. No active camera set.");
+                    Debug.Log($"Active Camera ID {cameraId} was removed. No active camera set.");
                 }
 
                 return true;
             }
 
-            Console.WriteLine($"<color=orange>WARNING: Attempted to remove non-existent camera ID: {cameraId}</color>");
+            Debug.Log($"<color=orange>WARNING: Attempted to remove non-existent camera ID: {cameraId}</color>");
             return false;
         }
 
@@ -66,11 +67,11 @@ namespace SDL2Engine.Core.Rendering
             if (_idToCamera.ContainsKey(cameraId))
             {
                 _activeCameraId = cameraId;
-                Console.WriteLine($"Active Camera Set: ID={cameraId}");
+                Debug.Log($"Active Camera Set: ID={cameraId}");
                 return true;
             }
 
-            Console.WriteLine($"<color=orange>WARNING: Cannot set active camera. Camera ID {cameraId} not found.</color>");
+            Debug.Log($"<color=orange>WARNING: Cannot set active camera. Camera ID {cameraId} not found.</color>");
             return false;
         }
 
@@ -82,7 +83,7 @@ namespace SDL2Engine.Core.Rendering
                 return camera;
             }
 
-            Console.WriteLine("<color=orange>WARNING: No active camera set.</color>");
+            Debug.Log("<color=orange>WARNING: No active camera set.</color>");
             return null;
         }
 
@@ -92,7 +93,7 @@ namespace SDL2Engine.Core.Rendering
             _idToCamera.Clear();
             _nameToId.Clear();
             _activeCameraId = null;
-            Console.WriteLine("CameraService Cleanup Completed. All cameras have been removed.");
+            Debug.Log("CameraService Cleanup Completed. All cameras have been removed.");
         }
     }
 }
