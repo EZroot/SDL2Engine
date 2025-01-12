@@ -3,24 +3,33 @@
 After you build the libs, ensure the correct path and dll names in your .csproj
 
 # SDL2 - TODO
-
+ Probably similar to SDL2_Mixer
 # CIMGUI - TODO
-
+ Probably similar to SDL2_Mixer
 # SDL2_Image - TODO
+ Probably similar to SDL2_Mixer
 
 # SDL2_Mixer
-https://github.com/libsdl-org/SDL_mixer/releases
+Repo: `https://github.com/libsdl-org/SDL_mixer/releases`
 
-tar -xvzf SDL2_mixer-2.8.0.tar.gz 
-cd SDL2_mixer-2.8.0
-mkdir build
-cd build
-cmake ..
-make
+`tar -xvzf SDL2_mixer-2.8.0.tar.gz `
+
+`cd SDL2_mixer-2.8.0`
+
+`mkdir build`
+
+`cd build`
+
+`cmake ..`
+
+`make`
+
+Copy the library into the SDL2Engine /libs folder, you may have to rename the library too.
+ The engine will complain about it and give you a hint.
 
 If you get errors from missing includes:
 
-sudo apt install \                
+`sudo apt install \                
     libsdl2-dev \
     libogg-dev \
     libvorbis-dev \
@@ -31,3 +40,4 @@ sudo apt install \
     libxmp-dev \
     libfluidsynth-dev \
     libwavpack-dev
+`
