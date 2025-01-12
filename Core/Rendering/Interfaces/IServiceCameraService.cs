@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace SDL2Engine.Core.Rendering.Interfaces;
 
-internal interface IServiceCameraService
+public interface IServiceCameraService
 {
     int CreateCamera(Vector2 initialPosition, float initialZoom = 1.0f);
     ICamera GetCamera(int cameraId);

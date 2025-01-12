@@ -31,6 +31,7 @@ class Program
             services.AddSingleton<IServiceAssetManager, AssetManager>();
             services.AddSingleton<IServiceCameraService, CameraService>();
 
+            services.AddSingleton<IGame, Game>();
             services.AddSingleton<Engine>();
 
             var serviceProvider = services.BuildServiceProvider();

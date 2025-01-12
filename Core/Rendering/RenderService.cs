@@ -11,6 +11,8 @@ namespace SDL2Engine.Core.Rendering
     {
         private readonly IServiceSysInfo m_sysInfo;
         private readonly IServiceWindowConfig m_windowConfig; // Replace with a renderer config if I need to
+
+        private IntPtr m_render;
         public RenderService(IServiceSysInfo sysInfo, IServiceWindowConfig windowConfig)
         {
             m_windowConfig = windowConfig ?? throw new ArgumentNullException(nameof(windowConfig));
@@ -23,16 +25,16 @@ namespace SDL2Engine.Core.Rendering
         {
             SDL.SDL_SetHint(SDL.SDL_HINT_RENDER_DRIVER, "opengl"); 
             LogAvailableRenderDrivers();
-            IntPtr renderer = SDL.SDL_CreateRenderer(window, -1, renderFlags);
-            if (renderer == IntPtr.Zero)
+            m_render = SDL.SDL_CreateRenderer(window, -1, renderFlags);
+            if (m_render == IntPtr.Zero)
             {
                 Debug.LogError("Renderer creation failed! SDL_Error: " + SDL.SDL_GetError());
                 SDL.SDL_DestroyWindow(window);
                 SDL.SDL_Quit();
                 throw new InvalidOperationException("Renderer creation failed! SDL_Error: " + SDL.SDL_GetError());
             }
-            PrintRenderDriver(renderer);
-            return renderer;
+            PrintRenderDriver(m_render);
+            return m_render;
         }
 
         public nint CreateOpenGLContext(nint window)
@@ -55,6 +57,11 @@ namespace SDL2Engine.Core.Rendering
                 Debug.LogError("Failed to make OpenGL context current! SDL_Error: " + SDL.SDL_GetError());
                 throw new InvalidOperationException("Failed to make OpenGL context current! SDL_Error: " + SDL.SDL_GetError());
             }
+        }
+
+        public IntPtr GetRenderer()
+        {
+            return m_render;
         }
 
         private void PrintRenderDriver(IntPtr renderer)
