@@ -153,30 +153,30 @@ namespace SDL2Engine.Core.GuiRenderer
             // }
             // ImGui.End();
 
-            if (ImGui.Begin("Bottom Dock", ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
-            {
-                ImGui.Text("Bottom docker window");
-                ImGui.BeginMenuBar();
-                ImGui.Text("Bottom menu bar");
-                ImGui.EndMenuBar();
-            }
-            ImGui.End();
-            if (ImGui.Begin("Left Dock", ImGuiWindowFlags.NoMove))
-            {
-                ImGui.Text("Left docker window");
-            }
-            ImGui.End();
-            if (ImGui.Begin("Right Dock", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove))
-            {
-                ImGui.Text("Game Screen");
-            }
-            ImGui.End();
+            // if (ImGui.Begin("Bottom Dock", ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
+            // {
+            //     ImGui.Text("Bottom docker window");
+            //     ImGui.BeginMenuBar();
+            //     ImGui.Text("Bottom menu bar");
+            //     ImGui.EndMenuBar();
+            // }
+            // ImGui.End();
+            // if (ImGui.Begin("Left Dock", ImGuiWindowFlags.NoMove))
+            // {
+            //     ImGui.Text("Left docker window");
+            // }
+            // ImGui.End();
+            // if (ImGui.Begin("Right Dock", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove))
+            // {
+            //     ImGui.Text("Game Screen");
+            // }
+            // ImGui.End();
 
             if (m_isDebugConsoleOpen)
                 Utils.Debug.RenderDebugConsole(ref m_isDebugConsoleOpen);
         }
 
-        public unsafe void RenderDrawData(ImDrawDataPtr drawData)
+        public void RenderDrawData(ImDrawDataPtr drawData)
         {
             if (drawData.CmdListsCount == 0) return;
 

@@ -54,15 +54,59 @@ namespace SDL2Engine.Core
             m_physicsService = m_serviceProvider.GetService<IServicePhysicsService>();
         }
 
+        private void Initialize()
+        {
+            if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
+            {
+                Debug.LogError("SDL could not initialize! SDL_Error: " + SDL.SDL_GetError());
+                return;
+            }
+            
+            m_window = m_windowService.CreateWindowSDL();
+            m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/ashh.png");
+            m_renderer = m_renderService.CreateRenderer(m_window, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED 
+                                                                  | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
+
+            IntPtr imguiContext = ImGui.CreateContext();
+            ImGui.SetCurrentContext(imguiContext);
+
+            SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
+            m_windowWidth = windowWidth;
+            m_windowHeight = windowHeight;
+            
+            m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
+            m_guiRenderService.SetupIO(windowWidth, windowHeight);
+            
+            m_camera = m_cameraService.CreateCamera(Vector2.One);
+            m_cameraService.SetActiveCamera(m_camera);
+            
+            m_physicsService.Initialize(9.81f);
+            m_physicsService.CreateWindowBoundaries(windowWidth, windowHeight);
+        }
+
         public void Run(IGame game)
         {
             Initialize();
             game.Initialize(m_serviceProvider);
 
+            var accumulator = 0f;
+            var fixedStep = 0.02f;
             bool running = true;
             while (running)
             {
                 Time.Update();
+                accumulator += Time.RawDeltaTime;
+                
+                while (accumulator >= fixedStep)
+                {
+                    m_physicsService.UpdatePhysics(fixedStep); 
+                    accumulator -= fixedStep;
+                }
+                
+                // Unnessesary because each object can update their own position
+                // float alpha = accumulator / fixedStep;
+                // m_physicsService.InterpolateObjects(alpha);
+                
                 while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
                 {
                     InputManager.Update(e);
@@ -74,8 +118,6 @@ namespace SDL2Engine.Core
 
                 var camera = m_cameraService.GetCamera(m_camera);
                 HandleCameraInput(camera);
-
-                m_physicsService.UpdatePhysics(Time.DeltaTime);
 
                 game.Update(Time.DeltaTime);
                 game.Render();
@@ -90,37 +132,6 @@ namespace SDL2Engine.Core
             Dispose();
         }
 
-        private void Initialize()
-        {
-            if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
-            {
-                Debug.LogError("SDL could not initialize! SDL_Error: " + SDL.SDL_GetError());
-                return;
-            }
-            
-            m_window = m_windowService.CreateWindowSDL();
-            m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/ashh.png");
-            m_renderer = m_renderService.CreateRenderer(m_window);
-
-            IntPtr imguiContext = ImGui.CreateContext();
-            ImGui.SetCurrentContext(imguiContext);
-
-            SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
-            m_windowWidth = windowWidth;
-            m_windowHeight = windowHeight;
-            
-            m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
-            m_guiRenderService.SetupIO(windowWidth, windowHeight);
-            
-            m_camera = m_cameraService.CreateCamera(Vector2.One);
-            m_cameraService.SetActiveCamera(m_camera);
-
-            if (m_physicsService != null)
-            {
-                m_physicsService.Initialize(-9.81f);
-            }
-        }
-        
         private void RenderGUI()
         {
             ImGui.Render();
@@ -157,6 +168,7 @@ namespace SDL2Engine.Core
                 m_windowWidth = e.window.data1;
                 m_windowHeight = e.window.data2;
                 m_guiRenderService.OnWindowResize(m_windowWidth, m_windowHeight);
+                m_physicsService.CreateWindowBoundaries(m_windowWidth, m_windowHeight);
 
                 var windowSettings = new WindowSettings(title, m_windowWidth, m_windowHeight, isFullscreen);
                 EventHub.Raise(this, new OnWindowResized(windowSettings));

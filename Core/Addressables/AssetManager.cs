@@ -175,13 +175,8 @@ namespace SDL2Engine.Core.Addressables
                 return;
             }
 
-            // Apply camera transformations
             SDL.SDL_Rect transformedDstRect = ApplyCameraTransform(dstRect, camera);
-
-            // Optionally, adjust source rectangle if needed
             SDL.SDL_Rect srcRect = textureData.SrcRect;
-
-            // Render the texture with transformed destination rectangle
             SDL.SDL_RenderCopy(renderer, textureData.Texture, ref srcRect, ref transformedDstRect);
         }
 

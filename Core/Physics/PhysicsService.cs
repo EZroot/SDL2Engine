@@ -10,37 +10,160 @@ namespace SDL2Engine.Core.Physics
 {
     public class PhysicsService : IServicePhysicsService
     {
+        // 1 meter = 100 pixels
+        private const float PPM = 100f;
+
         private World m_world;
 
-        // Keep track of all GameObjects we manage
         private readonly List<GameObject> m_registeredObjects = new List<GameObject>();
-        
-        public void Initialize(float gravity = -9.81f)
+        private readonly List<Body> m_boundaryBodies = new List<Body>();
+
+        // Use positive gravity by default because SDL and Box2d y values are flipped
+        public void Initialize(float gravity = 9.81f)
         {
-            Vector2 gravityVec = new Vector2(0f, gravity); 
+            Vector2 gravityVec = new Vector2(0f, gravity);
             m_world = new World(gravityVec);
+
             Debug.Log($"<color=green>PHYSICS ENGINE INITIALIZED gravity: {gravity}</color>");
         }
 
         /// <summary>
-        /// Creates a physics body for the GameObject based on position/width/height,
-        /// and registers it so we can auto-sync position/rotation after simulation.
+        /// Register a GameObject as a dynamic/kinematic/static body in Box2D.
         /// </summary>
-        /// <param name="gameObject">The game object to attach a physics body.</param>
-        /// <param name="width">Width in physics units (e.g., meters if using a physics scale).</param>
-        /// <param name="height">Height in physics units.</param>
-        /// <param name="type">The Box2D body type (Static, Dynamic, Kinematic).</param>
         public void RegisterGameObject(GameObject gameObject, float width, float height, BodyType type)
         {
             BodyDef bodyDef = new BodyDef
             {
                 BodyType = type,
-                Position = gameObject.Position  
+                // Convert from pixel coords to meters
+                Position = new Vector2(
+                    gameObject.Position.X / PPM,
+                    gameObject.Position.Y / PPM
+                )
             };
 
             Body body = m_world.CreateBody(bodyDef);
-            
-            //This only creates box shapes right now
+
+            // TODO: Double check this, could be cause for larger box collider than needed
+            PolygonShape shape = new PolygonShape();
+            shape.SetAsBox(
+                (width  / 2f) / PPM, 
+                (height / 2f) / PPM
+            );
+
+            FixtureDef fixtureDef = new FixtureDef
+            {
+                Shape = shape,
+                Density = 1.0f,
+                Friction = 0.02f
+            };
+            body.CreateFixture(fixtureDef);
+
+            gameObject.PhysicsBody = body;
+            m_registeredObjects.Add(gameObject);
+        }
+
+        /// <summary>
+        /// Fixed timestep update of Box2D physics. Syncs body positions/rotations back to GameObjects.
+        /// </summary>
+        public void UpdatePhysics(float deltaTime)
+        {
+            foreach (var gameObject in m_registeredObjects)
+            {
+                gameObject.PreviousPosition = gameObject.CurrentPosition;
+                gameObject.PreviousRotation = gameObject.CurrentRotation;
+            }
+
+            m_world.Step(deltaTime, velocityIterations: 8, positionIterations: 3);
+
+            foreach (var gameObject in m_registeredObjects)
+            {
+                if (gameObject.PhysicsBody != null)
+                {
+                    Body body = gameObject.PhysicsBody;
+                    Vector2 bodyPos = body.GetPosition();
+                    float bodyRot   = body.GetAngle();
+
+                    gameObject.CurrentPosition = bodyPos * PPM;
+                    gameObject.CurrentRotation = bodyRot;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Interpolate between previous/current for smooth rendering.
+        /// </summary>
+        // public void InterpolateObjects(float alpha)
+        // {
+        //     foreach (var gameObject in m_registeredObjects)
+        //     {
+        //         Vector2 prevPos = gameObject.PreviousPosition;
+        //         Vector2 currPos = gameObject.CurrentPosition;
+        //         Vector2 interpolatedPos = new Vector2(
+        //             prevPos.X + (currPos.X - prevPos.X) * alpha,
+        //             prevPos.Y + (currPos.Y - prevPos.Y) * alpha
+        //         );
+        //
+        //         float prevRot = gameObject.PreviousRotation;
+        //         float currRot = gameObject.CurrentRotation;
+        //         float interpolatedRot = prevRot + (currRot - prevRot) * alpha;
+        //
+        //         gameObject.Position = interpolatedPos;
+        //         gameObject.Rotation = interpolatedRot;
+        //     }
+        // }
+
+        /// <summary>
+        /// Create static bodies around the window edges.
+        /// Assuming top-left is (0,0) in SDL and y grows downward.
+        /// So top edge is y=0, bottom edge is y=screenHeight.
+        /// </summary>
+        public void CreateWindowBoundaries(float screenWidth, float screenHeight)
+        {
+            foreach (var body in m_boundaryBodies)
+            {
+                m_world.DestroyBody(body);
+            }
+            m_boundaryBodies.Clear();
+
+            float w = screenWidth  / PPM;
+            float h = screenHeight / PPM;
+
+            m_boundaryBodies.Add(CreateStaticBody(
+                new Vector2(w / 2f, 0f),
+                w,
+                0.1f 
+            ));
+
+            m_boundaryBodies.Add(CreateStaticBody(
+                new Vector2(w / 2f, h),
+                w,
+                0.1f
+            ));
+
+            m_boundaryBodies.Add(CreateStaticBody(
+                new Vector2(0f, h / 2f),
+                0.1f,
+                h
+            ));
+
+            m_boundaryBodies.Add(CreateStaticBody(
+                new Vector2(w, h / 2f),
+                0.1f,
+                h
+            ));
+        }
+
+        private Body CreateStaticBody(Vector2 position, float width, float height)
+        {
+            BodyDef bodyDef = new BodyDef
+            {
+                BodyType = BodyType.StaticBody,
+                Position = position
+            };
+            Body body = m_world.CreateBody(bodyDef);
+
+            // Note: setAsBox expects half-width and half-height (CHECK THIS)
             PolygonShape shape = new PolygonShape();
             shape.SetAsBox(width / 2f, height / 2f);
 
@@ -48,40 +171,12 @@ namespace SDL2Engine.Core.Physics
             {
                 Shape = shape,
                 Density = 1.0f,
-                Friction = 0.3f
+                Friction = 0.3f,
+                Restitution = 0.0f
             };
-
             body.CreateFixture(fixtureDef);
-            gameObject.PhysicsBody = body;
-            m_registeredObjects.Add(gameObject);
-        }
 
-        /// <summary>
-        /// Step (simulate) the physics world, then sync positions/rotations back to the registered GameObjects.
-        /// </summary>
-        public void UpdatePhysics(float deltaTime)
-        {
-            int velocityIterations = 8;
-            int positionIterations = 3;
-
-            m_world.Step(deltaTime, velocityIterations, positionIterations);
-            SyncGameObjects();
-        }
-
-        /// <summary>
-        /// Sync each registered GameObject’s Position/Rotation from its physics body.
-        /// </summary>
-        private void SyncGameObjects()
-        {
-            foreach (var gameObject in m_registeredObjects)
-            {
-                Body body = gameObject.PhysicsBody;
-                if (body != null)
-                {
-                    gameObject.Position = body.GetPosition();
-                    gameObject.Rotation = body.GetAngle();
-                }
-            }
+            return body;
         }
 
         public Body CreatePhysicsBody(Vector2 position, float width, float height, BodyType type)
@@ -103,12 +198,11 @@ namespace SDL2Engine.Core.Physics
                 Density = 1.0f,
                 Friction = 0.3f
             };
-
             body.CreateFixture(fixtureDef);
 
             return body;
         }
-        
+
         public void SetContactListener(IContactListener contactListener)
         {
             m_world.SetContactListener(contactListener);

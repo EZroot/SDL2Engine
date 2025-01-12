@@ -20,8 +20,7 @@ namespace SDL2Engine.Core.Rendering
         }
 
         public IntPtr CreateRenderer(IntPtr window, SDL.SDL_RendererFlags renderFlags = 
-        SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED 
-        | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+        SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED )
         {
             SDL.SDL_SetHint(SDL.SDL_HINT_RENDER_DRIVER, "opengl"); 
             LogAvailableRenderDrivers();
