@@ -17,6 +17,8 @@ public class Game : IGame
 
     private const int ENGINE_VOLUME = 24; // 0 - 128
 
+    private int m_windowWidth, m_windowHeight;
+    
     private readonly IServiceWindowService m_windowService;
     private readonly IServiceRenderService m_renderService;
     private readonly IServiceGuiRenderService m_guiRenderService;

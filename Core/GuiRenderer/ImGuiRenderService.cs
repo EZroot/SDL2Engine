@@ -30,14 +30,6 @@ namespace SDL2Engine.Core.GuiRenderer
         private uint m_dockSpaceRightID;
         private uint m_dockSpaceBottomID;
         private uint m_dockSpaceCenterID;
-        public uint DockSpaceMainID => m_dockSpaceMainID;
-        public uint DockSpaceLeftID => m_dockSpaceLeftID;
-        public uint DockSpaceTopID => m_dockSpaceTopID;
-        public uint DockSpaceRightID => m_dockSpaceRightID;
-        public uint DockSpaceBottomID => m_dockSpaceBottomID;
-        public uint DockSpaceCenterID => m_dockSpaceCenterID;
-
-
 
         /********************************************************
         *********************************************************

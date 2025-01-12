@@ -53,7 +53,7 @@ namespace SDL2Engine.Core
             IVariableBinder guiVariableBinder,
             IServiceAudioLoader audioLoader,
             IServiceCameraService cameraService,
-                IGame game
+            IGame game
         )
         {
             m_windowService = windowService ?? throw new ArgumentNullException(nameof(windowService));
@@ -92,14 +92,12 @@ namespace SDL2Engine.Core
                 
                 SDL.SDL_SetRenderDrawColor(m_renderer, 25, 25, 45, 255);
                 SDL.SDL_RenderClear(m_renderer);
-                
 
                 var camera = m_cameraService.GetCamera(m_camera);
                 HandleCameraInput(camera);
                 
                 m_game.Update(Time.DeltaTime);
                 m_game.Render();
-
 
                 ImGui.NewFrame();
 
