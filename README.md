@@ -2,6 +2,8 @@
 
 SDL2Engine is a robust rendering engine built using C# that leverages the power of SDL2 and ImGui for rendering and GUI functionality. 
 
+Game Template Example: https://github.com/EZroot/SDL2Game
+
 ![SDL Engine Screenshot](screenshottys/sdlscreenshot2.png)
 
 ## Features
