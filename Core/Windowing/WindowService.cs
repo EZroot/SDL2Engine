@@ -13,6 +13,10 @@ namespace SDL2Engine.Core.Windowing
         private readonly IServiceWindowConfig m_windowConfig;
         private readonly IServiceImageLoader m_imageLoader;
 
+        private nint m_window;
+
+        public nint Window => m_window;
+        
         public WindowService(
             IServiceWindowConfig windowConfig,
             IServiceImageLoader imageLoader
@@ -58,7 +62,7 @@ namespace SDL2Engine.Core.Windowing
         /// <exception cref="InvalidOperationException"></exception>
         public IntPtr CreateWindowSDL()
         {
-            IntPtr window = SDL.SDL_CreateWindow(
+            m_window = SDL.SDL_CreateWindow(
                 m_windowConfig.Settings.WindowName,
                 SDL.SDL_WINDOWPOS_CENTERED,
                 SDL.SDL_WINDOWPOS_CENTERED,
@@ -67,7 +71,7 @@ namespace SDL2Engine.Core.Windowing
                 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL.SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI
             );
 
-            if (window == IntPtr.Zero)
+            if (m_window == IntPtr.Zero)
             {
                 Debug.LogError("Window creation failed! SDL_Error: " + SDL.SDL_GetError());
                 SDL.SDL_Quit();
@@ -75,7 +79,7 @@ namespace SDL2Engine.Core.Windowing
             }
 
             SubscribeToEvents();
-            return window;
+            return m_window;
         }
 
         public void SetWindowIcon(IntPtr window, string iconPath)

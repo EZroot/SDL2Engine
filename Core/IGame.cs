@@ -1,3 +1,5 @@
+using SDL2;
+
 namespace SDL2Engine.Core;
 
 public interface IGame

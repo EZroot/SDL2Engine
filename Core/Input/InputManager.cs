@@ -2,14 +2,32 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using ImGuiNET;
 using SDL2;
+
 namespace SDL2Engine.Core.Input
 {
     public static class InputManager
     {
         private static HashSet<SDL.SDL_Keycode> _keysPressed = new();
+        private static bool[] _mouseButtonsPressed = new bool[3]; // 0 = left, 1 = right, 2 = middle
+
         public static bool IsKeyPressed(SDL.SDL_Keycode key)
         {
             return _keysPressed.Contains(key);
+        }
+
+        public static bool IsMouseButtonPressed(uint button)
+        {
+            switch (button)
+            {
+                case SDL.SDL_BUTTON_LEFT:
+                    return _mouseButtonsPressed[0];
+                case SDL.SDL_BUTTON_RIGHT:
+                    return _mouseButtonsPressed[1];
+                case SDL.SDL_BUTTON_MIDDLE:
+                    return _mouseButtonsPressed[2];
+                default:
+                    return false; // Invalid button
+            }
         }
 
         public static void Update(SDL.SDL_Event e)
@@ -23,11 +41,23 @@ namespace SDL2Engine.Core.Input
                     break;
                 case SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN:
                 case SDL.SDL_EventType.SDL_MOUSEBUTTONUP:
-                    int button = e.button.button;
+                    uint button = e.button.button;
                     bool isDown = e.type == SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN;
-                    if (button == SDL.SDL_BUTTON_LEFT) io.MouseDown[0] = isDown;
-                    if (button == SDL.SDL_BUTTON_RIGHT) io.MouseDown[1] = isDown;
-                    if (button == SDL.SDL_BUTTON_MIDDLE) io.MouseDown[2] = isDown;
+                    if (button == SDL.SDL_BUTTON_LEFT)
+                    {
+                        io.MouseDown[0] = isDown;
+                        _mouseButtonsPressed[0] = isDown; // Track the state of the left button
+                    }
+                    if (button == SDL.SDL_BUTTON_RIGHT)
+                    {
+                        io.MouseDown[1] = isDown;
+                        _mouseButtonsPressed[1] = isDown; // Track the state of the right button
+                    }
+                    if (button == SDL.SDL_BUTTON_MIDDLE)
+                    {
+                        io.MouseDown[2] = isDown;
+                        _mouseButtonsPressed[2] = isDown; // Track the state of the middle button
+                    }
                     break;
                 case SDL.SDL_EventType.SDL_TEXTINPUT:
                     unsafe

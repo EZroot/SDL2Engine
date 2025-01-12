@@ -111,8 +111,9 @@ namespace SDL2Engine.Core
                 {
                     InputManager.Update(e);
                     Debug.LogPollEvents(e);
-                    HandleWindowEvents(e, ref running);
+                    HandleWindowEvents(e, ref running); 
                 }
+
                 SDL.SDL_SetRenderDrawColor(m_renderer, 15, 15, 25, 255);
                 SDL.SDL_RenderClear(m_renderer);
 
