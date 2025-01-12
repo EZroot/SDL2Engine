@@ -10,6 +10,7 @@ SDL2Engine is a robust rendering engine built using C# that leverages the power 
 
 - **SDL2 for low-level window management and 2D rendering**
 - **ImGui.NET for an immediate mode GUI, with custom C# wrappers (ImGuiNative since it isn't officially supported) for additional flexibility**
+- **Box2D for 2d physics**
 - **Cross-platform capabilities courtesy of SDL2 and ImGui <3**
 
 ## Prerequisites
@@ -71,4 +72,4 @@ This project is licensed under the 'DO WHATEVER YOU WANT' License.
 
 ## Acknowledgments
 
-- Thanks to the gods of SDL2 and ImGui for their fantastic libraries <3
+- Thanks to the gods of SDL2, ImGui & Box2D for their fantastic libraries <3
