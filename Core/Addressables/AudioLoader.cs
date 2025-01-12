@@ -34,18 +34,44 @@ namespace SDL2Engine.Core.Addressables
 
         public AudioLoader()
         {
-            var startFrequency = -200;
-            var frequencyStep = 100;
+            var startFrequency = 0;
+            var frequencyStep = 25;
 
-            for (var i = 0; i < 25; i++)
+            for (var i = 0; i < 32; i++)
             {
                 var lowerBound = startFrequency + i * frequencyStep;
                 var upperBound = lowerBound + frequencyStep - 1;
 
                 FrequencyBand band = new FrequencyBand(lowerBound, upperBound); 
                 _frequencyBands.Add(i.ToString(), band);
-                // Debug.Log($"BOUND {lowerBound},{upperBound}");
-                frequencyStep += 25;
+                if (i == 0) // Sub-bass
+                {
+                    frequencyStep = 25; 
+                }
+                else if (i == 1) // Bass
+                {
+                    frequencyStep = 50;
+                }
+                else if (i == 5) // Lower midrange (includes lower vocals)
+                {
+                    frequencyStep = 100;
+                }
+                else if (i == 10) // Higher midrange (includes main vocals)
+                {
+                    frequencyStep = 200;
+                }
+                else if (i == 15) // Presence range (includes higher range instruments)
+                {
+                    frequencyStep = 550;
+                }
+                else if (i == 19)
+                {
+                    frequencyStep = 700;
+                }
+                // else if (i == 20) // Brilliance range (highest audible frequencies)
+                // {
+                //     frequencyStep = 1000;
+                // }
             }
             
             _audioEffectDelegate = AudioProcessor;
