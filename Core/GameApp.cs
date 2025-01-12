@@ -4,6 +4,8 @@ using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.GuiRenderer;
 using SDL2Engine.Core.GuiRenderer.Interfaces;
+using SDL2Engine.Core.Physics;
+using SDL2Engine.Core.Physics.Interfaces;
 using SDL2Engine.Core.Rendering;
 using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.Windowing;
@@ -28,6 +30,7 @@ public class GameApp
 
         services.AddSingleton<IServiceWindowService, WindowService>();
         services.AddSingleton<IServiceRenderService, RenderService>();
+        services.AddSingleton<IServicePhysicsService, PhysicsService>();
 
         services.AddSingleton<IServiceGuiRenderService, ImGuiRenderService>();
         services.AddSingleton<IServiceGuiWindowService, ImGuiWindowBuilder>();

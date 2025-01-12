@@ -57,7 +57,7 @@ namespace SDL2Engine.Core.Rendering
                 return true;
             }
 
-            Debug.Log($"<color=orange>WARNING: Attempted to remove non-existent camera ID: {cameraId}</color>");
+            Debug.LogWarning($"Attempted to remove non-existent camera ID: {cameraId}</color>");
             return false;
         }
 
@@ -71,7 +71,7 @@ namespace SDL2Engine.Core.Rendering
                 return true;
             }
 
-            Debug.Log($"<color=orange>WARNING: Cannot set active camera. Camera ID {cameraId} not found.</color>");
+            Debug.LogWarning($"Cannot set active camera. Camera ID {cameraId} not found.</color>");
             return false;
         }
 

@@ -15,6 +15,7 @@ namespace SDL2Engine.Core.Utils
         private const float CONSOLE_BRIGHTNESS_MOD = 0.45f;
         
         public static bool IsDebugMode = true;
+        public static bool IsDebugModeWarnings = false;
         public static bool IsDebugModePollEvents = false;
         public static bool IsDebugModeEventHub = true;
         public static bool IsShowingMethodNames = true;
@@ -86,6 +87,12 @@ namespace SDL2Engine.Core.Utils
         public static void LogError(string message)
         {
             Log($"<color=Red>Error: {message}</color>", 2);
+        }
+        
+        public static void LogWarning(string message)
+        {
+            if (!IsDebugModeWarnings) return;
+            Log($"<color=orange>WARNING: {message}</color>", 2);
         }
 
         public static void LogException(string message, Exception ex)

@@ -56,8 +56,6 @@ namespace SDL2Engine.Core.Addressables
             int soundId = _nextSoundId++;
             _idToSound[soundId] = sound;
             _pathToSoundId[path] = soundId;
-
-            Debug.Log($"Sound Loaded: Path={path}, ID={soundId}");
             return soundId;
         }
 
@@ -100,7 +98,7 @@ namespace SDL2Engine.Core.Addressables
             }
             else
             {
-                Debug.Log($"<color=orange>WARNING: Attempted to unload non-existent sound ID: {soundId}</color>");
+                Debug.LogWarning($"Attempted to unload non-existent sound ID: {soundId}");
             }
         }
 
@@ -115,7 +113,7 @@ namespace SDL2Engine.Core.Addressables
             if (_pathToId.ContainsKey(path))
             {
                 int existingId = _pathToId[path];
-                Debug.Log($"<color=orange>WARNING: Texture already loaded {path} with ID {existingId} </color>");
+                Debug.LogWarning($"Texture already loaded {path} with ID {existingId} </color>");
                 return _idToTexture[existingId];
             }
 
