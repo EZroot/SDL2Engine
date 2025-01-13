@@ -340,7 +340,6 @@ namespace SDL2Engine.Core.GuiRenderer.Helpers
             }
         }
 
-
         private static void ImGuiInputCell(string key, ref object value)
         {
             if (value is ImGuiCellTableData table)
@@ -349,24 +348,33 @@ namespace SDL2Engine.Core.GuiRenderer.Helpers
                     ImGuiTableFlags.Resizable
                     | ImGuiTableFlags.Borders
                     | ImGuiTableFlags.HighlightHoveredColumn);
-
                 foreach (var cell in table.ImGuiCell)
                 {
                     ImGui.TableSetupColumn(cell.Header);
                 }
 
                 ImGui.TableHeadersRow();
-                for (int i = 0; i < table.ImGuiCell.Length; i++)
+                int maxRows = table.ImGuiCell.Max(cell => cell.Value.Length);
+                for (int row = 0; row < maxRows; row++)
                 {
-                    var cell = table.ImGuiCell[i];
+                    ImGui.TableNextRow(); 
 
-                    for (int j = 0; j < cell.Value.Length; j++)
+                    for (int col = 0; col < table.ImGuiCell.Length; col++)
                     {
-                        byte val = (byte)((i + j) % 2 == 0 ? 20 : 25);
-                        ImGui.TableNextColumn();
-                        ImGui.TableSetBgColor(ImGuiTableBgTarget.CellBg, ColorHelper.GetColor(val, val, val));
+                        var cell = table.ImGuiCell[col];
+                        ImGui.TableNextColumn(); 
 
-                        ImGui.Text(cell.Value[j]);
+                        if (row < cell.Value.Length)
+                        {
+                            byte val = (byte)((col + row) % 2 == 0 ? 20 : 25);
+                            ImGui.TableSetBgColor(ImGuiTableBgTarget.CellBg, ColorHelper.GetColor(val, val, val));
+
+                            ImGui.Text(cell.Value[row]);
+                        }
+                        else
+                        {
+                            ImGui.Text("");
+                        }
                     }
                 }
 
@@ -374,8 +382,9 @@ namespace SDL2Engine.Core.GuiRenderer.Helpers
             }
             else
             {
-                ImGui.Text("Invalid value for cell. Expected ImGuiCell.");
+                ImGui.Text("Invalid value for cell. Expected ImGuiCellTableData.");
             }
         }
+  
     }
 }
