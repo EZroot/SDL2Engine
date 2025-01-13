@@ -20,19 +20,6 @@ namespace SDL2Engine.Core.GuiRenderer
         private IServiceSysInfo m_sysInfo;
         private bool m_disposed;
 
-        // more ew
-        private bool m_isDebugConsoleOpen = true;
-
-        /********************************************************
-        *********************************************************
-                REMOVE THIS - DEBUG TOP MENU WINDOW VARIABLES
-        *******************************************************
-        *******************************************************/
-        int selectedItem = 0;
-        string[] items = { "Item 1", "Item 2", "Item 3", "Item 4" };
-        bool test = false;
-        bool isChecked = true;
-
         public ImGuiRenderService(IServiceSysInfo sysInfo)
         {
             m_sysInfo = sysInfo ?? throw new ArgumentNullException(nameof(sysInfo));
@@ -178,7 +165,7 @@ namespace SDL2Engine.Core.GuiRenderer
 
             // Fully transparent background for docked windows that use NoBackground flag!
             ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0, 0, 0, 0));
-            ImGui.DockSpace(dockSettings.MainDock.Id, Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode);
+            ImGui.DockSpace(dockSettings.MainDock.Id, Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar);
             ImGui.PopStyleColor();
 
             ImGui.End();
@@ -245,7 +232,7 @@ namespace SDL2Engine.Core.GuiRenderer
             SDL.SDL_RenderSetClipRect(m_renderer, IntPtr.Zero);
         }
 
-        private unsafe void RenderCommandList(ImDrawListPtr cmdList, float scaleX, float scaleY)
+        private void RenderCommandList(ImDrawListPtr cmdList, float scaleX, float scaleY)
         {
             VertexConverter converter = new VertexConverter(cmdList);
 
