@@ -2,7 +2,7 @@ using ImGuiNET;
 using SDL2Engine.Core.GuiRenderer.Interfaces;
 namespace SDL2Engine.Core.GuiRenderer
 {
-    public class ImGuiWindowBuilder : IServiceGuiWindowService
+    public class ImGuiWindowBuilder : IServiceGuiWindowBuilder
     {
         private IVariableBinder _binder;
 

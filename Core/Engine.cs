@@ -24,7 +24,7 @@ namespace SDL2Engine.Core
         private readonly IServiceWindowService m_windowService;
         private readonly IServiceRenderService m_renderService;
         private readonly IServiceGuiRenderService m_guiRenderService;
-        private readonly IServiceGuiWindowService m_guiWindowBuilder;
+        private readonly IServiceGuiWindowBuilder m_guiWindowBuilder;
         private readonly IVariableBinder m_guiVariableBinder;
         private readonly IServiceAssetManager m_assetManager;
         private readonly IServiceAudioLoader m_audioLoader;
@@ -46,7 +46,7 @@ namespace SDL2Engine.Core
             m_windowService = m_serviceProvider.GetService<IServiceWindowService>();
             m_renderService = m_serviceProvider.GetService<IServiceRenderService>();
             m_guiRenderService = m_serviceProvider.GetService<IServiceGuiRenderService>();
-            m_guiWindowBuilder = m_serviceProvider.GetService<IServiceGuiWindowService>();
+            m_guiWindowBuilder = m_serviceProvider.GetService<IServiceGuiWindowBuilder>();
             m_assetManager = m_serviceProvider.GetService<IServiceAssetManager>();
             m_guiVariableBinder = m_serviceProvider.GetService<IVariableBinder>();
             m_audioLoader = m_serviceProvider.GetService<IServiceAudioLoader>();

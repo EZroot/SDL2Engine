@@ -33,7 +33,7 @@ public class GameApp
         services.AddSingleton<IServicePhysicsService, PhysicsService>();
 
         services.AddSingleton<IServiceGuiRenderService, ImGuiRenderService>();
-        services.AddSingleton<IServiceGuiWindowService, ImGuiWindowBuilder>();
+        services.AddSingleton<IServiceGuiWindowBuilder, ImGuiWindowBuilder>();
         services.AddSingleton<IVariableBinder, ImGuiVariableBinder>();
 
         services.AddSingleton<IServiceAudioLoader, AudioLoader>();

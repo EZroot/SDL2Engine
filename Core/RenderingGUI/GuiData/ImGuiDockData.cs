@@ -3,6 +3,7 @@ namespace SDL2Engine.Core.GuiRenderer.Helpers;
 public class ImGuiDockData
 {
     public bool IsDockInitialized { get; set; }
+    public bool HasFileMenu { get; private set; }
     public DockPanelData MainDock { get; set; }
     public DockPanelData LeftDock { get; set; }
     public DockPanelData TopDock { get; set; }
@@ -13,8 +14,9 @@ public class ImGuiDockData
         DockPanelData leftDock, 
         DockPanelData topDockId, 
         DockPanelData rightDock, 
-        DockPanelData bottomDock)
+        DockPanelData bottomDock, bool hasFileMenu = false)
     {
+        HasFileMenu = hasFileMenu;
         IsDockInitialized = false;
         MainDock = mainDockId;
         LeftDock = leftDock;

@@ -15,7 +15,7 @@ namespace SDL2Engine.Core.Windowing
 
         private nint m_window;
 
-        public nint Window => m_window;
+        public nint WindowPtr => m_window;
         
         public WindowService(
             IServiceWindowConfig windowConfig,
