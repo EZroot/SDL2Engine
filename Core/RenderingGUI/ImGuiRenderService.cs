@@ -17,12 +17,10 @@ namespace SDL2Engine.Core.GuiRenderer
         private int m_width;
         private int m_height;
         private FontTextureLoader m_fontTextureLoader;
-        private IServiceSysInfo m_sysInfo;
         private bool m_disposed;
 
-        public ImGuiRenderService(IServiceSysInfo sysInfo)
+        public ImGuiRenderService()
         {
-            m_sysInfo = sysInfo ?? throw new ArgumentNullException(nameof(sysInfo));
         }
 
         public void CreateGuiRender(IntPtr window, IntPtr renderer, int width, int height, DefaultGuiStyle defaultStyle = DefaultGuiStyle.Dark)
