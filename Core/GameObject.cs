@@ -73,7 +73,7 @@ public class GameObject
             var camera = cameraService.GetActiveCamera();
             if (camera != null)
             {
-                assetManager.DrawTexture(renderer, TextureId, ref destRect, camera);
+                assetManager.DrawTextureWithRotation(renderer, TextureId, ref destRect, Rotation, ref center, camera);
             }
             else
             {

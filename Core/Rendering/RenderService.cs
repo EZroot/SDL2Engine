@@ -13,11 +13,14 @@ namespace SDL2Engine.Core.Rendering
         private readonly IServiceWindowConfig m_windowConfig; // Replace with a renderer config if I need to
 
         private IntPtr m_render;
+        public IntPtr RenderPtr => m_render;
+
         public RenderService(IServiceSysInfo sysInfo, IServiceWindowConfig windowConfig)
         {
             m_windowConfig = windowConfig ?? throw new ArgumentNullException(nameof(windowConfig));
             m_sysInfo = sysInfo ?? throw new ArgumentNullException(nameof(sysInfo));
         }
+
 
         public IntPtr CreateRenderer(IntPtr window, SDL.SDL_RendererFlags renderFlags = 
         SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED )
@@ -56,11 +59,6 @@ namespace SDL2Engine.Core.Rendering
                 Debug.LogError("Failed to make OpenGL context current! SDL_Error: " + SDL.SDL_GetError());
                 throw new InvalidOperationException("Failed to make OpenGL context current! SDL_Error: " + SDL.SDL_GetError());
             }
-        }
-
-        public IntPtr GetRenderer()
-        {
-            return m_render;
         }
 
         private void PrintRenderDriver(IntPtr renderer)

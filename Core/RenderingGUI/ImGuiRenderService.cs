@@ -5,6 +5,7 @@ using ImGuiNET;
 using SDL2;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.GuiRenderer.Converters;
+using SDL2Engine.Core.GuiRenderer.Helpers;
 using SDL2Engine.Core.Input;
 using static SDL2Engine.Core.GuiRenderer.GuiStyles.StyleHelper;
 namespace SDL2Engine.Core.GuiRenderer
@@ -21,15 +22,6 @@ namespace SDL2Engine.Core.GuiRenderer
 
         // more ew
         private bool m_isDebugConsoleOpen = true;
-
-        // ew - format plz
-        private bool isDockInitialized;
-        private uint m_dockSpaceMainID;
-        private uint m_dockSpaceLeftID;
-        private uint m_dockSpaceTopID;
-        private uint m_dockSpaceRightID;
-        private uint m_dockSpaceBottomID;
-        private uint m_dockSpaceCenterID;
 
         /********************************************************
         *********************************************************
@@ -84,38 +76,72 @@ namespace SDL2Engine.Core.GuiRenderer
         /// <summary>
         /// Initializes the dock space layout. Should be called once during application setup.
         /// </summary>
-        private void InitializeDockSpace()
+        public ImGuiDockData InitializeDockSpace(ImGuiDockData dockSettings)
         {
-            m_dockSpaceMainID = ImGui.GetID("MainDockSpace");
-
-            if (ImGuiInternal.DockBuilderGetNode(m_dockSpaceMainID) == IntPtr.Zero)
+            if (dockSettings.MainDock.IsEnabled == false)
             {
-                ImGuiInternal.DockBuilderRemoveNode(m_dockSpaceMainID);
-                ImGuiInternal.DockBuilderAddNode(m_dockSpaceMainID, ImGuiDockNodeFlags.PassthruCentralNode);
-                ImGuiInternal.DockBuilderSetNodeSize(m_dockSpaceMainID, ImGui.GetIO().DisplaySize);
-
-                ImGuiInternal.DockBuilderSplitNode(m_dockSpaceMainID, ImGuiDir.Up, 0.0f, out m_dockSpaceTopID, out uint remainingID);
-                ImGuiInternal.DockBuilderSplitNode(remainingID, ImGuiDir.Down, 0.15f, out m_dockSpaceBottomID, out m_dockSpaceCenterID);
-                ImGuiInternal.DockBuilderSplitNode(m_dockSpaceCenterID, ImGuiDir.Left, 0.15f, out m_dockSpaceLeftID, out m_dockSpaceRightID);
-
-                ImGuiInternal.DockBuilderDockWindow("Left Dock", m_dockSpaceLeftID);
-                ImGuiInternal.DockBuilderDockWindow("Right Dock", m_dockSpaceRightID);
-                ImGuiInternal.DockBuilderDockWindow("Top Dock", m_dockSpaceTopID);
-                ImGuiInternal.DockBuilderDockWindow("Bottom Dock", m_dockSpaceBottomID);
-
-                ImGuiInternal.DockBuilderFinish(m_dockSpaceMainID);
-                isDockInitialized = true;
+                Utils.Debug.LogError("Failed to setup dock. MainDock IsEnabled = false");
             }
+            
+            dockSettings.MainDock.Id = ImGui.GetID(dockSettings.MainDock.Name);
+
+            if (ImGuiInternal.DockBuilderGetNode(dockSettings.MainDock.Id) == IntPtr.Zero)
+            {
+                ImGuiInternal.DockBuilderRemoveNode(dockSettings.MainDock.Id);
+                ImGuiInternal.DockBuilderAddNode(dockSettings.MainDock.Id, ImGuiDockNodeFlags.PassthruCentralNode);
+                ImGuiInternal.DockBuilderSetNodeSize(dockSettings.MainDock.Id, ImGui.GetIO().DisplaySize);
+
+                ImGuiInternal.DockBuilderSplitNode(dockSettings.MainDock.Id, ImGuiDir.Up, 0.0f, out var dockSpaceTopId, out uint remainingID);
+                ImGuiInternal.DockBuilderSplitNode(remainingID, ImGuiDir.Down, 0.15f, out var dockSpaceBottomId, out var centerId);
+                ImGuiInternal.DockBuilderSplitNode(centerId, ImGuiDir.Left, 0.15f, out var dockSpaceLeftId, out var dockSpaceRightId);
+
+                if (dockSettings.LeftDock.IsEnabled)
+                {
+                    dockSettings.LeftDock.Id = dockSpaceLeftId;
+                    ImGuiInternal.DockBuilderDockWindow(dockSettings.LeftDock.Name, dockSettings.LeftDock.Id);
+                    Utils.Debug.Log($"Enabled [{dockSettings.LeftDock.Id}] - {dockSettings.LeftDock.Name}");
+                }
+                
+                if (dockSettings.RightDock.IsEnabled)
+                {
+                    dockSettings.RightDock.Id = dockSpaceRightId;
+                    ImGuiInternal.DockBuilderDockWindow(dockSettings.RightDock.Name, dockSettings.RightDock.Id);
+                    Utils.Debug.Log($"Enabled [{dockSettings.RightDock.Id}] - {dockSettings.RightDock.Name}");
+                }
+                
+                if (dockSettings.TopDock.IsEnabled)
+                {
+                    dockSettings.TopDock.Id = dockSpaceTopId;
+                    ImGuiInternal.DockBuilderDockWindow(dockSettings.TopDock.Name, dockSettings.TopDock.Id);
+                    Utils.Debug.Log($"Enabled [{dockSettings.TopDock.Id}] - {dockSettings.TopDock.Name}");
+                }
+                
+                if (dockSettings.BottomDock.IsEnabled)
+                {
+                    dockSettings.BottomDock.Id = dockSpaceBottomId;
+                    ImGuiInternal.DockBuilderDockWindow(dockSettings.BottomDock.Name, dockSettings.BottomDock.Id);
+                    Utils.Debug.Log($"Enabled [{dockSettings.BottomDock.Id}] - {dockSettings.BottomDock.Name}");
+                }
+                
+                if(dockSettings.RightDock.IsEnabled)
+                    ImGuiInternal.DockBuilderDockWindow(dockSettings.RightDock.Name, dockSettings.RightDock.Id);
+                if(dockSettings.TopDock.IsEnabled)
+                    ImGuiInternal.DockBuilderDockWindow(dockSettings.TopDock.Name, dockSettings.TopDock.Id);
+                if(dockSettings.BottomDock.IsEnabled)
+                    ImGuiInternal.DockBuilderDockWindow(dockSettings.BottomDock.Name, dockSettings.BottomDock.Id);
+
+                ImGuiInternal.DockBuilderFinish(dockSettings.MainDock.Id);
+                dockSettings.IsDockInitialized = true;
+            }
+
+            return dockSettings;
         }
 
         /// <summary>
         /// Renders the full-screen dock space. Should be called every frame.
         /// </summary>
-        public void RenderFullScreenDockSpace()
+        public void RenderFullScreenDockSpace(ImGuiDockData dockSettings)
         {
-            if (!isDockInitialized)
-                InitializeDockSpace();
-
             ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
             ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
@@ -137,7 +163,7 @@ namespace SDL2Engine.Core.GuiRenderer
 
             // Fully transparent background for docked windows that use NoBackground flag!
             ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0, 0, 0, 0));
-            ImGui.DockSpace(m_dockSpaceMainID, Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.AutoHideTabBar);
+            ImGui.DockSpace(dockSettings.MainDock.Id, Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode);
             ImGui.PopStyleColor();
 
             ImGui.End();
@@ -145,35 +171,49 @@ namespace SDL2Engine.Core.GuiRenderer
 
             RenderFileMenu();
 
-            // Just uncomment this if we want a top window dock back
-            // Leaving here for now
-            // if (ImGui.Begin("Top Dock", ImGuiWindowFlags.MenuBar ))
-            // {
+            if (dockSettings.TopDock.IsEnabled)
+            {
+                if (ImGui.Begin(dockSettings.TopDock.Name, ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
+                {
+                    ImGui.Text("Top docker window");
+                }
 
-            // }
-            // ImGui.End();
+                ImGui.End();
+            }
 
-            // if (ImGui.Begin("Bottom Dock", ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
-            // {
-            //     ImGui.Text("Bottom docker window");
-            //     ImGui.BeginMenuBar();
-            //     ImGui.Text("Bottom menu bar");
-            //     ImGui.EndMenuBar();
-            // }
-            // ImGui.End();
-            // if (ImGui.Begin("Left Dock", ImGuiWindowFlags.NoMove))
-            // {
-            //     ImGui.Text("Left docker window");
-            // }
-            // ImGui.End();
-            // if (ImGui.Begin("Right Dock", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove))
-            // {
-            //     ImGui.Text("Game Screen");
-            // }
-            // ImGui.End();
+            if (dockSettings.BottomDock.IsEnabled)
+            {
+                if (ImGui.Begin(dockSettings.BottomDock.Name, ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
+                {
+                    ImGui.Text("Bottom docker window");
+                }
+
+                ImGui.End();
+            }
+
+            if (dockSettings.LeftDock.IsEnabled)
+            {
+                if (ImGui.Begin(dockSettings.LeftDock.Name, ImGuiWindowFlags.NoMove))
+                {
+                    ImGui.Text("Left docker window");
+                }
+
+                ImGui.End();
+            }
+
+            if (dockSettings.RightDock.IsEnabled)
+            {
+                if (ImGui.Begin(dockSettings.RightDock.Name, ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove))
+                {
+                    ImGui.Text("Game Screen");
+                }
+
+                ImGui.End();
+            }
 
             if (m_isDebugConsoleOpen)
                 Utils.Debug.RenderDebugConsole(ref m_isDebugConsoleOpen);
+
         }
 
         public void RenderDrawData(ImDrawDataPtr drawData)

@@ -114,7 +114,7 @@ namespace SDL2Engine.Core
                     HandleWindowEvents(e, ref running); 
                 }
 
-                SDL.SDL_SetRenderDrawColor(m_renderer, 15, 15, 25, 255);
+                SDL.SDL_SetRenderDrawColor(m_renderer, 5, 5, 5, 255);
                 SDL.SDL_RenderClear(m_renderer);
 
                 var camera = m_cameraService.GetCamera(m_camera);
@@ -124,7 +124,8 @@ namespace SDL2Engine.Core
                 game.Render();
 
                 ImGui.NewFrame();
-                m_guiRenderService.RenderFullScreenDockSpace();
+                game.RenderGui();
+                // m_guiRenderService.RenderFullScreenDockSpace();
                 RenderGUI();
 
                 SDL.SDL_RenderPresent(m_renderer);
@@ -206,7 +207,7 @@ namespace SDL2Engine.Core
                 return;
 
             disposed = true;
-
+            
             m_assetManager.Cleanup();
             m_cameraService.Cleanup();
             m_guiRenderService.Dispose();

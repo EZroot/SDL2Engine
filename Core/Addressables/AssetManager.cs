@@ -179,6 +179,29 @@ namespace SDL2Engine.Core.Addressables
             SDL.SDL_Rect srcRect = textureData.SrcRect;
             SDL.SDL_RenderCopy(renderer, textureData.Texture, ref srcRect, ref transformedDstRect);
         }
+        public void DrawTextureWithRotation(nint renderer, int textureId, ref SDL.SDL_Rect destRect, float rotation,
+            ref SDL.SDL_Point center, ICamera camera)
+        {
+            if (!_idToTexture.TryGetValue(textureId, out var textureData))
+            {
+                Debug.LogError($"Texture ID {textureId} not found.");
+                return;
+            }
+
+            if (camera == null)
+            {
+                Debug.LogError("Camera provided is null.");
+                return;
+            }
+            
+            float angleInDegrees = rotation * (180f / (float)Math.PI);
+
+            SDL.SDL_Rect transformedDstRect = ApplyCameraTransform(destRect, camera);
+            var srcRec = textureData.SrcRect;
+            SDL.SDL_RenderCopyEx(renderer, textureData.Texture, ref srcRec, ref transformedDstRect, angleInDegrees, ref center,
+                SDL.SDL_RendererFlip.SDL_FLIP_NONE);
+        }
+
 
         public void DrawTextureWithRotation(nint renderer, int textureId, ref SDL.SDL_Rect destRect, float rotation,
             ref SDL.SDL_Point center)
