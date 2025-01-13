@@ -14,16 +14,19 @@ namespace SDL2Engine.Core.Physics
         private const float PPM = 100f;
 
         private World m_world;
-
+        private CollisionDetector m_collisionDetector;
+        
         private readonly List<GameObject> m_registeredObjects = new List<GameObject>();
         private readonly List<Body> m_boundaryBodies = new List<Body>();
-
+        
+        public CollisionDetector CollisionDetector => m_collisionDetector;
+        
         // Use positive gravity by default because SDL and Box2d y values are flipped
         public void Initialize(float gravity = 9.81f)
         {
             Vector2 gravityVec = new Vector2(0f, gravity);
             m_world = new World(gravityVec);
-
+            m_collisionDetector = new CollisionDetector(m_world, PPM);
             Debug.Log($"<color=green>PHYSICS ENGINE INITIALIZED gravity: {gravity}</color>");
         }
 

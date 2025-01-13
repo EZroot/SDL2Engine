@@ -5,6 +5,8 @@ namespace SDL2Engine.Core.Physics.Interfaces;
 
 public interface IServicePhysicsService
 {
+    public CollisionDetector CollisionDetector { get; }
+
     void Initialize(float gravity = -9.81f);
     void RegisterGameObject(GameObject gameObject, float width, float height, BodyType type);
     void UpdatePhysics(float fixedTime);
