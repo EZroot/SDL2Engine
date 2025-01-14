@@ -4,6 +4,7 @@ using SDL2Engine.Core.Networking.Tasking;
 using SDL2Engine.Core.Utils;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -16,13 +17,16 @@ namespace SDL2Engine.Core.Networking
 {
     public class Server : IServer
     {
+        private int _clientCount;
         private TcpListener _tcpListener;
         private bool _isRunning;
-        private readonly ConcurrentDictionary<TcpClient, ClientHandler> _clients;
+        private readonly ConcurrentDictionary<int, ClientHandler> _clients;
+
+        public List<ClientConnectionData> Connections => _clients.Values.Select(handler => handler.ClientConnectionData).ToList();
 
         public Server()
         {
-            _clients = new ConcurrentDictionary<TcpClient, ClientHandler>();
+            _clients = new ConcurrentDictionary<int, ClientHandler>();
         }
 
         /// <summary>
@@ -40,12 +44,13 @@ namespace SDL2Engine.Core.Networking
                 EventHub.Raise(this, new OnServerStatusChanged(ServerStatus.Started));
                 while (_isRunning)
                 {
-                    TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
-                    var clientData = new ClientData(0, tcpClient.Client.RemoteEndPoint.ToString(), tcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
-                    var clientHandler = new ClientHandler(tcpClient, this);
+                    var tcpClient = await _tcpListener.AcceptTcpClientAsync();
+                    var clientConnectionData = new ClientConnectionData(_clientCount, tcpClient);
+                    var clientData = new ClientData(clientConnectionData.Id, clientConnectionData.TcpClient.Client.RemoteEndPoint.ToString(), clientConnectionData.TcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
+                    var clientHandler = new ClientHandler(clientConnectionData, this);
                     EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.Connected));
 
-                    if (_clients.TryAdd(tcpClient, clientHandler))
+                    if (_clients.TryAdd(clientConnectionData.Id, clientHandler))
                     {
                         _ = clientHandler.HandleClientAsync(RemoveClient);
                     }
@@ -53,6 +58,8 @@ namespace SDL2Engine.Core.Networking
                     {
                         EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.TimedOut));
                     }
+
+                    _clientCount++;
                 }
             }
             catch (Exception ex)
@@ -92,21 +99,21 @@ namespace SDL2Engine.Core.Networking
         /// <summary>
         /// Removes a client from the active clients list.
         /// </summary>
-        /// <param name="tcpClient">The client to remove.</param>
-        private void RemoveClient(TcpClient tcpClient)
+        /// <param name="clientConnectionData">The client to remove.</param>
+        private void RemoveClient(ClientConnectionData clientConnectionData)
         {
-            if (_clients.TryRemove(tcpClient, out var handler))
+            if (_clients.TryRemove(clientConnectionData.Id, out var handler))
             {
-                var clientData = new ClientData(0, tcpClient.Client.RemoteEndPoint.ToString(), tcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
+                var clientData = new ClientData(clientConnectionData.Id, clientConnectionData.TcpClient.Client.RemoteEndPoint.ToString(), clientConnectionData.TcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
                 EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.Disconnected));
-                Debug.Log($"Client {tcpClient.Client.RemoteEndPoint} has been removed.");
+                Debug.Log($"Client {clientConnectionData.TcpClient.Client.RemoteEndPoint} has been removed from client connections.");
             }
             else
             {
                 Debug.LogError("Failed to remove client from the client list.");
             }
         }
-        
+
         /// <summary>
         /// Broadcasts a message to all connected clients.
         /// </summary>
@@ -115,32 +122,38 @@ namespace SDL2Engine.Core.Networking
         {
             var clientsList = _clients.Values.ToList();
 
-            for (int i = 0; i < clientsList.Count; i++)
+            foreach (var clientHandler in clientsList)
             {
-                byte[] data = NetHelper.StringToBytes($"{message}").Data;
-                var client = clientsList[i];
-                await client.SendDataAsync(data);
+                try
+                {
+                    var data = NetHelper.StringToBytes($"{message}");
+                    await clientHandler.SendDataAsync(data.Data);
+                }
+                catch (Exception ex)
+                {
+                    var clientConnectionData = clientHandler.ClientConnectionData;
+                    Debug.LogError($"Error sending data to client {clientConnectionData.Id} {clientConnectionData.TcpClient.Client.RemoteEndPoint}: {ex.Message}");
+                }
             }
 
-            Debug.Log($"Broadcasted message to {_clients.Count} clients: {message}");
+            Debug.Log($"Broadcasted message to ({_clients.Count}) clients: <color=blue>{message}</color>");
         }
-
 
         /// <summary>
         /// Inner class to handle individual client communication.
         /// </summary>
         private class ClientHandler
         {
-            private readonly TcpClient _tcpClient;
+            public ClientConnectionData ClientConnectionData { get; }
             private readonly Server _server;
             private NetworkStream _networkStream;
             private CancellationTokenSource _cancellationTokenSource;
 
-            public ClientHandler(TcpClient tcpClient, Server server)
+            public ClientHandler(ClientConnectionData clientConnection, Server server)
             {
                 _server = server;
-                _tcpClient = tcpClient;
-                _networkStream = _tcpClient.GetStream();
+                ClientConnectionData = clientConnection;
+                _networkStream = ClientConnectionData.TcpClient.GetStream();
                 _cancellationTokenSource = new CancellationTokenSource();
             }
 
@@ -148,7 +161,7 @@ namespace SDL2Engine.Core.Networking
             /// Handles communication with the connected client.
             /// </summary>
             /// <param name="onDisconnect">Callback to invoke on disconnection.</param>
-            public async Task HandleClientAsync(Action<TcpClient> onDisconnect)
+            public async Task HandleClientAsync(Action<ClientConnectionData> onDisconnect)
             {
                 byte[] buffer = new byte[1024];
 
@@ -160,7 +173,7 @@ namespace SDL2Engine.Core.Networking
 
                         if (bytesRead == 0)
                         {
-                            var clientData = new ClientData(0, _tcpClient.Client.RemoteEndPoint.ToString(), _tcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
+                            var clientData = new ClientData(ClientConnectionData.Id, ClientConnectionData.TcpClient.Client.RemoteEndPoint.ToString(), ClientConnectionData.TcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
                             EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.Disconnected));
                             break;
                         }
@@ -169,27 +182,27 @@ namespace SDL2Engine.Core.Networking
                         Array.Copy(buffer, receivedData, bytesRead);
 
                         EventHub.Raise(this, new OnServerMessageRecieved(new RawByteData(receivedData)));
-                        
+
                         var messageBytes = NetHelper.BytesToString(receivedData);
-                        // var whisperMsg = NetHelper.StringToBytes("Server Whisper:>"+messageBytes.Message);
+                        // var whisperMsg = NetHelper.StringToBytes("Server Whisper:>" + messageBytes.Message);
                         // await SendDataAsync(whisperMsg.Data);
                         await _server.BroadcastMessageAsync($"{messageBytes.Message}");
                     }
                 }
                 catch (OperationCanceledException)
                 {
-                    Debug.Log($"Handling of client {_tcpClient.Client.RemoteEndPoint} has been canceled.");
+                    Debug.Log($"Handling of client {ClientConnectionData.TcpClient.Client.RemoteEndPoint} has been canceled.");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Error handling client {_tcpClient.Client.RemoteEndPoint}: {ex.Message}");
+                    Debug.LogError($"Error handling client {ClientConnectionData.TcpClient.Client.RemoteEndPoint}: {ex.Message}");
                 }
                 finally
                 {
-                    await DisconnectAsync();
-                    onDisconnect?.Invoke(_tcpClient);
-                    var clientData = new ClientData(0, _tcpClient.Client.RemoteEndPoint.ToString(), _tcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
+                    var clientData = new ClientData(ClientConnectionData.Id, ClientConnectionData.TcpClient.Client.RemoteEndPoint.ToString(), ClientConnectionData.TcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
                     EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.Disconnected));
+                    onDisconnect?.Invoke(ClientConnectionData);
+                    await DisconnectAsync();
                 }
             }
 
@@ -212,7 +225,7 @@ namespace SDL2Engine.Core.Networking
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Error sending data to {_tcpClient.Client.RemoteEndPoint}: {ex.Message}");
+                    Debug.LogError($"Error sending data to {ClientConnectionData.TcpClient.Client.RemoteEndPoint}: {ex.Message}");
                 }
             }
 
@@ -231,12 +244,12 @@ namespace SDL2Engine.Core.Networking
                         _networkStream.Close();
                     }
 
-                    _tcpClient.Close();
-                    Debug.Log($"Disconnected client {_tcpClient.Client.RemoteEndPoint}.");
+                    ClientConnectionData.TcpClient.Close();
+                    Debug.Log($"Disconnected client {ClientConnectionData.TcpClient.Client.RemoteEndPoint}.");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Error disconnecting client {_tcpClient.Client.RemoteEndPoint}: {ex.Message}");
+                    Debug.LogError($"Error disconnecting client {ClientConnectionData.TcpClient.Client.RemoteEndPoint}: {ex.Message}");
                 }
             }
         }
