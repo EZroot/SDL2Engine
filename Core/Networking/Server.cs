@@ -140,18 +140,16 @@ namespace SDL2Engine.Core.Networking
                         {
                             var clientData = new ClientData(0, _tcpClient.Client.RemoteEndPoint.ToString(), _tcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
                             EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.Disconnected));
-                            Debug.Log($"Client {_tcpClient.Client.RemoteEndPoint} has disconnected.");
                             break;
                         }
 
                         byte[] receivedData = new byte[bytesRead];
                         Array.Copy(buffer, receivedData, bytesRead);
 
-                        // Handle the received data (e.g., parse and process)
-                        var message = ParseReceivedData(receivedData);
-                        Debug.Log($"Received from {_tcpClient.Client.RemoteEndPoint}: {message.Message}");
-
-                        // Optionally, echo the message back to the client
+                        EventHub.Raise(this, new OnServerMessageRecieved(new RawByteData(receivedData)));
+                        
+                        // Reply to the client 
+                        var message = NetHelper.ParseReceivedData(receivedData);
                         await SendDataAsync(Encoding.UTF8.GetBytes($"Echo: {message.Message}"));
                     }
                 }
@@ -188,7 +186,6 @@ namespace SDL2Engine.Core.Networking
                 {
                     await _networkStream.WriteAsync(data, 0, data.Length);
                     await _networkStream.FlushAsync();
-                    Debug.Log($"Sent data to {_tcpClient.Client.RemoteEndPoint}.");
                 }
                 catch (Exception ex)
                 {
@@ -218,19 +215,6 @@ namespace SDL2Engine.Core.Networking
                 {
                     Debug.LogError($"Error disconnecting client {_tcpClient.Client.RemoteEndPoint}: {ex.Message}");
                 }
-            }
-
-            /// <summary>
-            /// Parses the received byte array into a NetworkMessage object.
-            /// </summary>
-            /// <param name="data">The received data.</param>
-            /// <returns>Parsed NetworkMessage.</returns>
-            private NetworkMessage ParseReceivedData(byte[] data)
-            {
-                // Implement your actual parsing logic here.
-                // For demonstration, we'll assume the data is a UTF8 string.
-                string messageString = Encoding.UTF8.GetString(data);
-                return new NetworkMessage { Data = data, Message = messageString };
             }
         }
     }

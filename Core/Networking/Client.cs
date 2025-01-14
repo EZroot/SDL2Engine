@@ -112,8 +112,8 @@ namespace SDL2Engine.Core.Networking
 
                     var message = ParseReceivedData(receivedData);
                     _dataQueue.Enqueue(message);
-
-                    Debug.Log("Received and enqueued a new network message.");
+                    
+                    EventHub.Raise(this, new OnClientMessageRecieved(new RawByteData(receivedData)));
                 }
             }
             catch (OperationCanceledException)
@@ -155,7 +155,7 @@ namespace SDL2Engine.Core.Networking
         /// <returns>Parsed NetworkMessage.</returns>
         private NetworkMessage ParseReceivedData(byte[] data)
         {
-            // we'll assume the data is a UTF8 string.
+            // we'll assume the data is a UTF8 string.                                 
             string messageString = Encoding.UTF8.GetString(data);
             return new NetworkMessage { Data = data, Message = messageString };
         }
