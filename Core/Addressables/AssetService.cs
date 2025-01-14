@@ -8,17 +8,17 @@ using SDL2Engine.Core.Rendering.Interfaces;
 
 namespace SDL2Engine.Core.Addressables
 {
-    public class AssetManager : IServiceAssetManager
+    public class AssetService : IAssetService
     {
-        private readonly IServiceImageLoader m_imageLoader;
-        private readonly IServiceAudioLoader m_audioLoader;
+        private readonly IImageLoaderService m_imageLoaderService;
+        private readonly IAudioLoaderService m_audioLoaderService;
         private readonly Dictionary<int, TextureData> _idToTexture;
         private readonly Dictionary<string, int> _pathToId;
         private int _nextId;
         private readonly Dictionary<int, IntPtr> _idToSound;
         private readonly Dictionary<string, int> _pathToSoundId;
         private int _nextSoundId;
-        public AssetManager(IServiceImageLoader imageLoader, IServiceAudioLoader audioLoader)
+        public AssetService(IImageLoaderService imageLoader, IAudioLoaderService audioLoader)
         {
             _idToTexture = new Dictionary<int, TextureData>();
             _pathToId = new Dictionary<string, int>();
@@ -28,8 +28,8 @@ namespace SDL2Engine.Core.Addressables
             _pathToSoundId = new Dictionary<string, int>();
             _nextSoundId = 1;
 
-            m_imageLoader = imageLoader;
-            m_audioLoader = audioLoader;
+            m_imageLoaderService = imageLoader;
+            m_audioLoaderService = audioLoader;
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace SDL2Engine.Core.Addressables
                 return existingSoundId;
             }
 
-            IntPtr sound = m_audioLoader.LoadAudio(path, audioType);
+            IntPtr sound = m_audioLoaderService.LoadAudio(path, audioType);
             if (sound == IntPtr.Zero)
             {
                 Debug.LogError($"Failed to load sound: {path}");
@@ -74,9 +74,9 @@ namespace SDL2Engine.Core.Addressables
             }
 
             if (isMusic)
-                m_audioLoader.PlayMusic(soundEffect, volume: volume);
+                m_audioLoaderService.PlayMusic(soundEffect, volume: volume);
             else
-                m_audioLoader.PlaySoundEffect(soundEffect, volume: volume);
+                m_audioLoaderService.PlaySoundEffect(soundEffect, volume: volume);
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace SDL2Engine.Core.Addressables
                 return _idToTexture[existingId];
             }
 
-            IntPtr surface = m_imageLoader.LoadImage(path);
+            IntPtr surface = m_imageLoaderService.LoadImage(path);
             if (surface == IntPtr.Zero)
             {
                 Debug.Throw<ArgumentNullException>(new ArgumentNullException(), $"Failed to load image: {path}");

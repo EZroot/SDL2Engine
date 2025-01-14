@@ -3,7 +3,7 @@ using Box2DSharp.Dynamics;
 
 namespace SDL2Engine.Core.Physics.Interfaces;
 
-public interface IServicePhysicsService
+public interface IPhysicsService
 {
     public CollisionDetector CollisionDetector { get; }
 

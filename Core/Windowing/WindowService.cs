@@ -10,20 +10,20 @@ namespace SDL2Engine.Core.Windowing
 {
     internal class WindowService : IServiceWindowService
     {
-        private readonly IServiceWindowConfig m_windowConfig;
-        private readonly IServiceImageLoader m_imageLoader;
+        private readonly IWindowConfig m_windowConfig;
+        private readonly IImageLoaderService m_imageLoaderService;
 
         private nint m_window;
 
         public nint WindowPtr => m_window;
         
         public WindowService(
-            IServiceWindowConfig windowConfig,
-            IServiceImageLoader imageLoader
+            IWindowConfig windowConfig,
+            IImageLoaderService imageLoader
             )
         {
             m_windowConfig = windowConfig ?? throw new ArgumentNullException(nameof(windowConfig));
-            m_imageLoader = imageLoader ?? throw new ArgumentNullException(nameof(imageLoader));
+            m_imageLoaderService = imageLoader ?? throw new ArgumentNullException(nameof(imageLoader));
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace SDL2Engine.Core.Windowing
                 throw new ArgumentException("Invalid window handle.");
             }
 
-            IntPtr iconSurface = m_imageLoader.LoadImage(iconPath);
+            IntPtr iconSurface = m_imageLoaderService.LoadImage(iconPath);
             SDL.SDL_SetWindowIcon(window, iconSurface);
             Debug.Log($"Window Icon Set: {iconPath}");
             SDL.SDL_FreeSurface(iconSurface); 

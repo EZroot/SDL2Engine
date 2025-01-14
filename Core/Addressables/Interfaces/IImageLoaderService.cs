@@ -1,6 +1,6 @@
 namespace SDL2Engine.Core.Addressables.Interfaces
 {
-    public interface IServiceImageLoader
+    public interface IImageLoaderService
     {
         IntPtr LoadImage(string path);
     }

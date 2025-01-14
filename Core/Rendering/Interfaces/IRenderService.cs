@@ -2,7 +2,7 @@ using SDL2;
 
 namespace SDL2Engine.Core.Rendering.Interfaces
 {
-    public interface IServiceRenderService
+    public interface IRenderService
     {
         public nint RenderPtr { get; }
         IntPtr CreateRenderer(IntPtr window, SDL.SDL_RendererFlags renderFlags =

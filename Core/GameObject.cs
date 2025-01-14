@@ -43,7 +43,7 @@ public class GameObject
     /// <summary>
     /// Render Gameobject
     /// </summary>
-    public virtual void Render(nint renderer, IServiceAssetManager assetManager, IServiceCameraService cameraService = null)
+    public virtual void Render(nint renderer, IAssetService assetManager, ICameraService cameraService = null)
     {
         if (TextureId == 0)
         {

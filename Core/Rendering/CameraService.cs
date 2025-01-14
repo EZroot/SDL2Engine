@@ -4,7 +4,7 @@ using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.Rendering
 {
-    public class CameraService : IServiceCameraService
+    public class CameraService : ICameraService
     {
         private readonly Dictionary<int, ICamera> _idToCamera;
         private readonly Dictionary<string, int> _nameToId; 

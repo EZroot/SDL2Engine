@@ -7,15 +7,15 @@ using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.Rendering
 {
-    internal class RenderService : IServiceRenderService
+    internal class RenderService : IRenderService
     {
-        private readonly IServiceSysInfo m_sysInfo;
-        private readonly IServiceWindowConfig m_windowConfig; // Replace with a renderer config if I need to
+        private readonly ISysInfo m_sysInfo;
+        private readonly IWindowConfig m_windowConfig; // Replace with a renderer config if I need to
 
         private IntPtr m_render;
         public IntPtr RenderPtr => m_render;
 
-        public RenderService(IServiceSysInfo sysInfo, IServiceWindowConfig windowConfig)
+        public RenderService(ISysInfo sysInfo, IWindowConfig windowConfig)
         {
             m_windowConfig = windowConfig ?? throw new ArgumentNullException(nameof(windowConfig));
             m_sysInfo = sysInfo ?? throw new ArgumentNullException(nameof(sysInfo));

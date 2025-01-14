@@ -22,14 +22,14 @@ namespace SDL2Engine.Core
         public enum ExampleEnum { OptionA, OptionB, OptionC };
         
         private readonly IServiceWindowService m_windowService;
-        private readonly IServiceRenderService m_renderService;
-        private readonly IServiceGuiRenderService m_guiRenderService;
-        private readonly IServiceGuiWindowBuilder m_guiWindowBuilder;
+        private readonly IRenderService m_renderService;
+        private readonly IGuiRenderService m_guiRenderService;
+        private readonly IGuiWindowBuilder m_guiWindowBuilder;
         private readonly IVariableBinder m_guiVariableBinder;
-        private readonly IServiceAssetManager m_assetManager;
-        private readonly IServiceAudioLoader m_audioLoader;
-        private readonly IServiceCameraService m_cameraService;
-        private readonly IServicePhysicsService m_physicsService;
+        private readonly IAssetService m_assetService;
+        private readonly IAudioLoaderService m_audioLoaderService;
+        private readonly ICameraService m_cameraService;
+        private readonly IPhysicsService m_physicsService;
         private readonly IServiceProvider m_serviceProvider;
         
         private IntPtr m_window, m_renderer;
@@ -44,14 +44,14 @@ namespace SDL2Engine.Core
         {
             m_serviceProvider = serviceProvider;
             m_windowService = m_serviceProvider.GetService<IServiceWindowService>();
-            m_renderService = m_serviceProvider.GetService<IServiceRenderService>();
-            m_guiRenderService = m_serviceProvider.GetService<IServiceGuiRenderService>();
-            m_guiWindowBuilder = m_serviceProvider.GetService<IServiceGuiWindowBuilder>();
-            m_assetManager = m_serviceProvider.GetService<IServiceAssetManager>();
+            m_renderService = m_serviceProvider.GetService<IRenderService>();
+            m_guiRenderService = m_serviceProvider.GetService<IGuiRenderService>();
+            m_guiWindowBuilder = m_serviceProvider.GetService<IGuiWindowBuilder>();
+            m_assetService = m_serviceProvider.GetService<IAssetService>();
             m_guiVariableBinder = m_serviceProvider.GetService<IVariableBinder>();
-            m_audioLoader = m_serviceProvider.GetService<IServiceAudioLoader>();
-            m_cameraService = m_serviceProvider.GetService<IServiceCameraService>();
-            m_physicsService = m_serviceProvider.GetService<IServicePhysicsService>();
+            m_audioLoaderService = m_serviceProvider.GetService<IAudioLoaderService>();
+            m_cameraService = m_serviceProvider.GetService<ICameraService>();
+            m_physicsService = m_serviceProvider.GetService<IPhysicsService>();
         }
 
         private void Initialize()
@@ -208,7 +208,7 @@ namespace SDL2Engine.Core
 
             disposed = true;
             
-            m_assetManager.Cleanup();
+            m_assetService.Cleanup();
             m_cameraService.Cleanup();
             m_guiRenderService.Dispose();
             

@@ -1,10 +1,10 @@
 using SDL2;
 using SDL2Engine.Core.Rendering.Interfaces;
-using static SDL2Engine.Core.Addressables.AssetManager;
+using static SDL2Engine.Core.Addressables.AssetService;
 
 namespace SDL2Engine.Core.Addressables.Interfaces
 {
-    public interface IServiceAssetManager
+    public interface IAssetService
     {
         int LoadSound(string path, AudioType audioType = AudioType.Wave);
         void PlaySound(int soundId, int volume = 128, bool isMusic = false);

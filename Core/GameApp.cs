@@ -25,21 +25,21 @@ public class GameApp
     {
         var services = new ServiceCollection();
 
-        services.AddSingleton<IServiceWindowConfig, WindowConfig>();
-        services.AddSingleton<IServiceSysInfo, SysInfo>();
+        services.AddSingleton<IWindowConfig, WindowConfig>();
+        services.AddSingleton<ISysInfo, SysInfo>();
 
         services.AddSingleton<IServiceWindowService, WindowService>();
-        services.AddSingleton<IServiceRenderService, RenderService>();
-        services.AddSingleton<IServicePhysicsService, PhysicsService>();
+        services.AddSingleton<IRenderService, RenderService>();
+        services.AddSingleton<IPhysicsService, PhysicsService>();
 
-        services.AddSingleton<IServiceGuiRenderService, ImGuiRenderService>();
-        services.AddSingleton<IServiceGuiWindowBuilder, ImGuiWindowBuilder>();
+        services.AddSingleton<IGuiRenderService, ImGuiRenderService>();
+        services.AddSingleton<IGuiWindowBuilder, ImGuiWindowBuilder>();
         services.AddSingleton<IVariableBinder, ImGuiVariableBinder>();
 
-        services.AddSingleton<IServiceAudioLoader, AudioLoader>();
-        services.AddSingleton<IServiceImageLoader, ImageLoader>();
-        services.AddSingleton<IServiceAssetManager, AssetManager>();
-        services.AddSingleton<IServiceCameraService, CameraService>();
+        services.AddSingleton<IAudioLoaderService, AudioLoaderService>();
+        services.AddSingleton<IImageLoaderService, ImageLoaderService>();
+        services.AddSingleton<IAssetService, AssetService>();
+        services.AddSingleton<ICameraService, CameraService>();
 
         var serviceProvider = services.BuildServiceProvider();
         

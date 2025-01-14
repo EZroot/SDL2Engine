@@ -10,7 +10,7 @@ using SDL2Engine.Core.Input;
 using static SDL2Engine.Core.GuiRenderer.GuiStyles.StyleHelper;
 namespace SDL2Engine.Core.GuiRenderer
 {
-    public class ImGuiRenderService : IServiceGuiRenderService
+    public class ImGuiRenderService : IGuiRenderService
     {
         private IntPtr m_window;
         private IntPtr m_renderer;

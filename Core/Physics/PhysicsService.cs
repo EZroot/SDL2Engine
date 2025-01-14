@@ -8,7 +8,7 @@ using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.Physics
 {
-    public class PhysicsService : IServicePhysicsService
+    public class PhysicsService : IPhysicsService
     {
         // 1 meter = 100 pixels
         private const float PPM = 100f;

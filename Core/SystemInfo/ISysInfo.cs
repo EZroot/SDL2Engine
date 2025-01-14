@@ -1,6 +1,6 @@
 namespace SDL2Engine.Core.CoreSystem.Configuration
 {
-    public interface IServiceSysInfo
+    public interface ISysInfo
     {
         public SDLRenderInfo SDLRenderInfo {get;}
         public void SetInfoCurrentDriver(string currentDriver);

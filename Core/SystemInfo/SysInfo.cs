@@ -4,7 +4,7 @@ namespace SDL2Engine.Core.CoreSystem.Configuration
     /// Purely for recording information about the system.
     /// Doesn't effect any functionality.
     /// </summary>
-    internal sealed class SysInfo : IServiceSysInfo
+    internal sealed class SysInfo : ISysInfo
     {
         private SDLRenderInfo m_sdlRenderInfo;
         public SDLRenderInfo SDLRenderInfo => m_sdlRenderInfo;
