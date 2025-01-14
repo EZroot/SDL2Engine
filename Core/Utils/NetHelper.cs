@@ -10,11 +10,15 @@ public static class NetHelper
     /// </summary>
     /// <param name="data">The received data.</param>
     /// <returns>Parsed NetworkMessage.</returns>
-    public static NetworkMessage ParseReceivedData(byte[] data)
+    public static NetworkMessage BytesToString(byte[] data)
     {
-        // Implement your actual parsing logic here.
-        // For demonstration, we'll assume the data is a UTF8 string.
-        string messageString = Encoding.UTF8.GetString(data);
+        var messageString = Encoding.UTF8.GetString(data);
         return new NetworkMessage { Data = data, Message = messageString };
+    }
+
+    public static NetworkMessage StringToBytes(string data)
+    {
+        var raw = Encoding.UTF8.GetBytes(data);
+        return new NetworkMessage { Data = raw, Message = data };
     }
 }

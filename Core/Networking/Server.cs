@@ -42,8 +42,9 @@ namespace SDL2Engine.Core.Networking
                 {
                     TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
                     var clientData = new ClientData(0, tcpClient.Client.RemoteEndPoint.ToString(), tcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
-                    EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.Connecting));
-                    var clientHandler = new ClientHandler(tcpClient);
+                    var clientHandler = new ClientHandler(tcpClient, this);
+                    EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.Connected));
+
                     if (_clients.TryAdd(tcpClient, clientHandler))
                     {
                         _ = clientHandler.HandleClientAsync(RemoveClient);
@@ -105,6 +106,25 @@ namespace SDL2Engine.Core.Networking
                 Debug.LogError("Failed to remove client from the client list.");
             }
         }
+        
+        /// <summary>
+        /// Broadcasts a message to all connected clients.
+        /// </summary>
+        /// <param name="message">The message to broadcast.</param>
+        public async Task BroadcastMessageAsync(string message)
+        {
+            var clientsList = _clients.Values.ToList();
+
+            for (int i = 0; i < clientsList.Count; i++)
+            {
+                byte[] data = NetHelper.StringToBytes($"{message}").Data;
+                var client = clientsList[i];
+                await client.SendDataAsync(data);
+            }
+
+            Debug.Log($"Broadcasted message to {_clients.Count} clients: {message}");
+        }
+
 
         /// <summary>
         /// Inner class to handle individual client communication.
@@ -112,11 +132,13 @@ namespace SDL2Engine.Core.Networking
         private class ClientHandler
         {
             private readonly TcpClient _tcpClient;
+            private readonly Server _server;
             private NetworkStream _networkStream;
             private CancellationTokenSource _cancellationTokenSource;
 
-            public ClientHandler(TcpClient tcpClient)
+            public ClientHandler(TcpClient tcpClient, Server server)
             {
+                _server = server;
                 _tcpClient = tcpClient;
                 _networkStream = _tcpClient.GetStream();
                 _cancellationTokenSource = new CancellationTokenSource();
@@ -148,9 +170,10 @@ namespace SDL2Engine.Core.Networking
 
                         EventHub.Raise(this, new OnServerMessageRecieved(new RawByteData(receivedData)));
                         
-                        // Reply to the client 
-                        var message = NetHelper.ParseReceivedData(receivedData);
-                        await SendDataAsync(Encoding.UTF8.GetBytes($"Echo: {message.Message}"));
+                        var messageBytes = NetHelper.BytesToString(receivedData);
+                        // var whisperMsg = NetHelper.StringToBytes("Server Whisper:>"+messageBytes.Message);
+                        // await SendDataAsync(whisperMsg.Data);
+                        await _server.BroadcastMessageAsync($"{messageBytes.Message}");
                     }
                 }
                 catch (OperationCanceledException)
