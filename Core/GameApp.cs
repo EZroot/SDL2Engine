@@ -4,6 +4,8 @@ using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.GuiRenderer;
 using SDL2Engine.Core.GuiRenderer.Interfaces;
+using SDL2Engine.Core.Networking;
+using SDL2Engine.Core.Networking.Interfaces;
 using SDL2Engine.Core.Physics;
 using SDL2Engine.Core.Physics.Interfaces;
 using SDL2Engine.Core.Rendering;
@@ -28,6 +30,11 @@ public class GameApp
         services.AddSingleton<IWindowConfig, WindowConfig>();
         services.AddSingleton<ISysInfo, SysInfo>();
 
+        services.AddSingleton<IAudioLoaderService, AudioLoaderService>();
+        services.AddSingleton<IImageLoaderService, ImageLoaderService>();
+        services.AddSingleton<IAssetService, AssetService>();
+        services.AddSingleton<ICameraService, CameraService>();
+        
         services.AddSingleton<IServiceWindowService, WindowService>();
         services.AddSingleton<IRenderService, RenderService>();
         services.AddSingleton<IPhysicsService, PhysicsService>();
@@ -35,11 +42,8 @@ public class GameApp
         services.AddSingleton<IGuiRenderService, ImGuiRenderService>();
         services.AddSingleton<IGuiWindowBuilder, ImGuiWindowBuilder>();
         services.AddSingleton<IVariableBinder, ImGuiVariableBinder>();
-
-        services.AddSingleton<IAudioLoaderService, AudioLoaderService>();
-        services.AddSingleton<IImageLoaderService, ImageLoaderService>();
-        services.AddSingleton<IAssetService, AssetService>();
-        services.AddSingleton<ICameraService, CameraService>();
+        
+        services.AddSingleton<INetworkService, NetworkService>();
 
         var serviceProvider = services.BuildServiceProvider();
         

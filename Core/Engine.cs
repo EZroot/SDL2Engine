@@ -39,7 +39,6 @@ namespace SDL2Engine.Core
         private bool disposed = false;
         private bool TEST_window_isopen = true;
 
-        // Constructor that takes IServiceProvider
         public Engine(IServiceProvider serviceProvider)
         {
             m_serviceProvider = serviceProvider;
@@ -125,9 +124,7 @@ namespace SDL2Engine.Core
 
                 ImGui.NewFrame();
                 game.RenderGui();
-                // m_guiRenderService.RenderFullScreenDockSpace();
                 RenderGUI();
-
                 SDL.SDL_RenderPresent(m_renderer);
             }
 

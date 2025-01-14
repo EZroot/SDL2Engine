@@ -17,8 +17,8 @@ namespace SDL2Engine.Core.Utils
         public static bool IsDebugMode = true;
         public static bool IsDebugModeWarnings = false;
         public static bool IsDebugModePollEvents = false;
-        public static bool IsDebugModeEventHub = true;
-        public static bool IsShowingMethodNames = true;
+        public static bool IsDebugModeEventHub = false;
+        public static bool IsShowingMethodNames = false;
 
         private static readonly List<LogEntry> _logEntries = new List<LogEntry>();
         private static readonly object _logLock = new object();
