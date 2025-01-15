@@ -120,23 +120,59 @@ namespace SDL2Engine.Core.Networking
         /// <param name="message">The message to broadcast.</param>
         public async Task BroadcastMessageAsync(string message)
         {
+            var messageBytes = Encoding.UTF8.GetBytes(message);
+            var protocolMessage = new ProtocolMessage
+            {
+                Type = DataType.Message,
+                Length = messageBytes.Length,
+                Payload = messageBytes
+            };
+
+            var dataToSend = protocolMessage.ToBytes();
             var clientsList = _clients.Values.ToList();
 
             foreach (var clientHandler in clientsList)
             {
                 try
                 {
-                    var data = NetHelper.StringToBytes($"{message}");
-                    await clientHandler.SendDataAsync(data.Data);
+                    await clientHandler.SendDataAsync(dataToSend);
                 }
                 catch (Exception ex)
                 {
                     var clientConnectionData = clientHandler.ClientConnectionData;
-                    Debug.LogError($"Error sending data to client {clientConnectionData.Id} {clientConnectionData.TcpClient.Client.RemoteEndPoint}: {ex.Message}");
+                    Debug.LogError($"Error sending message to client {clientConnectionData.Id} {clientConnectionData.TcpClient.Client.RemoteEndPoint}: {ex.Message}");
                 }
             }
 
             Debug.Log($"Broadcasted message to ({_clients.Count}) clients: <color=blue>{message}</color>");
+        }
+
+        public async Task BroadcastStreamDataAsync(byte[] data)
+        {
+            var protocolMessage = new ProtocolMessage
+            {
+                Type = DataType.Stream,
+                Length = data.Length,
+                Payload = data
+            };
+
+            var messageBytes = protocolMessage.ToBytes();
+            var clientsList = _clients.Values.ToList();
+
+            foreach (var clientHandler in clientsList)
+            {
+                try
+                {
+                    await clientHandler.SendDataAsync(messageBytes);
+                }
+                catch (Exception ex)
+                {
+                    var clientConnectionData = clientHandler.ClientConnectionData;
+                    Debug.LogError($"Error sending stream data to client {clientConnectionData.Id} {clientConnectionData.TcpClient.Client.RemoteEndPoint}: {ex.Message}");
+                }
+            }
+
+            Debug.Log($"Broadcasted stream data to ({_clients.Count}) clients.");
         }
 
         /// <summary>
@@ -163,30 +199,51 @@ namespace SDL2Engine.Core.Networking
             /// <param name="onDisconnect">Callback to invoke on disconnection.</param>
             public async Task HandleClientAsync(Action<ClientConnectionData> onDisconnect)
             {
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[4096];
 
                 try
                 {
                     while (!_cancellationTokenSource.Token.IsCancellationRequested)
                     {
-                        int bytesRead = await _networkStream.ReadAsync(buffer, 0, buffer.Length, _cancellationTokenSource.Token);
-
-                        if (bytesRead == 0)
+                        // Read the header first (8 bytes: 4 for type, 4 for length)
+                        int headerBytesRead = 0;
+                        while (headerBytesRead < 8)
                         {
-                            var clientData = new ClientData(ClientConnectionData.Id, ClientConnectionData.TcpClient.Client.RemoteEndPoint.ToString(), ClientConnectionData.TcpClient.Client.RemoteEndPoint.AddressFamily.ToString());
-                            EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.Disconnected));
-                            break;
+                            int read = await _networkStream.ReadAsync(buffer, headerBytesRead, 8 - headerBytesRead, _cancellationTokenSource.Token);
+                            if (read == 0)
+                                throw new Exception("Client disconnected");
+                            headerBytesRead += read;
+                        }
+                        var header = ProtocolMessage.FromBytes(buffer.Take(8).ToArray());
+                        DataType dataType = header.Type;
+                        int payloadLength = header.Length;
+
+                        byte[] payload = new byte[payloadLength];
+                        int payloadBytesRead = 0;
+                        while (payloadBytesRead < payloadLength)
+                        {
+                            int read = await _networkStream.ReadAsync(payload, payloadBytesRead, payloadLength - payloadBytesRead, _cancellationTokenSource.Token);
+                            if (read == 0)
+                                throw new Exception("Client disconnected during payload reception");
+                            payloadBytesRead += read;
                         }
 
-                        byte[] receivedData = new byte[bytesRead];
-                        Array.Copy(buffer, receivedData, bytesRead);
+                        switch (dataType)
+                        {
+                            case DataType.Message:
+                                string message = Encoding.UTF8.GetString(payload);
+                                EventHub.Raise(this, new OnServerMessageRecieved(new RawByteData(payload)));
+                                await _server.BroadcastMessageAsync(message);
+                                break;
 
-                        EventHub.Raise(this, new OnServerMessageRecieved(new RawByteData(receivedData)));
+                            case DataType.Stream:
+                                await ProcessStreamDataAsync(payload);
+                                break;
 
-                        var messageBytes = NetHelper.BytesToString(receivedData);
-                        // var whisperMsg = NetHelper.StringToBytes("Server Whisper:>" + messageBytes.Message);
-                        // await SendDataAsync(whisperMsg.Data);
-                        await _server.BroadcastMessageAsync($"{messageBytes.Message}");
+                            default:
+                                Debug.LogError("Unknown data type received.");
+                                break;
+                        }
                     }
                 }
                 catch (OperationCanceledException)
@@ -203,6 +260,19 @@ namespace SDL2Engine.Core.Networking
                     EventHub.Raise(this, new OnServerClientConnectionStatus(clientData, ClientStatus.Disconnected));
                     onDisconnect?.Invoke(ClientConnectionData);
                     await DisconnectAsync();
+                }
+            }
+            
+            private async Task ProcessStreamDataAsync(byte[] data)
+            {
+                try
+                {
+                    EventHub.Raise(this, new OnServerStreamDataReceived(new RawByteData(data)));
+                    await _server.BroadcastStreamDataAsync(data);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error processing stream data: {ex.Message}");
                 }
             }
 

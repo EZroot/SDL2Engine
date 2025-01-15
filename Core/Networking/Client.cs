@@ -85,20 +85,39 @@ namespace SDL2Engine.Core.Networking
                 throw;
             }
         }
-
+        /// <summary>
+        /// Processes incoming stream data from the server.
+        /// </summary>
+        /// <param name="data">The stream data payload.</param>
+        private void ProcessStreamData(byte[] data)
+        {
+            try
+            {
+                EventHub.Raise(this, new OnClientStreamDataReceived(new RawByteData(data)));
+                // _streamDataQueue.Enqueue(new RawByteData(data));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error processing stream data: {ex.Message}");
+            }
+        }
         /// <summary>
         /// Continuously receives data from the server.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to stop receiving.</param>
         public async Task ReceiveDataAsync(CancellationToken cancellationToken)
         {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[4096]; 
+            int bufferOffset = 0;
+            int expectedLength = 0;
+            DataType currentDataType = DataType.Message;
 
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    int bytesRead = await _networkStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+                    int bytesRead = await _networkStream.ReadAsync(buffer, bufferOffset, buffer.Length - bufferOffset,
+                        cancellationToken);
 
                     if (bytesRead == 0)
                     {
@@ -107,13 +126,72 @@ namespace SDL2Engine.Core.Networking
                         break;
                     }
 
-                    byte[] receivedData = new byte[bytesRead];
-                    Array.Copy(buffer, receivedData, bytesRead);
+                    bufferOffset += bytesRead;
+                    int processedBytes = 0;
 
-                    var message = ParseReceivedData(receivedData);
-                    _dataQueue.Enqueue(message);
-                    
-                    EventHub.Raise(this, new OnClientMessageRecieved(new RawByteData(receivedData)));
+                    while (true)
+                    {
+                        if (expectedLength == 0)
+                        {
+                            if (bufferOffset - processedBytes >= 8)
+                            {
+                                byte[] headerData = buffer.Skip(processedBytes).Take(8).ToArray();
+                                var protocolMessage = ProtocolMessage.FromBytes(headerData);
+                                currentDataType = protocolMessage.Type;
+                                expectedLength = protocolMessage.Length;
+                                processedBytes += 8;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        if (expectedLength > 0)
+                        {
+                            if (bufferOffset - processedBytes >= expectedLength)
+                            {
+                                byte[] payloadData = buffer.Skip(processedBytes).Take(expectedLength).ToArray();
+                                processedBytes += expectedLength;
+                                switch (currentDataType)
+                                {
+                                    case DataType.Message:
+                                        string message = Encoding.UTF8.GetString(payloadData);
+                                        var networkMessage = new NetworkMessage
+                                            { Data = payloadData, Message = message };
+                                        _dataQueue.Enqueue(networkMessage);
+                                        EventHub.Raise(this, new OnClientMessageRecieved(new RawByteData(payloadData)));
+                                        break;
+
+                                    case DataType.Stream:
+                                        ProcessStreamData(payloadData);
+                                        break;
+
+                                    default:
+                                        Debug.LogError("Unknown data type received.");
+                                        break;
+                                }
+
+                                expectedLength = 0;
+                                currentDataType = DataType.Message;
+                            }
+                            else
+                            {
+                                Debug.LogError("Not enough data for payload!");
+                                break;
+                            }
+                        }
+                    }
+
+                    if (processedBytes < bufferOffset)
+                    {
+                        Array.Copy(buffer, processedBytes, buffer, 0, bufferOffset - processedBytes);
+                        bufferOffset -= processedBytes;
+                    }
+                    else
+                    {
+                        bufferOffset = 0;
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -146,18 +224,6 @@ namespace SDL2Engine.Core.Networking
             {
                 Debug.LogError($"Error sending data: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Parses the received byte array into a NetworkMessage object.
-        /// </summary>
-        /// <param name="data">The received data.</param>
-        /// <returns>Parsed NetworkMessage.</returns>
-        private NetworkMessage ParseReceivedData(byte[] data)
-        {
-            // we'll assume the data is a UTF8 string.                                 
-            string messageString = Encoding.UTF8.GetString(data);
-            return new NetworkMessage { Data = data, Message = messageString };
         }
     }
 }
