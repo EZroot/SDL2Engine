@@ -14,6 +14,9 @@ public class AnimatedSprite : ISprite
     private float frameTime;  // Time each frame is displayed
     private float timeSinceLastFrame;
 
+    public int Width => frameWidth;
+    public int Height => frameHeight;
+    
     public AnimatedSprite(IntPtr texture, int frameWidth, int frameHeight, int totalFrames, float frameTime)
     {
         this.texture = texture;
@@ -51,10 +54,16 @@ public class AnimatedSprite : ISprite
         {
             x = (int)position.X,
             y = (int)position.Y,
-            w = frameWidth,
-            h = frameHeight
+            w = (int)(frameWidth * scale.X),
+            h = (int)(frameHeight * scale.Y)
         };
 
-        SDL.SDL_RenderCopy(renderer, texture, ref sourceRect, ref destRect);
+        SDL.SDL_Point center = new SDL.SDL_Point
+        {
+            x = destRect.w / 2,
+            y = destRect.h / 2
+        };
+
+        SDL.SDL_RenderCopyEx(renderer, texture, ref sourceRect, ref destRect, rotation, ref center, SDL.SDL_RendererFlip.SDL_FLIP_NONE);
     }
 }

@@ -71,26 +71,26 @@ namespace SDL2Engine.Core.Physics
         /// </summary>
         public void UpdatePhysics(float deltaTime)
         {
-            foreach (var gameObject in m_registeredObjects)
-            {
-                gameObject.PreviousPosition = gameObject.CurrentPosition;
-                gameObject.PreviousRotation = gameObject.CurrentRotation;
-            }
+            // foreach (var gameObject in m_registeredObjects)
+            // {
+            //     gameObject.PreviousPosition = gameObject.CurrentPosition;
+            //     gameObject.PreviousRotation = gameObject.CurrentRotation;
+            // }
 
             m_world.Step(deltaTime, velocityIterations: 8, positionIterations: 3);
 
-            foreach (var gameObject in m_registeredObjects)
-            {
-                if (gameObject.PhysicsBody != null)
-                {
-                    Body body = gameObject.PhysicsBody;
-                    Vector2 bodyPos = body.GetPosition();
-                    float bodyRot   = body.GetAngle();
-
-                    gameObject.CurrentPosition = bodyPos * PPM;
-                    gameObject.CurrentRotation = bodyRot;
-                }
-            }
+            // foreach (var gameObject in m_registeredObjects)
+            // {
+            //     if (gameObject.PhysicsBody != null)
+            //     {
+            //         Body body = gameObject.PhysicsBody;
+            //         Vector2 bodyPos = body.GetPosition();
+            //         float bodyRot   = body.GetAngle();
+            //
+            //         gameObject.Position = bodyPos * PPM;
+            //         gameObject.Rotation = bodyRot;
+            //     }
+            // }
         }
 
         /// <summary>
