@@ -21,7 +21,7 @@ namespace SDL2Engine.Core
 
         public enum ExampleEnum { OptionA, OptionB, OptionC };
         
-        private readonly IServiceWindowService m_windowService;
+        private readonly IWindowService m_windowService;
         private readonly IRenderService m_renderService;
         private readonly IGuiRenderService m_guiRenderService;
         private readonly IGuiWindowBuilder m_guiWindowBuilder;
@@ -42,7 +42,7 @@ namespace SDL2Engine.Core
         public Engine(IServiceProvider serviceProvider)
         {
             m_serviceProvider = serviceProvider;
-            m_windowService = m_serviceProvider.GetService<IServiceWindowService>();
+            m_windowService = m_serviceProvider.GetService<IWindowService>();
             m_renderService = m_serviceProvider.GetService<IRenderService>();
             m_guiRenderService = m_serviceProvider.GetService<IGuiRenderService>();
             m_guiWindowBuilder = m_serviceProvider.GetService<IGuiWindowBuilder>();

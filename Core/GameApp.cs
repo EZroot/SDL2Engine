@@ -35,7 +35,7 @@ public class GameApp
         
         services.AddSingleton<ICameraService, CameraService>();
         
-        services.AddSingleton<IServiceWindowService, WindowService>();
+        services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<IRenderService, RenderService>();
         services.AddSingleton<IPhysicsService, PhysicsService>();
 

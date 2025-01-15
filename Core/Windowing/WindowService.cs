@@ -8,7 +8,7 @@ using SDL2Engine.Events;
 
 namespace SDL2Engine.Core.Windowing
 {
-    internal class WindowService : IServiceWindowService
+    internal class WindowService : IWindowService
     {
         private readonly IWindowConfig m_windowConfig;
         private readonly IImageService m_imageService;
