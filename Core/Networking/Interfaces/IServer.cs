@@ -4,7 +4,8 @@ namespace SDL2Engine.Core.Networking.Interfaces;
 
 public interface IServer
 {
-    public List<ClientConnectionData> Connections { get; }
+    bool IsServer { get; }
+    List<ClientConnectionData> Connections { get; }
     Task Start(int port);
     Task Stop();
 }

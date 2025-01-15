@@ -23,6 +23,7 @@ namespace SDL2Engine.Core.Networking
         private readonly ConcurrentDictionary<int, ClientHandler> _clients;
 
         public List<ClientConnectionData> Connections => _clients.Values.Select(handler => handler.ClientConnectionData).ToList();
+        public bool IsServer => _isRunning;
 
         public Server()
         {
@@ -228,10 +229,18 @@ namespace SDL2Engine.Core.Networking
                             payloadBytesRead += read;
                         }
 
+                        var message = "";
                         switch (dataType)
                         {
+                            case DataType.None:
+                                Debug.Log("<color=yellow>NO PROTOCOL SET FOR RECIEVING MESSAGE!</color> Defaulting to DataType.Message");
+                                message = Encoding.UTF8.GetString(payload);
+                                EventHub.Raise(this, new OnServerMessageRecieved(new RawByteData(payload)));
+                                await _server.BroadcastMessageAsync(message);
+                                break;
+                            
                             case DataType.Message:
-                                string message = Encoding.UTF8.GetString(payload);
+                                message = Encoding.UTF8.GetString(payload);
                                 EventHub.Raise(this, new OnServerMessageRecieved(new RawByteData(payload)));
                                 await _server.BroadcastMessageAsync(message);
                                 break;

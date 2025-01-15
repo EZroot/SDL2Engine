@@ -1,5 +1,6 @@
 public enum DataType
 {
+    None = 0,
     Message = 1,
     Stream = 2
 }

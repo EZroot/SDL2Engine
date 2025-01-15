@@ -18,12 +18,28 @@ namespace SDL2Engine.Core.Networking
         private TcpClient _tcpClient;
         private NetworkStream _networkStream;
         private CancellationTokenSource _cancellationTokenSource;
-
+        private bool _isConnected;
+        public bool IsConnected => _isConnected;
         public Client(NetworkDataQueue dataQueue)
         {
             _dataQueue = dataQueue;
+            EventHub.Subscribe<OnClientStatusChanged>(OnClientStatusChanged);
         }
-
+        
+        private void OnClientStatusChanged(object sender, OnClientStatusChanged e)
+        {
+            
+            switch (e.ClientStatus)
+            {
+                case ClientStatus.Connected:
+                    _isConnected = true;
+                    break;
+                case ClientStatus.Disconnected:
+                    _isConnected = false;
+                    break;
+            }
+        }
+        
         /// <summary>
         /// Connects to the server at the specified address and port.
         /// </summary>
@@ -39,9 +55,7 @@ namespace SDL2Engine.Core.Networking
                 await _tcpClient.ConnectAsync(address, port);
                 _networkStream = _tcpClient.GetStream();
                 EventHub.Raise(this, new OnClientStatusChanged(ClientStatus.Connected));
-
                 _cancellationTokenSource = new CancellationTokenSource();
-
                 _ = ReceiveDataAsync(_cancellationTokenSource.Token);
             }
             catch (Exception ex)
@@ -153,11 +167,22 @@ namespace SDL2Engine.Core.Networking
                             {
                                 byte[] payloadData = buffer.Skip(processedBytes).Take(expectedLength).ToArray();
                                 processedBytes += expectedLength;
+                                var message = "";
+                                var networkMessage = new NetworkMessage();
                                 switch (currentDataType)
                                 {
+                                    case DataType.None:
+                                        Debug.Log("<color=yellow>NO PROTOCOL SET FOR RECIEVING MESSAGE!</color> Defaulting to DataType.Message");
+                                        message = Encoding.UTF8.GetString(payloadData);
+                                        networkMessage = new NetworkMessage
+                                            { Data = payloadData, Message = message };
+                                        _dataQueue.Enqueue(networkMessage);
+                                        EventHub.Raise(this, new OnClientMessageRecieved(new RawByteData(payloadData)));
+                                        break;
+                                    
                                     case DataType.Message:
-                                        string message = Encoding.UTF8.GetString(payloadData);
-                                        var networkMessage = new NetworkMessage
+                                        message = Encoding.UTF8.GetString(payloadData);
+                                        networkMessage = new NetworkMessage
                                             { Data = payloadData, Message = message };
                                         _dataQueue.Enqueue(networkMessage);
                                         EventHub.Raise(this, new OnClientMessageRecieved(new RawByteData(payloadData)));
