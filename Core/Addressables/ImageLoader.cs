@@ -3,9 +3,9 @@ using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.Utils;
 namespace SDL2Engine.Core.Addressables
 {
-    public class ImageLoaderService : IImageLoaderService
+    public class ImageLoader : IImageLoader
     {
-        public ImageLoaderService()
+        public ImageLoader()
         {
             Initialize();
         }

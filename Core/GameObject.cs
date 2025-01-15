@@ -43,7 +43,7 @@ public class GameObject
     /// <summary>
     /// Render Gameobject
     /// </summary>
-    public virtual void Render(nint renderer, IAssetService assetManager, ICameraService cameraService = null)
+    public virtual void Render(nint renderer, IImageService imageService, ICameraService cameraService = null)
     {
         if (TextureId == 0)
         {
@@ -73,7 +73,7 @@ public class GameObject
             var camera = cameraService.GetActiveCamera();
             if (camera != null)
             {
-                assetManager.DrawTextureWithRotation(renderer, TextureId, ref destRect, Rotation, ref center, camera);
+                imageService.DrawTextureWithRotation(renderer, TextureId, ref destRect, Rotation, ref center, camera);
             }
             else
             {
@@ -82,7 +82,7 @@ public class GameObject
         }
         else
         {
-            assetManager.DrawTextureWithRotation(renderer, TextureId, ref destRect, Rotation, ref center);
+            imageService.DrawTextureWithRotation(renderer, TextureId, ref destRect, Rotation, ref center);
         }
     }
 

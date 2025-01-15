@@ -30,9 +30,9 @@ public class GameApp
         services.AddSingleton<IWindowConfig, WindowConfig>();
         services.AddSingleton<ISysInfo, SysInfo>();
 
-        services.AddSingleton<IAudioLoaderService, AudioLoaderService>();
-        services.AddSingleton<IImageLoaderService, ImageLoaderService>();
-        services.AddSingleton<IAssetService, AssetService>();
+        services.AddSingleton<IImageService, ImageService>();
+        services.AddSingleton<IAudioService, AudioService>();
+        
         services.AddSingleton<ICameraService, CameraService>();
         
         services.AddSingleton<IServiceWindowService, WindowService>();

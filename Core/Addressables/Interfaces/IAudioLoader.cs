@@ -1,8 +1,8 @@
-using static SDL2Engine.Core.Addressables.AudioLoaderService;
+using static SDL2Engine.Core.Addressables.AudioLoader;
 
 namespace SDL2Engine.Core.Addressables.Interfaces
 {
-    public interface IAudioLoaderService
+    public interface IAudioLoader
     {
         IReadOnlyDictionary<string, FrequencyBand> FrequencyBands { get; }
         IntPtr LoadAudio(string path, AudioType audioType = AudioType.Wave);

@@ -26,8 +26,8 @@ namespace SDL2Engine.Core
         private readonly IGuiRenderService m_guiRenderService;
         private readonly IGuiWindowBuilder m_guiWindowBuilder;
         private readonly IVariableBinder m_guiVariableBinder;
-        private readonly IAssetService m_assetService;
-        private readonly IAudioLoaderService m_audioLoaderService;
+        private readonly IAudioService m_audioService;
+        private readonly IImageService m_imageService;
         private readonly ICameraService m_cameraService;
         private readonly IPhysicsService m_physicsService;
         private readonly IServiceProvider m_serviceProvider;
@@ -46,9 +46,9 @@ namespace SDL2Engine.Core
             m_renderService = m_serviceProvider.GetService<IRenderService>();
             m_guiRenderService = m_serviceProvider.GetService<IGuiRenderService>();
             m_guiWindowBuilder = m_serviceProvider.GetService<IGuiWindowBuilder>();
-            m_assetService = m_serviceProvider.GetService<IAssetService>();
+            m_audioService = m_serviceProvider.GetService<IAudioService>();
+            m_imageService = m_serviceProvider.GetService<IImageService>();
             m_guiVariableBinder = m_serviceProvider.GetService<IVariableBinder>();
-            m_audioLoaderService = m_serviceProvider.GetService<IAudioLoaderService>();
             m_cameraService = m_serviceProvider.GetService<ICameraService>();
             m_physicsService = m_serviceProvider.GetService<IPhysicsService>();
         }
@@ -205,7 +205,9 @@ namespace SDL2Engine.Core
 
             disposed = true;
             
-            m_assetService.Cleanup();
+            m_audioService.Cleanup();
+            m_imageService.Cleanup();
+            
             m_cameraService.Cleanup();
             m_guiRenderService.Dispose();
             

@@ -1,105 +1,30 @@
-using SDL2;
-using SDL2Engine.Core.Addressables.Interfaces;
-using SDL2Engine.Core.Utils;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
+using SDL2;
+using SDL2Engine.Core.Addressables.Data;
+using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Utils;
 
-namespace SDL2Engine.Core.Addressables
+namespace SDL2Engine.Core.Addressables;
+
+public class ImageService : IImageService
 {
-    public class AssetService : IAssetService
-    {
-        private readonly IImageLoaderService m_imageLoaderService;
-        private readonly IAudioLoaderService m_audioLoaderService;
+        private readonly IImageLoader m_imageLoader;
         private readonly Dictionary<int, TextureData> _idToTexture;
         private readonly Dictionary<string, int> _pathToId;
         private int _nextId;
-        private readonly Dictionary<int, IntPtr> _idToSound;
-        private readonly Dictionary<string, int> _pathToSoundId;
-        private int _nextSoundId;
-        public AssetService(IImageLoaderService imageLoader, IAudioLoaderService audioLoader)
+        public ImageService()
         {
             _idToTexture = new Dictionary<int, TextureData>();
             _pathToId = new Dictionary<string, int>();
             _nextId = 1;
 
-            _idToSound = new Dictionary<int, IntPtr>();
-            _pathToSoundId = new Dictionary<string, int>();
-            _nextSoundId = 1;
-
-            m_imageLoaderService = imageLoader;
-            m_audioLoaderService = audioLoader;
+            m_imageLoader = new ImageLoader();
         }
 
-        /// <summary>
-        /// Load and return a sound pointer. If the sound is already loaded, return the existing pointer.
-        /// </summary>
-        /// <param name="path">File path to sound e.g., resources/sound/song.wav</param>
-        /// <param name="audioType">Type of audio (default is Wave)</param>
-        /// <returns>Unique sound ID</returns>
-        public int LoadSound(string path, AudioType audioType = AudioType.Wave)
+        public IntPtr LoadImageRaw(string path)
         {
-            if (_pathToSoundId.TryGetValue(path, out int existingSoundId))
-            {
-                Debug.Log($"Sound already loaded: {path} with ID {existingSoundId}");
-                return existingSoundId;
-            }
-
-            IntPtr sound = m_audioLoaderService.LoadAudio(path, audioType);
-            if (sound == IntPtr.Zero)
-            {
-                Debug.LogError($"Failed to load sound: {path}");
-                return -1;
-            }
-
-            int soundId = _nextSoundId++;
-            _idToSound[soundId] = sound;
-            _pathToSoundId[path] = soundId;
-            return soundId;
-        }
-
-        /// <summary>
-        /// Play a sound by its unique sound ID.
-        /// </summary>
-        /// <param name="soundId">Unique sound ID</param>
-        /// <param name="volume">Volume level (0-128)</param>
-        /// <param name="isMusic">Whether the sound is music</param>
-        public void PlaySound(int soundId, int volume = 128, bool isMusic = false)
-        {
-            if (!_idToSound.TryGetValue(soundId, out IntPtr soundEffect))
-            {
-                Debug.LogError($"Sound ID {soundId} not found.");
-                return;
-            }
-
-            if (isMusic)
-                m_audioLoaderService.PlayMusic(soundEffect, volume: volume);
-            else
-                m_audioLoaderService.PlaySoundEffect(soundEffect, volume: volume);
-        }
-
-        /// <summary>
-        /// Unload a sound by its unique sound ID.
-        /// </summary>
-        /// <param name="soundId">Unique sound ID</param>
-        public void UnloadSound(int soundId)
-        {
-            if (_idToSound.TryGetValue(soundId, out IntPtr sound))
-            {
-                SDL_mixer.Mix_FreeChunk(sound);
-                _idToSound.Remove(soundId);
-
-                string path = _pathToSoundId.FirstOrDefault(x => x.Value == soundId).Key;
-                if (path != null)
-                    _pathToSoundId.Remove(path);
-
-                Debug.Log($"Sound Unloaded: ID={soundId}, Path={path}");
-            }
-            else
-            {
-                Debug.LogWarning($"Attempted to unload non-existent sound ID: {soundId}");
-            }
+            return m_imageLoader.LoadImage(path);
         }
 
         /// <summary>
@@ -117,7 +42,7 @@ namespace SDL2Engine.Core.Addressables
                 return _idToTexture[existingId];
             }
 
-            IntPtr surface = m_imageLoaderService.LoadImage(path);
+            IntPtr surface = m_imageLoader.LoadImage(path);
             if (surface == IntPtr.Zero)
             {
                 Debug.Throw<ArgumentNullException>(new ArgumentNullException(), $"Failed to load image: {path}");
@@ -253,17 +178,9 @@ namespace SDL2Engine.Core.Addressables
                 SDL.SDL_DestroyTexture(textureData.Texture);
             }
             
-            foreach (var sound in _idToSound.Values)
-            {
-                SDL_mixer.Mix_FreeChunk(sound);
-            }
-            
             _idToTexture.Clear();
             _pathToId.Clear();
-            _idToSound.Clear();
-            _pathToSoundId.Clear();
 
-            SDL_mixer.Mix_CloseAudio();
             SDL_image.IMG_Quit();
 
             Debug.Log("AssetManager Cleanup Completed.");
@@ -300,22 +217,5 @@ namespace SDL2Engine.Core.Addressables
             return transformedRect;
         }
 
-        public class TextureData
-        {
-            public int Id { get; }
-            public IntPtr Texture { get; }
-            public int Width { get; }
-            public int Height { get; }
-            public SDL.SDL_Rect SrcRect { get; private set; }
 
-            public TextureData(int id, IntPtr texture, int width, int height, SDL.SDL_Rect srcRect)
-            {
-                Id = id;
-                Texture = texture;
-                Width = width;
-                Height = height;
-                SrcRect = srcRect;
-            }
-        }
-    }
 }

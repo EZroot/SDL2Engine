@@ -7,7 +7,7 @@ using System.Numerics;
 
 namespace SDL2Engine.Core.Addressables
 {
-    public class AudioLoaderService : IAudioLoaderService
+    public class AudioLoader : IAudioLoader
     {
         public class FrequencyBand
         {
@@ -32,7 +32,7 @@ namespace SDL2Engine.Core.Addressables
 
         private readonly object _lock = new object();
 
-        public AudioLoaderService()
+        public AudioLoader()
         {
             var startFrequency = 0;
             var frequencyStep = 25;
