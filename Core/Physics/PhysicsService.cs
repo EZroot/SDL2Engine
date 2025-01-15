@@ -71,50 +71,8 @@ namespace SDL2Engine.Core.Physics
         /// </summary>
         public void UpdatePhysics(float deltaTime)
         {
-            // foreach (var gameObject in m_registeredObjects)
-            // {
-            //     gameObject.PreviousPosition = gameObject.CurrentPosition;
-            //     gameObject.PreviousRotation = gameObject.CurrentRotation;
-            // }
-
             m_world.Step(deltaTime, velocityIterations: 8, positionIterations: 3);
-
-            // foreach (var gameObject in m_registeredObjects)
-            // {
-            //     if (gameObject.PhysicsBody != null)
-            //     {
-            //         Body body = gameObject.PhysicsBody;
-            //         Vector2 bodyPos = body.GetPosition();
-            //         float bodyRot   = body.GetAngle();
-            //
-            //         gameObject.Position = bodyPos * PPM;
-            //         gameObject.Rotation = bodyRot;
-            //     }
-            // }
         }
-
-        /// <summary>
-        /// Interpolate between previous/current for smooth rendering.
-        /// </summary>
-        // public void InterpolateObjects(float alpha)
-        // {
-        //     foreach (var gameObject in m_registeredObjects)
-        //     {
-        //         Vector2 prevPos = gameObject.PreviousPosition;
-        //         Vector2 currPos = gameObject.CurrentPosition;
-        //         Vector2 interpolatedPos = new Vector2(
-        //             prevPos.X + (currPos.X - prevPos.X) * alpha,
-        //             prevPos.Y + (currPos.Y - prevPos.Y) * alpha
-        //         );
-        //
-        //         float prevRot = gameObject.PreviousRotation;
-        //         float currRot = gameObject.CurrentRotation;
-        //         float interpolatedRot = prevRot + (currRot - prevRot) * alpha;
-        //
-        //         gameObject.Position = interpolatedPos;
-        //         gameObject.Rotation = interpolatedRot;
-        //     }
-        // }
 
         /// <summary>
         /// Create static bodies around the window edges.
