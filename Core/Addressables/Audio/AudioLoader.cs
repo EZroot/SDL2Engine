@@ -4,6 +4,8 @@ using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.Utils;
 using MathNet.Numerics.IntegralTransforms;
 using System.Numerics;
+using SDL2Engine.Events;
+using SDL2Engine.Events.EventData.Audio;
 
 namespace SDL2Engine.Core.Addressables
 {
@@ -27,7 +29,8 @@ namespace SDL2Engine.Core.Addressables
 
         private SDL_mixer.Mix_EffectFunc_t _audioEffectDelegate;
         private SDL_mixer.Mix_EffectDone_t _effectDoneDelegate;
-
+        private SDL_mixer.MusicFinishedDelegate _musicFinishedDelegate; // Added delegate field
+        
         public IReadOnlyDictionary<string, FrequencyBand> FrequencyBands => _frequencyBands;
 
         private readonly object _lock = new object();
@@ -76,80 +79,145 @@ namespace SDL2Engine.Core.Addressables
             
             _audioEffectDelegate = AudioProcessor;
             _effectDoneDelegate = AudioProcessorDone;
+            _musicFinishedDelegate = OnMusicFinished;
+            
+            SDL_mixer.Mix_HookMusicFinished(_musicFinishedDelegate);
+
             Initialize();
         }
 
         private void Initialize()
         {
-            if (SDL_mixer.Mix_OpenAudio(44100, SDL.AUDIO_S16SYS, 2, 2048) < 0)
+            try
             {
-                Debug.LogError("SDL_mixer could not initialize! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
-                return;
+                if (SDL_mixer.Mix_OpenAudio(44100, SDL.AUDIO_S16SYS, 2, 2048) < 0)
+                {
+                    Debug.LogError("SDL_mixer could not initialize! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
+                    return;
+                }
+
+                SDL_mixer.Mix_AllocateChannels(16);
             }
-            SDL_mixer.Mix_AllocateChannels(16);
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
+
             Debug.Log("<color=green> Successfully initialized MIX_OPENAUDIO() with (16) Channels</color>");
         }
 
-        public IntPtr LoadAudio(string path, AudioType audioType = AudioType.Wave)
+        /// <summary>
+        /// Loads an audio file
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="audioType"></param>
+        /// <returns>loaded sound pointer</returns>
+        public nint LoadAudio(string path, AudioType audioType = AudioType.Wave)
         {
-            IntPtr soundEffect = IntPtr.Zero;
-            switch (audioType)
-            {
-                case AudioType.Wave:
-                    soundEffect = SDL_mixer.Mix_LoadWAV(path);
-                    break;
-                case AudioType.Music:
-                    soundEffect = SDL_mixer.Mix_LoadMUS(path);
-                    break;
-                default:
-                    Debug.LogError("Unsupported AudioType: " + audioType);
-                    break;
-            }
 
-            if (soundEffect == IntPtr.Zero)
+            nint soundEffect = IntPtr.Zero;
+            try
             {
-                Debug.LogError("Failed to load sound effect! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
-                return IntPtr.Zero;
+                switch (audioType)
+                {
+                    case AudioType.Wave:
+                        soundEffect = SDL_mixer.Mix_LoadWAV(path);
+                        break;
+                    case AudioType.Music:
+                        soundEffect = SDL_mixer.Mix_LoadMUS(path);
+                        break;
+                    default:
+                        Debug.LogError("Unsupported AudioType: " + audioType);
+                        break;
+                }
+
+                if (soundEffect == IntPtr.Zero)
+                {
+                    Debug.LogError("Failed to load sound effect! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
+                    return IntPtr.Zero;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
             }
 
             Debug.Log("<color=green>Raw Audio Loaded:</color> " + path);
             return soundEffect;
         }
 
-        public void PlaySoundEffect(IntPtr soundEffect, int channel = -1, int loops = 0, int volume = 128)
+        /// <summary>
+        /// Plays a sound effect on an available channel
+        /// </summary>
+        /// <param name="soundEffect"></param>
+        /// <param name="channel"></param>
+        /// <param name="loops"></param>
+        /// <param name="volume"></param>
+        /// <returns>sound channel</returns>
+        public nint PlaySoundEffect(IntPtr soundEffect, int channel = -1, int loops = 0, int volume = 128)
         {
-            SDL_mixer.Mix_VolumeChunk(soundEffect, volume);
-            int playingChannel = SDL_mixer.Mix_PlayChannel(channel, soundEffect, loops);
+            int playingChannel = 0;
+            try
+            {
+                SDL_mixer.Mix_VolumeChunk(soundEffect, volume);
+                playingChannel = SDL_mixer.Mix_PlayChannel(channel, soundEffect, loops);
 
-            if (playingChannel != -1)
-            {
-                RegisterAudioEffect(playingChannel);
+                if (playingChannel != -1)
+                {
+                    RegisterAudioEffect(playingChannel);
+                }
+                else
+                {
+                    Debug.LogError("Failed to play sound effect! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
+                }
             }
-            else
+            catch (Exception e)
             {
-                Debug.LogError("Failed to play sound effect! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
+                
             }
+
+            return playingChannel;
         }
 
-        public void PlayMusic(IntPtr music, int loops = -1, int volume = 128)
+        /// <summary>
+        /// Plays music on a dedicated music channel
+        /// </summary>
+        /// <param name="music"></param>
+        /// <param name="loops"></param>
+        /// <param name="volume"></param>
+        public void PlayMusic(nint music, int loops = -1, int volume = 128)
         {
-            SDL_mixer.Mix_VolumeMusic(volume);
-            if (SDL_mixer.Mix_PlayMusic(music, loops) == -1)
-            {
-                Debug.LogError("Failed to play music! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
-            }
+            // try
+            // {
+                // SDL_mixer.Mix_VolumeMusic(volume);
+                if (SDL_mixer.Mix_PlayMusic(music, loops) == -1)
+                {
+                    Debug.LogError("Failed to play music! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
+                }
+            // }
+            // catch (Exception e)
+            // {
+            //     Debug.LogError(e.Message);
+            // }
         }
 
         public void RegisterAudioEffect(int channel)
         {
-            int result = SDL_mixer.Mix_RegisterEffect(channel, _audioEffectDelegate, _effectDoneDelegate, IntPtr.Zero);
-            if (result == 0)
+            try
             {
-                Debug.LogError("Failed to register audio effect! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
+                int result = SDL_mixer.Mix_RegisterEffect(channel, _audioEffectDelegate, _effectDoneDelegate, IntPtr.Zero);
+                if (result == 0)
+                {
+                    Debug.LogError("Failed to register audio effect! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
+                }
+                else
+                {
+                    Debug.Log("Audio effect registered successfully!");
+                }
             }
-            else
+            catch (Exception e)
             {
-                Debug.Log("Audio effect registered successfully!");
+                Debug.LogError(e.Message);
             }
         }
 
@@ -184,70 +252,85 @@ namespace SDL2Engine.Core.Addressables
 
         private void AudioProcessor(int channel, IntPtr stream, int length, IntPtr userData)
         {
-            byte[] audioBytes = new byte[length];
-            Marshal.Copy(stream, audioBytes, 0, length);
-
-            int sampleCount = length / 2; // 16-bit audio
-            Complex[] fftBuffer = new Complex[sampleCount];
-
-            for (int i = 0; i < sampleCount; i++)
+            try
             {
-                short sample = BitConverter.ToInt16(audioBytes, i * 2);
-                fftBuffer[i] = new Complex(sample / 32768.0, 0);
-            }
+                byte[] audioBytes = new byte[length];
+                Marshal.Copy(stream, audioBytes, 0, length);
 
-            ApplyHannWindow(fftBuffer);
-            Fourier.Forward(fftBuffer, FourierOptions.Matlab);
+                int sampleCount = length / 2; // 16-bit audio
+                Complex[] fftBuffer = new Complex[sampleCount];
 
-            double sampleRate = 44100.0;
-            lock (_lock) 
-            {
-                foreach (var band in _frequencyBands.Values)
+                for (int i = 0; i < sampleCount; i++)
                 {
-                    band.Amplitude = 0f;
+                    short sample = BitConverter.ToInt16(audioBytes, i * 2);
+                    fftBuffer[i] = new Complex(sample / 32768.0, 0);
                 }
 
-                double totalAmplitude = 0.0;
+                ApplyHannWindow(fftBuffer);
+                Fourier.Forward(fftBuffer, FourierOptions.Matlab);
 
-                for (int i = 0; i < fftBuffer.Length / 2; i++)
-                {
-                    double magnitude = fftBuffer[i].Magnitude;
-                    double frequency = i * sampleRate / fftBuffer.Length;
-
-                    foreach (var kvp in _frequencyBands)
-                    {
-                        var band = kvp.Value;
-                        if (frequency >= band.LowerBound && frequency < band.UpperBound)
-                        {
-                            band.Amplitude += (float)magnitude;
-                            break;
-                        }
-                    }
-
-                    totalAmplitude += magnitude;
-                }
-
-                if (totalAmplitude > 0)
+                double sampleRate = 44100.0;
+                lock (_lock)
                 {
                     foreach (var band in _frequencyBands.Values)
                     {
-                        band.Amplitude = (float)(band.Amplitude / totalAmplitude);
+                        band.Amplitude = 0f;
                     }
-                }
 
-                // string amplitudeLog = "Frequency Amplitudes: ";
-                // foreach (var kvp in _frequencyBands)
-                // {
-                //     amplitudeLog += $"{kvp.Key}: {kvp.Value.Amplitude:F2} ";
-                // }
-                // Debug.Log(amplitudeLog);
+                    double totalAmplitude = 0.0;
+
+                    for (int i = 0; i < fftBuffer.Length / 2; i++)
+                    {
+                        double magnitude = fftBuffer[i].Magnitude;
+                        double frequency = i * sampleRate / fftBuffer.Length;
+
+                        foreach (var kvp in _frequencyBands)
+                        {
+                            var band = kvp.Value;
+                            if (frequency >= band.LowerBound && frequency < band.UpperBound)
+                            {
+                                band.Amplitude += (float)magnitude;
+                                break;
+                            }
+                        }
+
+                        totalAmplitude += magnitude;
+                    }
+
+                    if (totalAmplitude > 0)
+                    {
+                        foreach (var band in _frequencyBands.Values)
+                        {
+                            band.Amplitude = (float)(band.Amplitude / totalAmplitude);
+                        }
+                    }
+
+                    // string amplitudeLog = "Frequency Amplitudes: ";
+                    // foreach (var kvp in _frequencyBands)
+                    // {
+                    //     amplitudeLog += $"{kvp.Key}: {kvp.Value.Amplitude:F2} ";
+                    // }
+                    // Debug.Log(amplitudeLog);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
             }
         }
 
         private void AudioProcessorDone(int channel, IntPtr userData)
         {
             Debug.Log($"Audio processing done on channel {channel}.");
+            EventHub.Raise(this, new OnAudioProcessFinished());
         }
+
+        private void OnMusicFinished()
+        {
+            Debug.Log("Music finished playing.");
+            EventHub.Raise(this, new OnMusicFinishedPlaying());
+        }
+
 
         private void ApplyHannWindow(Complex[] buffer)
         {

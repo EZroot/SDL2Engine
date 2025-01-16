@@ -8,16 +8,16 @@ namespace SDL2Engine.Core.Addressables;
 public class AudioService : IAudioService
 {
     private readonly IAudioLoader m_audioLoader;
-    private readonly Dictionary<int, IntPtr> _idToSound;
-    private readonly Dictionary<string, int> _pathToSoundId;
+    private readonly Dictionary<nint, nint> _idToSound;
+    private readonly Dictionary<string, nint> _pathToSoundId;
     private int _nextSoundId;
 
     public IReadOnlyDictionary<string, AudioLoader.FrequencyBand> FrequencyBands => m_audioLoader.FrequencyBands;
 
     public AudioService()
     {
-        _idToSound = new Dictionary<int, IntPtr>();
-        _pathToSoundId = new Dictionary<string, int>();
+        _idToSound = new Dictionary<nint, nint>();
+        _pathToSoundId = new Dictionary<string, nint>();
         _nextSoundId = 1;
 
         m_audioLoader = new AudioLoader();
@@ -29,9 +29,9 @@ public class AudioService : IAudioService
     /// <param name="path">File path to sound e.g., resources/sound/song.wav</param>
     /// <param name="audioType">Type of audio (default is Wave)</param>
     /// <returns>Unique sound ID</returns>
-    public int LoadSound(string path, AudioType audioType = AudioType.Wave)
+    public nint LoadSound(string path, AudioType audioType = AudioType.Wave)
     {
-        if (_pathToSoundId.TryGetValue(path, out int existingSoundId))
+        if (_pathToSoundId.TryGetValue(path, out nint existingSoundId))
         {
             Debug.Log($"Sound already loaded: {path} with ID {existingSoundId}");
             return existingSoundId;
@@ -51,32 +51,44 @@ public class AudioService : IAudioService
     }
 
     /// <summary>
-    /// Play a sound by its unique sound ID.
+    /// Plays a sound effect on an available channel
     /// </summary>
-    /// <param name="soundId">Unique sound ID</param>
-    /// <param name="volume">Volume level (0-128)</param>
-    /// <param name="isMusic">Whether the sound is music</param>
-    public void PlaySound(int soundId, int volume = 128, bool isMusic = false)
+    /// <param name="soundEffect"></param>
+    /// <param name="volume"></param>
+    /// <returns>sound channel</returns>
+    public nint PlaySound(nint soundId, int volume = 128)
     {
         if (!_idToSound.TryGetValue(soundId, out IntPtr soundEffect))
         {
             Debug.LogError($"Sound ID {soundId} not found.");
-            return;
+            return 0;
         }
 
-        if (isMusic)
-            m_audioLoader.PlayMusic(soundEffect, volume: volume);
-        else
-            m_audioLoader.PlaySoundEffect(soundEffect, volume: volume);
+        try
+        {
+            var soundPtr = m_audioLoader.PlaySoundEffect(soundEffect, volume: volume);
+            return soundPtr;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e.Message);
+        }
+
+        return 0;
+    }
+
+    public void PlayMusic(nint soundId, int volume = 128)
+    { 
+        m_audioLoader.PlayMusic(soundId, volume: volume);
     }
 
     /// <summary>
     /// Unload a sound by its unique sound ID.
     /// </summary>
     /// <param name="soundId">Unique sound ID</param>
-    public void UnloadSound(int soundId)
+    public void UnloadSound(nint soundId)
     {
-        if (_idToSound.TryGetValue(soundId, out IntPtr sound))
+        if (_idToSound.TryGetValue(soundId, out nint sound))
         {
             SDL_mixer.Mix_FreeChunk(sound);
             _idToSound.Remove(soundId);
@@ -92,7 +104,30 @@ public class AudioService : IAudioService
             Debug.LogWarning($"Attempted to unload non-existent sound ID: {soundId}");
         }
     }
+    public void StopMusic()
+    {
+        SDL_mixer.Mix_HaltMusic();
+    }
 
+    public void StopSoundEffect(int channel)
+    {
+        SDL_mixer.Mix_HaltChannel(channel);
+    }
+
+    public void FreeSoundEffect(nint soundEffect)
+    {
+        SDL_mixer.Mix_FreeChunk(soundEffect);
+    }
+
+    public void FreeMusic(nint music)
+    {
+        SDL_mixer.Mix_FreeMusic(music);
+    }
+
+    public void UnregisterEffects(int channel)
+    {
+        SDL_mixer.Mix_UnregisterAllEffects(channel);
+    }
     public float GetAmplitudeByName(string name)
     {
         return m_audioLoader.GetAmplitudeByName(name);

@@ -173,7 +173,6 @@ namespace SDL2Engine.Core.GuiRenderer
             {
                 if (ImGui.Begin(dockSettings.TopDock.Name, ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
                 {
-                    ImGui.Text("Top docker window");
                 }
 
                 ImGui.End();
@@ -183,7 +182,6 @@ namespace SDL2Engine.Core.GuiRenderer
             {
                 if (ImGui.Begin(dockSettings.BottomDock.Name, ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoMove))
                 {
-                    ImGui.Text("Bottom docker window");
                 }
 
                 ImGui.End();
@@ -193,7 +191,6 @@ namespace SDL2Engine.Core.GuiRenderer
             {
                 if (ImGui.Begin(dockSettings.LeftDock.Name, ImGuiWindowFlags.NoMove))
                 {
-                    ImGui.Text("Left docker window");
                 }
 
                 ImGui.End();
@@ -203,7 +200,6 @@ namespace SDL2Engine.Core.GuiRenderer
             {
                 if (ImGui.Begin(dockSettings.RightDock.Name, ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove))
                 {
-                    ImGui.Text("Game Screen");
                 }
 
                 ImGui.End();
