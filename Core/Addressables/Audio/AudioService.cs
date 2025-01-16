@@ -5,6 +5,10 @@ using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.Addressables;
 
+/// <summary>
+/// DONT USE!
+/// THIS GARBAGE NEEDS TO BE REDONE
+/// </summary>
 public class AudioService : IAudioService
 {
     private readonly IAudioLoader m_audioLoader;
@@ -79,7 +83,7 @@ public class AudioService : IAudioService
 
     public void PlayMusic(nint soundId, int volume = 128)
     { 
-        m_audioLoader.PlayMusic(soundId, volume: volume);
+        m_audioLoader.PlayMusic(soundId, 0, volume: volume);
     }
 
     /// <summary>

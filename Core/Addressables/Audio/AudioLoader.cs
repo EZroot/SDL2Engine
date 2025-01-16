@@ -9,6 +9,10 @@ using SDL2Engine.Events.EventData.Audio;
 
 namespace SDL2Engine.Core.Addressables
 {
+    /// <summary>
+    /// DONT USE!
+    /// THIS GARBAGE NEEDS TO BE REDONE
+    /// </summary>
     public class AudioLoader : IAudioLoader
     {
         public class FrequencyBand
@@ -29,7 +33,9 @@ namespace SDL2Engine.Core.Addressables
 
         private SDL_mixer.Mix_EffectFunc_t _audioEffectDelegate;
         private SDL_mixer.Mix_EffectDone_t _effectDoneDelegate;
-        private SDL_mixer.MusicFinishedDelegate _musicFinishedDelegate; // Added delegate field
+        
+        private SDL_mixer.MusicFinishedDelegate _musicFinishedDelegate; 
+        private SDL_mixer.MixFuncDelegate _postMixDelegate;
         
         public IReadOnlyDictionary<string, FrequencyBand> FrequencyBands => _frequencyBands;
 
@@ -80,9 +86,11 @@ namespace SDL2Engine.Core.Addressables
             _audioEffectDelegate = AudioProcessor;
             _effectDoneDelegate = AudioProcessorDone;
             _musicFinishedDelegate = OnMusicFinished;
+            _postMixDelegate = PostMixProcessor;//AudioProcessor;
             
             SDL_mixer.Mix_HookMusicFinished(_musicFinishedDelegate);
-
+            SDL_mixer.Mix_SetPostMix(_postMixDelegate, IntPtr.Zero);
+            
             Initialize();
         }
 
@@ -189,7 +197,7 @@ namespace SDL2Engine.Core.Addressables
         {
             // try
             // {
-                // SDL_mixer.Mix_VolumeMusic(volume);
+                SDL_mixer.Mix_VolumeMusic(volume);
                 if (SDL_mixer.Mix_PlayMusic(music, loops) == -1)
                 {
                     Debug.LogError("Failed to play music! SDL_mixer Error: " + SDL_mixer.Mix_GetError());
@@ -252,12 +260,84 @@ namespace SDL2Engine.Core.Addressables
 
         private void AudioProcessor(int channel, IntPtr stream, int length, IntPtr userData)
         {
+            // We probably shouldnt read the frequency of sound effects
+            // Unlike music these can overlap
+            
+            // try
+            // {
+            //     byte[] audioBytes = new byte[length];
+            //     Marshal.Copy(stream, audioBytes, 0, length);
+            //
+            //     int sampleCount = length / 2; // 16-bit audio
+            //     Complex[] fftBuffer = new Complex[sampleCount];
+            //
+            //     for (int i = 0; i < sampleCount; i++)
+            //     {
+            //         short sample = BitConverter.ToInt16(audioBytes, i * 2);
+            //         fftBuffer[i] = new Complex(sample / 32768.0, 0);
+            //     }
+            //
+            //     ApplyHannWindow(fftBuffer);
+            //     Fourier.Forward(fftBuffer, FourierOptions.Matlab);
+            //
+            //     double sampleRate = 44100.0;
+            //     lock (_lock)
+            //     {
+            //         foreach (var band in _frequencyBands.Values)
+            //         {
+            //             band.Amplitude = 0f;
+            //         }
+            //
+            //         double totalAmplitude = 0.0;
+            //
+            //         for (int i = 0; i < fftBuffer.Length / 2; i++)
+            //         {
+            //             double magnitude = fftBuffer[i].Magnitude;
+            //             double frequency = i * sampleRate / fftBuffer.Length;
+            //
+            //             foreach (var kvp in _frequencyBands)
+            //             {
+            //                 var band = kvp.Value;
+            //                 if (frequency >= band.LowerBound && frequency < band.UpperBound)
+            //                 {
+            //                     band.Amplitude += (float)magnitude;
+            //                     break;
+            //                 }
+            //             }
+            //
+            //             totalAmplitude += magnitude;
+            //         }
+            //
+            //         if (totalAmplitude > 0)
+            //         {
+            //             foreach (var band in _frequencyBands.Values)
+            //             {
+            //                 band.Amplitude = (float)(band.Amplitude / totalAmplitude);
+            //             }
+            //         }
+            //
+            //         // string amplitudeLog = "Frequency Amplitudes: ";
+            //         // foreach (var kvp in _frequencyBands)
+            //         // {
+            //         //     amplitudeLog += $"{kvp.Key}: {kvp.Value.Amplitude:F2} ";
+            //         // }
+            //         // Debug.Log(amplitudeLog);
+            //     }
+            // }
+            // catch (Exception e)
+            // {
+            //     Debug.LogError(e.Message);
+            // }
+        }
+        
+        private void PostMixProcessor(IntPtr udata, IntPtr stream, int len)
+        {
             try
             {
-                byte[] audioBytes = new byte[length];
-                Marshal.Copy(stream, audioBytes, 0, length);
+                byte[] audioBytes = new byte[len];
+                Marshal.Copy(stream, audioBytes, 0, len);
 
-                int sampleCount = length / 2; // 16-bit audio
+                int sampleCount = len / 2; // Assuming 16-bit audio
                 Complex[] fftBuffer = new Complex[sampleCount];
 
                 for (int i = 0; i < sampleCount; i++)
@@ -304,13 +384,6 @@ namespace SDL2Engine.Core.Addressables
                             band.Amplitude = (float)(band.Amplitude / totalAmplitude);
                         }
                     }
-
-                    // string amplitudeLog = "Frequency Amplitudes: ";
-                    // foreach (var kvp in _frequencyBands)
-                    // {
-                    //     amplitudeLog += $"{kvp.Key}: {kvp.Value.Amplitude:F2} ";
-                    // }
-                    // Debug.Log(amplitudeLog);
                 }
             }
             catch (Exception e)
