@@ -2,24 +2,13 @@
 
 SDL2Engine is a robust rendering engine built using C# that leverages the power of SDL2 and ImGui for rendering and GUI functionality. 
 
-- Game Template Example: https://github.com/EZroot/SDL2Game
-
-![SDL Engine Screenshot](screenshottys/sdlscreenshot2.png)
-
 ## Features
 
 - **SDL2 for low-level window management and 2D rendering**
 - **ImGui.NET for an immediate mode GUI, with custom C# wrappers (ImGuiNative since it isn't officially supported) for additional flexibility**
 - **Box2D for 2d physics**
+- **Basic Network Capabilities**
 - **Cross-platform capabilities courtesy of SDL2 and ImGui <3**
-
-## Prerequisites
-
-Before you can build and run SDL2Engine, you need to have the following tools installed on your system:
-
-- Git
-- CMake
-- .NET SDK (compatible with your version of SDL2Engine)
 
 ## Getting Started
 
@@ -39,37 +28,19 @@ For help on how to build each dll/library check the /docs
 - Ensure that all libraries are correctly placed in the `/libs` directory of your project.
 - Configure your .NET project to reference these libraries.
 
-### Building SDL2Engine
+## Templates
 
-Once all dependencies are configured, you can build SDL2Engine by navigating to the root directory of the project and running:
+### Game
+- Repository: https://github.com/EZroot/SDL2Game
 
-`dotnet build`
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+  <img src="screenshottys/screenshottys/pinkboy.png" alt="SDL Game Screenshot" width="300">
+</div>
 
-## Documentation
+### Music Player
+- Repository: https://github.com/EZroot/MusicPlayer
 
-For more detailed documentation on how to use SDL2Engine and extend its capabilities, refer to the `/docs` folder in this repository.
-
-Or grab a game example:
-- Game Template Example: 
-- - https://github.com/EZroot/SDL2Game
-- Reference SDL2Engine and run!
-
-
-`git clone https://github.com/EZroot/SDL2Game.git`
-
-`cd SDL2Game`
-
-`dotnet run`
-
-
-## Contributing
-
-Contributions to SDL2Engine are welcomed & encouraged!
-
-## License
-
-This project is licensed under the 'DO WHATEVER YOU WANT' License.
-
-## Acknowledgments
-
-- Thanks to the gods of SDL2, ImGui & Box2D for their fantastic libraries <3
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+  <img src="screenshottys/screenshottysmisk/playing2.png" alt="Music Player Screenshot" width="500">
+  <img src="screenshottys/screenshottysmisk/playingsettings.png" alt="Music Player Settings" width="500">
+</div>
