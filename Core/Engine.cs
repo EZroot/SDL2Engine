@@ -62,7 +62,7 @@ namespace SDL2Engine.Core
             }
             
             m_window = m_windowService.CreateWindowSDL();
-            m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/ashh.png");
+            m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/pinkboysingle.png");
             m_renderer = m_renderService.CreateRenderer(m_window, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED 
                                                                   | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
 

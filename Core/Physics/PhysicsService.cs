@@ -47,18 +47,23 @@ namespace SDL2Engine.Core.Physics
 
             Body body = m_world.CreateBody(bodyDef);
 
+            var diameter = Math.Min(width, height);
+            var radius = (diameter / 2f);
+            CircleShape shape = new CircleShape();
+            shape.Radius = (radius) / PPM; 
+
             // TODO: Double check this, could be cause for larger box collider than needed
-            PolygonShape shape = new PolygonShape();
-            shape.SetAsBox(
-                (width  / 2f) / PPM, 
-                (height / 2f) / PPM
-            );
+            // PolygonShape shape = new PolygonShape();
+            // shape.SetAsBox(
+            //     (width  / 2f) / PPM, 
+            //     (height / 2f) / PPM
+            // );
 
             FixtureDef fixtureDef = new FixtureDef
             {
                 Shape = shape,
                 Density = 1.0f,
-                Friction = 0.02f
+                Friction = 0.2f
             };
             body.CreateFixture(fixtureDef);
 
