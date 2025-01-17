@@ -11,6 +11,8 @@ using SDL2Engine.Core.CoreSystem.Configuration.Components;
 using System.Numerics;
 using Microsoft.Extensions.DependencyInjection;
 using SDL2Engine.Core.Input;
+using SDL2Engine.Core.Partitions;
+using SDL2Engine.Core.Partitions.Interfaces;
 using SDL2Engine.Core.Physics.Interfaces;    
 
 namespace SDL2Engine.Core
@@ -31,6 +33,8 @@ namespace SDL2Engine.Core
         private readonly ICameraService m_cameraService;
         private readonly IPhysicsService m_physicsService;
         private readonly IServiceProvider m_serviceProvider;
+
+        private readonly IPartitioner m_partitioner;
         
         private IntPtr m_window, m_renderer;
         private int m_windowWidth, m_windowHeight;
@@ -51,6 +55,8 @@ namespace SDL2Engine.Core
             m_guiVariableBinder = m_serviceProvider.GetService<IVariableBinder>();
             m_cameraService = m_serviceProvider.GetService<ICameraService>();
             m_physicsService = m_serviceProvider.GetService<IPhysicsService>();
+
+            m_partitioner = new SpatialPartitioner(32);
         }
 
         private void Initialize()
@@ -86,7 +92,7 @@ namespace SDL2Engine.Core
         public void Run(IGame game)
         {
             Initialize();
-            game.Initialize(m_serviceProvider);
+            game.Initialize(m_serviceProvider, m_partitioner);
 
             var accumulator = 0f;
             var fixedStep = 0.02f;
