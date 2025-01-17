@@ -9,5 +9,6 @@ public interface IPartitioner
     void Remove(GameObject obj);
     void Update(GameObject obj, Vector2 oldPosition);
     IEnumerable<GameObject> GetObjectsInCell(Vector2 position);
+    public IEnumerable<GameObject> GetNeighbors(Vector2 position, float radius);
     void RenderDebug(nint renderer, ICameraService cameraService = null);
 }

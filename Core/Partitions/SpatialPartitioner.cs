@@ -6,6 +6,7 @@ using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.Partitions;
+
 public class SpatialPartitioner : IPartitioner
 {
     private readonly float cellSize;
@@ -34,6 +35,7 @@ public class SpatialPartitioner : IPartitioner
         {
             grid[cell] = new HashSet<GameObject>();
         }
+
         grid[cell].Add(obj);
 
         obj.CurrentCell = cell;
@@ -50,11 +52,12 @@ public class SpatialPartitioner : IPartitioner
             {
                 grid.Remove(cell);
             }
-            obj.CurrentCell = null; 
+
+            obj.CurrentCell = null;
         }
         else
         {
-            Debug.LogError($"[SpatialPartitioner] Failed to remove object from cell {cell}, position {obj.Position}");
+            Debug.LogError($"Failed to remove object from cell {cell}, position {obj.Position}");
         }
     }
 
@@ -65,9 +68,30 @@ public class SpatialPartitioner : IPartitioner
         var newCell = GetCell(obj.Position);
         if (obj.CurrentCell != newCell)
         {
-            Remove(obj); 
-            Add(obj);    
+            Remove(obj);
+            Add(obj);
         }
+    }
+
+    public IEnumerable<GameObject> GetNeighbors(Vector2 position, float radius)
+    {
+        var centerCell = GetCell(position);
+        List<GameObject> neighbors = new List<GameObject>();
+
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                var cell = (centerCell.Item1 + dx, centerCell.Item2 + dy);
+                if (grid.TryGetValue(cell, out var cellObjects))
+                {
+                    neighbors.AddRange(cellObjects.Where(obj =>
+                        Vector2.DistanceSquared(obj.Position, position) <= radius * radius));
+                }
+            }
+        }
+
+        return neighbors;
     }
 
     public IEnumerable<GameObject> GetObjectsInCell(Vector2 position)
@@ -78,10 +102,9 @@ public class SpatialPartitioner : IPartitioner
 
     public void RenderDebug(nint renderer, ICameraService cameraService = null)
     {
-        var rectColor = new SDL.SDL_Color { r = 255, g = 0, b = 0, a = 255 }; 
-        var lineColor = new SDL.SDL_Color { r = 0, g = 255, b = 0, a = 255 }; 
+        var rectColor = new SDL.SDL_Color { r = 255, g = 0, b = 0, a = 255 };
+        var lineColor = new SDL.SDL_Color { r = 0, g = 255, b = 0, a = 255 };
 
-        SDL.SDL_SetRenderDrawColor(renderer, rectColor.r, rectColor.g, rectColor.b, rectColor.a);
 
         Vector2 cameraOffset = Vector2.Zero;
 
@@ -102,6 +125,7 @@ public class SpatialPartitioner : IPartitioner
                 w = (int)cellSize,
                 h = (int)cellSize
             };
+            SDL.SDL_SetRenderDrawColor(renderer, rectColor.r, rectColor.g, rectColor.b, rectColor.a);
 
             SDL.SDL_RenderDrawRect(renderer, ref rect);
 
@@ -124,5 +148,4 @@ public class SpatialPartitioner : IPartitioner
             }
         }
     }
-
 }

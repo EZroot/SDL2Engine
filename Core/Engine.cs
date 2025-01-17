@@ -33,8 +33,6 @@ namespace SDL2Engine.Core
         private readonly ICameraService m_cameraService;
         private readonly IPhysicsService m_physicsService;
         private readonly IServiceProvider m_serviceProvider;
-
-        private readonly IPartitioner m_partitioner;
         
         private IntPtr m_window, m_renderer;
         private int m_windowWidth, m_windowHeight;
@@ -56,7 +54,6 @@ namespace SDL2Engine.Core
             m_cameraService = m_serviceProvider.GetService<ICameraService>();
             m_physicsService = m_serviceProvider.GetService<IPhysicsService>();
 
-            m_partitioner = new SpatialPartitioner(32);
         }
 
         private void Initialize()
@@ -71,7 +68,6 @@ namespace SDL2Engine.Core
             m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/pinkboysingle.png");
             m_renderer = m_renderService.CreateRenderer(m_window, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED 
                                                                   | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
-
             IntPtr imguiContext = ImGui.CreateContext();
             ImGui.SetCurrentContext(imguiContext);
 
@@ -92,7 +88,7 @@ namespace SDL2Engine.Core
         public void Run(IGame game)
         {
             Initialize();
-            game.Initialize(m_serviceProvider, m_partitioner);
+            game.Initialize(m_serviceProvider);
 
             var accumulator = 0f;
             var fixedStep = 0.02f;
