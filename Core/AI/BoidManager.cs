@@ -41,7 +41,7 @@ namespace SDL2Engine.Core.AI
         }
 
         /// <summary>
-        // BASIC EXAMPLE
+        /// Update all boids' positions based on flocking behavior
         /// </summary>
         /// <param name="deltaTime"></param>
         public void UpdateBoids(float deltaTime)
@@ -55,25 +55,33 @@ namespace SDL2Engine.Core.AI
             {
                 neighborBuffer.Clear();
                 neighborBuffer.AddRange(_partitioner.GetNeighbors(boid.Position, NeighborRadius));
-                // neighborBuffer.AddRange(_partitioner.GetObjectsInCell(boid.Position));
+
+                // Calculate steering behaviors
                 Vector2 alignment = CalculateAlignment(boid, neighborBuffer) * AlignmentWeight;
                 Vector2 cohesion = CalculateCohesion(boid, neighborBuffer) * CohesionWeight;
                 Vector2 separation = CalculateSeparation(boid, neighborBuffer) * SeparationWeight;
 
-                Vector2 mouseAttraction = mousePosition - boid.Position;
-                if (mouseAttraction.LengthSquared() > 0)
+                // Calculate mouse attraction
+                Vector2 mouseAttraction = Vector2.Zero;
+                Vector2 toMouse = mousePosition - boid.Position;
+                if (toMouse.LengthSquared() > 0)
                 {
-                    mouseAttraction = Vector2.Normalize(mouseAttraction) * MouseAttractionWeight;
+                    mouseAttraction = Vector2.Normalize(toMouse) * MouseAttractionWeight;
                 }
 
-                Vector2 velocity = alignment + cohesion + separation + mouseAttraction;
+                // Combine all steering forces
+                Vector2 steering = alignment + cohesion + separation + mouseAttraction;
 
-                if (velocity.LengthSquared() > _boidSpeed * _boidSpeed)
-                    velocity = Vector2.Normalize(velocity) * _boidSpeed;
+                // Update velocity
+                boid.Velocity += steering * deltaTime;
 
-                Vector2 oldPosition = boid.Position;
-                Vector2 newPosition = boid.Position + velocity * Time.DeltaTime * 10f;
-                boid.Position = newPosition;
+                // Limit speed
+                if (boid.Velocity.LengthSquared() > _boidSpeed * _boidSpeed)
+                {
+                    boid.Velocity = Vector2.Normalize(boid.Velocity) * _boidSpeed;
+                }
+
+                // Update position through GameObject's Update method
                 boid.Update(deltaTime);
             }
         }
@@ -93,10 +101,14 @@ namespace SDL2Engine.Core.AI
             Vector2 averageVelocity = Vector2.Zero;
             foreach (var neighbor in neighbors)
             {
-                averageVelocity += neighbor.Position - boid.Position;
+                averageVelocity += neighbor.Velocity;
             }
 
-            return averageVelocity.LengthSquared() > 0 ? Vector2.Normalize(averageVelocity / neighbors.Count) : Vector2.Zero;
+            averageVelocity /= neighbors.Count;
+
+            // Steering towards the average velocity
+            Vector2 alignment = averageVelocity - boid.Velocity;
+            return alignment;
         }
 
         private Vector2 CalculateCohesion(GameObject boid, List<GameObject> neighbors)

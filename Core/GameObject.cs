@@ -34,7 +34,7 @@ public class GameObject
         get => m_position;
         set => m_position = value; 
     }
-
+    public Vector2 Velocity { get; set; } 
     public float Rotation { get; set; }
     public Vector2 Scale { get; set; } = Vector2.One;
 
@@ -59,7 +59,11 @@ public class GameObject
             Position = PhysicsBody.GetPosition() * PPM;
             Rotation = (float)(PhysicsBody.GetAngle() * (180 / Math.PI));
         }
-
+        else
+        {
+            Position += Velocity * deltaTime;
+        }
+        
         if (m_partitioner != null && Position != m_lastPosition)
         {
             m_partitioner.Update(this, m_lastPosition);
