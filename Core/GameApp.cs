@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using SDL2Engine.Core.Addressables;
+using SDL2Engine.Core.Addressables.Fonts;
+using SDL2Engine.Core.Addressables.Fonts.Interfaces;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.GuiRenderer;
@@ -30,6 +32,7 @@ public class GameApp
         services.AddSingleton<IWindowConfig, WindowConfig>();
         services.AddSingleton<ISysInfo, SysInfo>();
 
+        services.AddSingleton<IFontService, FontService>();
         services.AddSingleton<IImageService, ImageService>();
         services.AddSingleton<IAudioService, AudioService>();
         

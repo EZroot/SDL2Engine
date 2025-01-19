@@ -9,6 +9,24 @@ After you build the libs, ensure the correct path and dll names in your .csproj
 # SDL2_Image - TODO
  Probably similar to SDL2_Mixer
 
+# SDL2_TTF
+
+download release tar.gz
+
+sudo apt-get install libsdl2-dev libfreetype6-dev
+
+tar -xzf SDL2_ttf-2.24.0.tar.gz
+
+cd mkdir
+
+cd build
+
+cmake ..
+
+make
+
+then copy the lib to the engine /lib folder
+
 # SDL2_Mixer
 Repo: `https://github.com/libsdl-org/SDL_mixer/releases`
 
