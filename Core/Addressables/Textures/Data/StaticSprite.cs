@@ -31,25 +31,35 @@ public class StaticSprite : ISprite
         {
             x = 0,
             y = 0,
-            w = textureWidth,  
+            w = textureWidth,
             h = textureHeight
         };
 
+        int scaledWidth = (int)(textureWidth * scale.X);
+        int scaledHeight = (int)(textureHeight * scale.Y);
+
         SDL.SDL_Rect destRect = new SDL.SDL_Rect
         {
-            x = (int)position.X,
-            y = (int)position.Y,
-            w = (int)(textureWidth * scale.X),
-            h = (int)(textureHeight * scale.Y)
+            x = (int)(position.X - scaledWidth / 2f),
+            y = (int)(position.Y - scaledHeight / 2f),
+            w = scaledWidth,
+            h = scaledHeight
         };
 
         SDL.SDL_Point center = new SDL.SDL_Point
         {
-            x = destRect.w / 2,
-            y = destRect.h / 2
+            x = scaledWidth / 2,
+            y = scaledHeight / 2
         };
 
-        SDL.SDL_RenderCopyEx(renderer, texture, ref sourceRect, ref destRect, rotation, ref center, SDL.SDL_RendererFlip.SDL_FLIP_NONE);
+        SDL.SDL_RenderCopyEx(
+            renderer,
+            texture,
+            ref sourceRect,
+            ref destRect,
+            rotation,
+            ref center,
+            SDL.SDL_RendererFlip.SDL_FLIP_NONE
+        );
     }
-
 }

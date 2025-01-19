@@ -50,18 +50,21 @@ public class AnimatedSprite : ISprite
             h = frameHeight
         };
 
+        int scaledWidth = (int)(frameWidth * scale.X);
+        int scaledHeight = (int)(frameHeight * scale.Y);
+
         SDL.SDL_Rect destRect = new SDL.SDL_Rect
         {
-            x = (int)position.X,
-            y = (int)position.Y,
-            w = (int)(frameWidth * scale.X),
-            h = (int)(frameHeight * scale.Y)
+            x = (int)(position.X - scaledWidth / 2f),
+            y = (int)(position.Y - scaledHeight / 2f),
+            w = scaledWidth,
+            h = scaledHeight
         };
 
         SDL.SDL_Point center = new SDL.SDL_Point
         {
-            x = destRect.w / 2,
-            y = destRect.h / 2
+            x = scaledWidth / 2,
+            y = scaledHeight / 2
         };
 
         SDL.SDL_RenderCopyEx(renderer, texture, ref sourceRect, ref destRect, rotation, ref center, SDL.SDL_RendererFlip.SDL_FLIP_NONE);

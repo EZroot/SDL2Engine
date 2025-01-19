@@ -9,11 +9,12 @@ namespace SDL2Engine.Core.AI
 {
     public class BoidManager
     {
-        private const float NeighborRadius = 32; 
+        private const float NeighborRadius = 64; 
         private const float NeighborRadiusSquared = NeighborRadius * NeighborRadius;
         private const float AlignmentWeight = 1.5f ;
         private const float CohesionWeight = 1.0f ;
         private const float SeparationWeight = 4.5f;
+        private const float DebugMousePullWeight = 2.5f;
 
         private readonly List<GameObject> _boids = new();
         private readonly SpatialPartitioner _partitioner;
@@ -49,7 +50,6 @@ namespace SDL2Engine.Core.AI
             List<GameObject> neighborBuffer = new List<GameObject>(128);
 
             Vector2 mousePosition = new Vector2(InputManager.MouseX, InputManager.MouseY);
-            const float MouseAttractionWeight = 1.4f; 
 
             foreach (var boid in _boids)
             {
@@ -61,27 +61,21 @@ namespace SDL2Engine.Core.AI
                 Vector2 cohesion = CalculateCohesion(boid, neighborBuffer) * CohesionWeight;
                 Vector2 separation = CalculateSeparation(boid, neighborBuffer) * SeparationWeight;
 
-                // Calculate mouse attraction
                 Vector2 mouseAttraction = Vector2.Zero;
                 Vector2 toMouse = mousePosition - boid.Position;
                 if (toMouse.LengthSquared() > 0)
                 {
-                    mouseAttraction = Vector2.Normalize(toMouse) * MouseAttractionWeight;
+                    mouseAttraction = Vector2.Normalize(toMouse) * DebugMousePullWeight;
                 }
 
-                // Combine all steering forces
                 Vector2 steering = alignment + cohesion + separation + mouseAttraction;
-
-                // Update velocity
                 boid.Velocity += steering * deltaTime;
 
-                // Limit speed
                 if (boid.Velocity.LengthSquared() > _boidSpeed * _boidSpeed)
                 {
                     boid.Velocity = Vector2.Normalize(boid.Velocity) * _boidSpeed;
                 }
 
-                // Update position through GameObject's Update method
                 boid.Update(deltaTime);
             }
         }
