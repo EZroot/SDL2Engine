@@ -13,8 +13,9 @@ namespace SDL2Engine.Core.AI
         private const float NeighborRadiusSquared = NeighborRadius * NeighborRadius;
         private const float AlignmentWeight = 1.5f ;
         private const float CohesionWeight = 1.0f ;
-        private const float SeparationWeight = 4.5f;
+        private const float SeparationWeight = 10.5f;
         private const float DebugMousePullWeight = 2.5f;
+        private const float MinSeparationDistance = 64.0f; 
 
         private readonly List<GameObject> _boids = new();
         private readonly SpatialPartitioner _partitioner;
@@ -123,7 +124,6 @@ namespace SDL2Engine.Core.AI
         private Vector2 CalculateSeparation(GameObject boid, List<GameObject> neighbors)
         {
             Vector2 separation = Vector2.Zero;
-            const float MinSeparationDistance = 10.0f; 
 
             foreach (var neighbor in neighbors)
             {

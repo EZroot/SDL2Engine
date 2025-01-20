@@ -21,6 +21,89 @@ namespace SDL2Engine.Core.Addressables.Fonts
         }
 
         /// <summary>
+        /// Loads a sprite sheet font from the specified path.
+        /// </summary>
+        /// <param name="path">Path to the sprite sheet image file.</param>
+        public SpriteFontTexture LoadSpriteFont(string path, int frameWidth, int frameHeight, int charsPerRow = 26)
+        {
+            var spriteSheetTexture = SDL_image.IMG_LoadTexture(m_renderService.RenderPtr, path);
+            if (spriteSheetTexture == IntPtr.Zero)
+            {
+                Debug.LogError($"Failed to load sprite sheet! SDL_Error: {SDL.SDL_GetError()}");
+            }
+
+            var spriteFont = new SpriteFontTexture()
+            {
+                Texture = spriteSheetTexture,
+                Width = frameWidth,
+                Height = frameHeight,
+                CharsPerRow = charsPerRow
+            };
+
+            return spriteFont;
+        }
+        
+        /// <summary>
+        /// Renders a character from the sprite sheet.
+        /// </summary>
+        /// <param name="character">Character to render.</param>
+        /// <param name="position">Position to render the character (x, y).</param>
+        /// <param name="scale">Scale factor for the character.</param>
+        public void RenderFontSpriteChar(SpriteFontTexture spriteFontTexture, char character, (int x, int y) position, float scale = 1.0f)
+        {
+            int charIndex = GetCharIndex(character);
+            int charsPerRow = spriteFontTexture.CharsPerRow; 
+            int srcX = (charIndex % charsPerRow) * spriteFontTexture.Width;
+            int srcY = (charIndex / charsPerRow) * spriteFontTexture.Height;
+
+            SDL.SDL_Rect srcRect = new SDL.SDL_Rect { x = srcX, y = srcY, w = spriteFontTexture.Width, h = spriteFontTexture.Height };
+            SDL.SDL_Rect destRect = new SDL.SDL_Rect
+            {
+                x = position.x,
+                y = position.y,
+                w = (int)(spriteFontTexture.Width * scale),
+                h = (int)(spriteFontTexture.Height * scale)
+            };
+
+            SDL.SDL_RenderCopy(m_renderService.RenderPtr, spriteFontTexture.Texture, ref srcRect, ref destRect);
+        }
+        
+        /// <summary>
+        /// Renders a string using the sprite sheet, each character from the sprite sheet.
+        /// </summary>
+        /// <param name="text">String to render.</param>
+        /// <param name="position">Starting position to render the string (x, y).</param>
+        /// <param name="scale">Scale factor for each character.</param>
+        public void RenderStringSprite(SpriteFontTexture spriteFontTexture, string text, (int x, int y) position, int charPadding = 0, float scale = 1.0f)
+        {
+            int charsPerRow = spriteFontTexture.CharsPerRow; 
+            int characterWidth = spriteFontTexture.Width; 
+            int characterHeight = spriteFontTexture.Height; 
+            int spacing = (int)(characterWidth * scale) + charPadding; 
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char character = text[i];
+                int charIndex = GetCharIndex(character);
+                if (charIndex == -1) continue; 
+
+                int srcX = (charIndex % charsPerRow) * characterWidth;
+                int srcY = (charIndex / charsPerRow) * characterHeight;
+
+                SDL.SDL_Rect srcRect = new SDL.SDL_Rect { x = srcX, y = srcY, w = characterWidth, h = characterHeight };
+                SDL.SDL_Rect destRect = new SDL.SDL_Rect
+                {
+                    x = position.x + (i * spacing), 
+                    y = position.y,
+                    w = (int)(characterWidth * scale),
+                    h = (int)(characterHeight * scale)
+                };
+
+                SDL.SDL_RenderCopy(m_renderService.RenderPtr, spriteFontTexture.Texture, ref srcRect, ref destRect);
+            }
+        }
+        
+        /// <summary>
         /// Loads a font from the specified path with the given size.
         /// </summary>
         /// <param name="path">Path to the TTF font file.</param>
@@ -32,7 +115,6 @@ namespace SDL2Engine.Core.Addressables.Fonts
             if (font == IntPtr.Zero)
             {
                 Debug.LogError($"Failed to load font! TTF_Error: {SDL_ttf.TTF_GetError()}");
-                SDL_ttf.TTF_Quit();
                 return IntPtr.Zero;
             }
 
@@ -55,8 +137,6 @@ namespace SDL2Engine.Core.Addressables.Fonts
             if (textSurface == IntPtr.Zero)
             {
                 Debug.LogError($"Unable to render text surface! TTF_Error: {SDL_ttf.TTF_GetError()}");
-                SDL_ttf.TTF_CloseFont(font);
-                SDL_ttf.TTF_Quit();
                 return new FontTexture(IntPtr.Zero, new SDL.SDL_Rect());
             }
 
@@ -65,22 +145,15 @@ namespace SDL2Engine.Core.Addressables.Fonts
             if (textTexture == IntPtr.Zero)
             {
                 Debug.LogError($"Unable to create texture from rendered text! SDL_Error: {SDL.SDL_GetError()}");
-                SDL.SDL_FreeSurface(textSurface);
-                SDL_ttf.TTF_CloseFont(font);
-                SDL_ttf.TTF_Quit();
-                SDL.SDL_Quit();
                 return new FontTexture(IntPtr.Zero, new SDL.SDL_Rect());
             }
 
-            // Get text dimensions
             SDL.SDL_QueryTexture(textTexture, out _, out _, out int textWidth, out int textHeight);
-            SDL.SDL_FreeSurface(textSurface); // Free the surface after creating the texture
+            SDL.SDL_FreeSurface(textSurface);
 
-            // Apply scaling
             int scaledWidth = (int)(textWidth * scale);
             int scaledHeight = (int)(textHeight * scale);
 
-            // Define destination rectangle for rendering the text at the specified position
             SDL.SDL_Rect renderQuad = new SDL.SDL_Rect
             {
                 x = position.x,
@@ -88,10 +161,6 @@ namespace SDL2Engine.Core.Addressables.Fonts
                 w = scaledWidth,
                 h = scaledHeight
             };
-
-            // If scaling is applied, use SDL_RenderCopyEx for rotation or flipping if needed
-            // Currently, SDL_RenderCopy is sufficient for scaling via the destination rectangle
-
             return new FontTexture(textTexture, renderQuad);
         }
 
@@ -104,6 +173,7 @@ namespace SDL2Engine.Core.Addressables.Fonts
             if (fontTexture.Texture != IntPtr.Zero)
             {
                 var renderQuad = fontTexture.RenderQuad;
+                // use SDL_RenderCopyEx for rotation or flipping if needed
                 SDL.SDL_RenderCopy(m_renderService.RenderPtr, fontTexture.Texture, IntPtr.Zero, ref renderQuad);
             }
         }
@@ -119,8 +189,42 @@ namespace SDL2Engine.Core.Addressables.Fonts
                 SDL.SDL_DestroyTexture(fontTexture.Texture);
             }
         }
-
-        // Implement IDisposable for proper resource management
+        
+        /// <summary>
+        /// Assuming the layout is: ABC...XYZ0123456789!.,?><=+-
+        /// </summary>
+        /// <param name="character"></param>
+        /// <returns></returns>
+        private int GetCharIndex(char character)
+        {
+            if (char.IsLetter(character))
+            {
+                return char.ToUpper(character) - 'A';
+            }
+            else if (char.IsDigit(character))
+            {
+                return 26 + (character - '0'); 
+            }
+            else
+            {
+                // Assuming the layout is: ABC...XYZ0123456789!.,?><=+-
+                switch (character)
+                {
+                    case '!': return 36; 
+                    case '.': return 37;
+                    case ',': return 38;
+                    case '?': return 39;
+                    case '>': return 40;
+                    case '<': return 41;
+                    case '=': return 42;
+                    case '+': return 43;
+                    case '-': return 44;
+                    default: return -1; 
+                }
+            }
+            return -1;
+        }
+        
         public void Dispose()
         {
             Dispose(true);
@@ -133,10 +237,9 @@ namespace SDL2Engine.Core.Addressables.Fonts
             {
                 if (disposing)
                 {
-                    // Dispose managed resources here if any
+
                 }
 
-                // Dispose unmanaged resources
                 SDL_ttf.TTF_Quit();
 
                 disposed = true;
