@@ -10,13 +10,13 @@ namespace SDL2Engine.Core.AI
 {
     public class BoidManager
     {
-        private const float NeighborRadius = 16; 
+        private const float NeighborRadius = 32; 
         private const float NeighborRadiusSquared = NeighborRadius * NeighborRadius;
-        private const float AlignmentWeight = 1.5f;
-        private const float CohesionWeight = 1.0f;
+        private const float AlignmentWeight = 2.5f;
+        private const float CohesionWeight = 2.0f;
         private const float SeparationWeight = 4.5f;
         private const float DebugMousePullWeight = 2.5f;
-        private const float MinSeparationDistance = 32.0f; 
+        private const float MinSeparationDistance = 1f; 
 
         private readonly List<GameObject> _boids = new();
         private readonly SpatialPartitioner _partitioner;
@@ -51,34 +51,37 @@ namespace SDL2Engine.Core.AI
             var boidSteerings = new Vector2[_boids.Count];
             Vector2 mousePosition = new Vector2(InputManager.MouseX, InputManager.MouseY);
 
-            // PARALLEL pass
+            // Parallel pass
             Parallel.For(0, _boids.Count, i =>
             {
                 var boid = _boids[i];
                 var neighbors = _partitioner.GetNeighbors(boid.Position, NeighborRadius);
 
-                Vector2 alignment = CalculateAlignment(boid, neighbors) * AlignmentWeight;
-                Vector2 cohesion = CalculateCohesion(boid, neighbors) * CohesionWeight;
-                Vector2 separation = CalculateSeparation(boid, neighbors) * SeparationWeight;
+                Vector2 alignment   = CalculateAlignment(boid, neighbors)   * AlignmentWeight;
+                Vector2 cohesion    = CalculateCohesion(boid, neighbors)    * CohesionWeight;
+                Vector2 separation  = CalculateSeparation(boid, neighbors)  * SeparationWeight;
 
-                Vector2 mouseAttraction = Vector2.Zero;
                 Vector2 toMouse = mousePosition - boid.Position;
+                Vector2 mouseAttraction = Vector2.Zero;
                 if (toMouse.LengthSquared() > 0)
-                {
                     mouseAttraction = Vector2.Normalize(toMouse) * DebugMousePullWeight;
-                }
 
                 boidSteerings[i] = alignment + cohesion + separation + mouseAttraction;
             });
 
-            // SINGLE-THREADED 
             for (int i = 0; i < _boids.Count; i++)
             {
                 var boid = _boids[i];
-                Vector2 steering = boidSteerings[i];
 
-                boid.Velocity += steering * deltaTime;
-                
+                boid.Velocity += boidSteerings[i] * deltaTime;
+
+                float maxSpeed = _boidSpeed; 
+                float speedSq = boid.Velocity.LengthSquared();
+                if (speedSq > maxSpeed * maxSpeed)
+                {
+                    boid.Velocity = Vector2.Normalize(boid.Velocity) * maxSpeed;
+                }
+
                 boid.Update(deltaTime);
             }
         }
@@ -91,7 +94,6 @@ namespace SDL2Engine.Core.AI
             }
         }
 
-        // Same alignment/cohesion/separation as your original:
         private Vector2 CalculateAlignment(GameObject boid, IEnumerable<GameObject> neighbors)
         {
             Vector2 averageVelocity = Vector2.Zero;
