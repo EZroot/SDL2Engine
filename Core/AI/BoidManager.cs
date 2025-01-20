@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Numerics;
+using System.Threading.Tasks;
 using SDL2Engine.Core.AI.Data;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Partitions;
@@ -9,13 +10,13 @@ namespace SDL2Engine.Core.AI
 {
     public class BoidManager
     {
-        private const float NeighborRadius = 64; 
+        private const float NeighborRadius = 16; 
         private const float NeighborRadiusSquared = NeighborRadius * NeighborRadius;
-        private const float AlignmentWeight = 1.5f ;
-        private const float CohesionWeight = 1.0f ;
-        private const float SeparationWeight = 10.5f;
+        private const float AlignmentWeight = 1.5f;
+        private const float CohesionWeight = 1.0f;
+        private const float SeparationWeight = 4.5f;
         private const float DebugMousePullWeight = 2.5f;
-        private const float MinSeparationDistance = 64.0f; 
+        private const float MinSeparationDistance = 32.0f; 
 
         private readonly List<GameObject> _boids = new();
         private readonly SpatialPartitioner _partitioner;
@@ -43,24 +44,28 @@ namespace SDL2Engine.Core.AI
         }
 
         /// <summary>
-        /// Update all boids' positions based on flocking behavior
+        /// Update all boids' positions based on flocking behavior, using parallel steering.
         /// </summary>
-        /// <param name="deltaTime"></param>
         public void UpdateBoids(float deltaTime)
         {
-            List<GameObject> neighborBuffer = new List<GameObject>(128);
+            // We'll store each boid’s steering result here
+            var boidSteerings = new Vector2[_boids.Count];
 
+            // Mouse is captured just once, outside the parallel loop
             Vector2 mousePosition = new Vector2(InputManager.MouseX, InputManager.MouseY);
 
-            foreach (var boid in _boids)
+            // 1) PARALLEL pass to calculate steering
+            //    (No boid.Update(...) calls here, since that modifies the partitioner)
+            Parallel.For(0, _boids.Count, i =>
             {
-                neighborBuffer.Clear();
-                neighborBuffer.AddRange(_partitioner.GetNeighbors(boid.Position, NeighborRadius));
+                var boid = _boids[i];
+                // Safely read neighbors (assuming no one else is writing to the partitioner right now)
+                var neighbors = _partitioner.GetNeighbors(boid.Position, NeighborRadius);
 
-                // Calculate steering behaviors
-                Vector2 alignment = CalculateAlignment(boid, neighborBuffer) * AlignmentWeight;
-                Vector2 cohesion = CalculateCohesion(boid, neighborBuffer) * CohesionWeight;
-                Vector2 separation = CalculateSeparation(boid, neighborBuffer) * SeparationWeight;
+                // Calculate steering
+                Vector2 alignment = CalculateAlignment(boid, neighbors) * AlignmentWeight;
+                Vector2 cohesion = CalculateCohesion(boid, neighbors) * CohesionWeight;
+                Vector2 separation = CalculateSeparation(boid, neighbors) * SeparationWeight;
 
                 Vector2 mouseAttraction = Vector2.Zero;
                 Vector2 toMouse = mousePosition - boid.Position;
@@ -69,14 +74,25 @@ namespace SDL2Engine.Core.AI
                     mouseAttraction = Vector2.Normalize(toMouse) * DebugMousePullWeight;
                 }
 
-                Vector2 steering = alignment + cohesion + separation + mouseAttraction;
+                boidSteerings[i] = alignment + cohesion + separation + mouseAttraction;
+            });
+
+            // 2) SINGLE-THREADED pass to actually apply velocities & update partitioner
+            for (int i = 0; i < _boids.Count; i++)
+            {
+                var boid = _boids[i];
+                Vector2 steering = boidSteerings[i];
+
+                // Apply steering
                 boid.Velocity += steering * deltaTime;
 
+                // Speed clamp
                 if (boid.Velocity.LengthSquared() > _boidSpeed * _boidSpeed)
                 {
                     boid.Velocity = Vector2.Normalize(boid.Velocity) * _boidSpeed;
                 }
 
+                // Now do the actual update (which calls partitioner.Update)
                 boid.Update(deltaTime);
             }
         }
@@ -89,39 +105,38 @@ namespace SDL2Engine.Core.AI
             }
         }
 
-        private Vector2 CalculateAlignment(GameObject boid, List<GameObject> neighbors)
+        // Same alignment/cohesion/separation as your original:
+        private Vector2 CalculateAlignment(GameObject boid, IEnumerable<GameObject> neighbors)
         {
-            if (neighbors.Count == 0) return Vector2.Zero;
-
             Vector2 averageVelocity = Vector2.Zero;
+            int count = 0;
             foreach (var neighbor in neighbors)
             {
                 averageVelocity += neighbor.Velocity;
+                count++;
             }
-
-            averageVelocity /= neighbors.Count;
-
-            // Steering towards the average velocity
-            Vector2 alignment = averageVelocity - boid.Velocity;
-            return alignment;
+            if (count == 0) return Vector2.Zero;
+            averageVelocity /= count;
+            return averageVelocity - boid.Velocity;
         }
 
-        private Vector2 CalculateCohesion(GameObject boid, List<GameObject> neighbors)
+        private Vector2 CalculateCohesion(GameObject boid, IEnumerable<GameObject> neighbors)
         {
-            if (neighbors.Count == 0) return Vector2.Zero;
-
             Vector2 centerOfMass = Vector2.Zero;
+            int count = 0;
             foreach (var neighbor in neighbors)
             {
                 centerOfMass += neighbor.Position;
+                count++;
             }
+            if (count == 0) return Vector2.Zero;
+            centerOfMass /= count;
 
-            centerOfMass /= neighbors.Count;
-            Vector2 direction = centerOfMass - boid.Position;
-            return direction.LengthSquared() > 0 ? Vector2.Normalize(direction) : Vector2.Zero;
+            Vector2 dir = centerOfMass - boid.Position;
+            return (dir.LengthSquared() > 0) ? Vector2.Normalize(dir) : Vector2.Zero;
         }
 
-        private Vector2 CalculateSeparation(GameObject boid, List<GameObject> neighbors)
+        private Vector2 CalculateSeparation(GameObject boid, IEnumerable<GameObject> neighbors)
         {
             Vector2 separation = Vector2.Zero;
 
@@ -129,7 +144,6 @@ namespace SDL2Engine.Core.AI
             {
                 Vector2 diff = boid.Position - neighbor.Position;
                 float distanceSquared = diff.LengthSquared();
-
                 if (distanceSquared > 0 && distanceSquared < NeighborRadiusSquared)
                 {
                     float distance = MathF.Sqrt(distanceSquared);
@@ -146,7 +160,7 @@ namespace SDL2Engine.Core.AI
                 }
             }
 
-            return separation.LengthSquared() > 0 ? Vector2.Normalize(separation) : Vector2.Zero;
+            return (separation.LengthSquared() > 0) ? Vector2.Normalize(separation) : Vector2.Zero;
         }
     }
 }
