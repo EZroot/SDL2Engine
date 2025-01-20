@@ -61,7 +61,7 @@ public class GameObject
         }
         else
         {
-            Position += Velocity * deltaTime;
+            Position += Velocity;
         }
         
         if (m_partitioner != null && Position != m_lastPosition)

@@ -48,21 +48,15 @@ namespace SDL2Engine.Core.AI
         /// </summary>
         public void UpdateBoids(float deltaTime)
         {
-            // We'll store each boid’s steering result here
             var boidSteerings = new Vector2[_boids.Count];
-
-            // Mouse is captured just once, outside the parallel loop
             Vector2 mousePosition = new Vector2(InputManager.MouseX, InputManager.MouseY);
 
-            // 1) PARALLEL pass to calculate steering
-            //    (No boid.Update(...) calls here, since that modifies the partitioner)
+            // PARALLEL pass
             Parallel.For(0, _boids.Count, i =>
             {
                 var boid = _boids[i];
-                // Safely read neighbors (assuming no one else is writing to the partitioner right now)
                 var neighbors = _partitioner.GetNeighbors(boid.Position, NeighborRadius);
 
-                // Calculate steering
                 Vector2 alignment = CalculateAlignment(boid, neighbors) * AlignmentWeight;
                 Vector2 cohesion = CalculateCohesion(boid, neighbors) * CohesionWeight;
                 Vector2 separation = CalculateSeparation(boid, neighbors) * SeparationWeight;
@@ -77,22 +71,19 @@ namespace SDL2Engine.Core.AI
                 boidSteerings[i] = alignment + cohesion + separation + mouseAttraction;
             });
 
-            // 2) SINGLE-THREADED pass to actually apply velocities & update partitioner
+            // SINGLE-THREADED 
             for (int i = 0; i < _boids.Count; i++)
             {
                 var boid = _boids[i];
                 Vector2 steering = boidSteerings[i];
 
-                // Apply steering
                 boid.Velocity += steering * deltaTime;
 
-                // Speed clamp
                 if (boid.Velocity.LengthSquared() > _boidSpeed * _boidSpeed)
                 {
-                    boid.Velocity = Vector2.Normalize(boid.Velocity) * _boidSpeed;
+                    boid.Velocity = Vector2.Normalize(boid.Velocity) * _boidSpeed * Time.DeltaTime;
                 }
 
-                // Now do the actual update (which calls partitioner.Update)
                 boid.Update(deltaTime);
             }
         }
