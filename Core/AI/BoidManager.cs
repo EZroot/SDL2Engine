@@ -78,12 +78,7 @@ namespace SDL2Engine.Core.AI
                 Vector2 steering = boidSteerings[i];
 
                 boid.Velocity += steering * deltaTime;
-
-                if (boid.Velocity.LengthSquared() > _boidSpeed * _boidSpeed)
-                {
-                    boid.Velocity = Vector2.Normalize(boid.Velocity) * _boidSpeed * Time.DeltaTime;
-                }
-
+                
                 boid.Update(deltaTime);
             }
         }
