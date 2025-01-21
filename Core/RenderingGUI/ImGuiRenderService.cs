@@ -97,10 +97,21 @@ namespace SDL2Engine.Core.GuiRenderer
             io.ConfigFlags |= ImGuiConfigFlags.ViewportsEnable;
             io.Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int width, out int height, out int bytesPerPixel);
             int fontTexture = GL.GenTexture();
+            
             GL.BindTexture(TextureTarget.Texture2D, fontTexture);
+            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 
                 width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
-            io.Fonts.SetTexID(fontTexture); 
+            io.Fonts.SetTexID((IntPtr)fontTexture);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 
+                width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
+            io.Fonts.SetTexID((IntPtr)fontTexture);
             io.Fonts.ClearTexData();           
         }
 
@@ -314,7 +325,7 @@ namespace SDL2Engine.Core.GuiRenderer
 
             GL.Disable(EnableCap.CullFace);
             GL.Disable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.ScissorTest);
+            // GL.Enable(EnableCap.ScissorTest);
 
             // 3. Setup viewport & orthographic projection
             GL.Viewport(0, 0, (int)drawData.DisplaySize.X, (int)drawData.DisplaySize.Y);
@@ -368,13 +379,19 @@ namespace SDL2Engine.Core.GuiRenderer
                     }
                     else
                     {
-                        // Setup scissor
-                        GL.Scissor(
-                            (int)pcmd.ClipRect.X,
-                            (int)(drawData.DisplaySize.Y - pcmd.ClipRect.W),
-                            (int)(pcmd.ClipRect.Z - pcmd.ClipRect.X),
-                            (int)(pcmd.ClipRect.W - pcmd.ClipRect.Y)
-                        );
+
+                        float clipX = pcmd.ClipRect.X;
+                        float clipY = pcmd.ClipRect.Y;
+                        float clipW = pcmd.ClipRect.Z - clipX;
+                        float clipH = pcmd.ClipRect.W - clipY;
+                        int fbHeight = (int)drawData.DisplaySize.Y;
+                        // GL.Scissor(
+                        //     (int)clipX,
+                        //     (int)(fbHeight - (clipY + clipH)),
+                        //     (int)clipW,
+                        //     (int)clipH
+                        // );
+
 
                         // Bind texture
                         GL.ActiveTexture(TextureUnit.Texture0);

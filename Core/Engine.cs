@@ -138,14 +138,11 @@ namespace SDL2Engine.Core
                 // Unnessesary because each object can update their own position
                 // float alpha = accumulator / fixedStep;
                 // m_physicsService.InterpolateObjects(alpha);
-                
+
                 while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
                 {
-                    if (m_rendererType == RendererType.SDLRenderer)
-                    {
-                        InputManager.Update(e);
-                        HandleWindowEvents(e, ref running); 
-                    }
+                    InputManager.Update(e);
+                    HandleWindowEvents(e, ref running);
                     Debug.LogPollEvents(e);
                 }
 

@@ -150,9 +150,8 @@ namespace SDL2Engine.Core.Rendering
             return m_glHandle;
         }
 
-// Minimal naive shader strings
         private const string MyImGuiVertexShaderSrc = @"
-#version 330 core
+#version 450 core
 layout (location = 0) in vec2 Position;
 layout (location = 1) in vec2 UV;
 layout (location = 2) in vec4 Color;
@@ -166,11 +165,11 @@ void main()
 {
     Frag_UV = UV;
     Frag_Color = Color;
-    gl_Position = ProjMtx * vec4(Position, 0, 1);
+    gl_Position = ProjMtx * vec4(Position, 0.0, 1.0);
 }";
 
         private const string MyImGuiFragmentShaderSrc = @"
-#version 330 core
+#version 450 core
 in vec2 Frag_UV;
 in vec4 Frag_Color;
 
@@ -182,7 +181,6 @@ void main()
 {
     Out_Color = Frag_Color * texture(Texture, Frag_UV);
 }";
-
         private int CompileShader(ShaderType type, string src)
         {
             int shader = GL.CreateShader(type);

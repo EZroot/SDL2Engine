@@ -34,9 +34,9 @@ namespace SDL2Engine.Core.Windowing
         /// <exception cref="InvalidOperationException"></exception>
         public IntPtr CreateWindowOpenGL()
         {
-            // opengl version/flags (example: 3.3 core)
-            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 3);
+            // opengl version/flags OPENGL 4.5 requested
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 5);
             SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK,
                 (int)SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
 
