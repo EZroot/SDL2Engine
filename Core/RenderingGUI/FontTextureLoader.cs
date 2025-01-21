@@ -17,7 +17,7 @@ namespace SDL2Engine.Core.GuiRenderer
         /// Loads the current font texture, or IMGui default font if none specified.
         /// </summary>
         /// <exception cref="Exception"></exception>
-        public void LoadFontTexture()
+        public void LoadFontTextureSDL()
         {
             ImGuiIOPtr io = ImGui.GetIO();
             io.Fonts.GetTexDataAsRGBA32(out IntPtr pixelData, out int textureWidth, out int textureHeight, out int bytesPerPixel);
@@ -47,7 +47,7 @@ namespace SDL2Engine.Core.GuiRenderer
         /// <param name="fontPath"></param>
         /// <param name="fontSize"></param>
         /// <exception cref="FileNotFoundException"></exception>
-        public void LoadFontFromFile(string fontPath, float fontSize)
+        public void LoadFontFromFileSDL(string fontPath, float fontSize)
         {
             if (!File.Exists(fontPath))
             {
@@ -59,7 +59,7 @@ namespace SDL2Engine.Core.GuiRenderer
             io.Fonts.Build();
             
             // Re-invoke loading texture data after adding a new font
-            LoadFontTexture();
+            LoadFontTextureSDL();
         }
 
         public void Dispose()

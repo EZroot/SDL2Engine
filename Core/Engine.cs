@@ -10,6 +10,7 @@ using SDL2Engine.Events;
 using SDL2Engine.Core.CoreSystem.Configuration.Components;
 using System.Numerics;
 using Microsoft.Extensions.DependencyInjection;
+using OpenTK.Graphics.OpenGL4;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Partitions;
 using SDL2Engine.Core.Partitions.Interfaces;
@@ -37,11 +38,13 @@ namespace SDL2Engine.Core
         private IntPtr m_window, m_renderer;
         private int m_windowWidth, m_windowHeight;
         private int m_camera;
-
+        
+        private RendererType m_rendererType;
+        
         private bool disposed = false;
         private bool TEST_window_isopen = true;
 
-        public Engine(IServiceProvider serviceProvider)
+        public Engine(IServiceProvider serviceProvider, RendererType rendererType)
         {
             m_serviceProvider = serviceProvider;
             m_windowService = m_serviceProvider.GetService<IWindowService>();
@@ -54,6 +57,7 @@ namespace SDL2Engine.Core
             m_cameraService = m_serviceProvider.GetService<ICameraService>();
             m_physicsService = m_serviceProvider.GetService<IPhysicsService>();
 
+            m_rendererType = rendererType;
         }
 
         private void Initialize()
@@ -63,26 +67,53 @@ namespace SDL2Engine.Core
                 Debug.LogError("SDL could not initialize! SDL_Error: " + SDL.SDL_GetError());
                 return;
             }
-            
-            m_window = m_windowService.CreateWindowSDL();
-            m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/pinkboysingle.png");
-            m_renderer = m_renderService.CreateRenderer(m_window, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED 
-                                                                  | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
-            IntPtr imguiContext = ImGui.CreateContext();
-            ImGui.SetCurrentContext(imguiContext);
 
-            SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
-            m_windowWidth = windowWidth;
-            m_windowHeight = windowHeight;
+            if (m_rendererType == RendererType.SDLRenderer)
+            {
+                m_window = m_windowService.CreateWindowSDL();
+                m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/pinkboysingle.png");
+                m_renderer = m_renderService.CreateRendererSDL(m_window, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
+                IntPtr imguiContext = ImGui.CreateContext();
+                ImGui.SetCurrentContext(imguiContext);
+
+                SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
+                m_windowWidth = windowWidth;
+                m_windowHeight = windowHeight;
             
-            m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
-            m_guiRenderService.SetupIO(windowWidth, windowHeight);
+                m_guiRenderService.CreateGuiRenderSDL(m_window, m_renderer, windowWidth, windowHeight);
+                m_guiRenderService.SetupIOSDL(windowWidth, windowHeight);
             
-            m_camera = m_cameraService.CreateCamera(Vector2.One);
-            m_cameraService.SetActiveCamera(m_camera);
+                m_camera = m_cameraService.CreateCamera(Vector2.One);
+                m_cameraService.SetActiveCamera(m_camera);
             
-            m_physicsService.Initialize(9.81f);
-            m_physicsService.CreateWindowBoundaries(windowWidth, windowHeight);
+                m_physicsService.Initialize(9.81f);
+                m_physicsService.CreateWindowBoundaries(windowWidth, windowHeight);   
+            }
+
+            if (m_rendererType == RendererType.OpenGlRenderer)
+            {
+                m_window = m_windowService.CreateWindowOpenGL();
+                m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/pinkboysingle.png");
+                
+                m_renderer = m_renderService.CreateOpenGLContext(m_window);
+                m_renderService.CreateOpenGLDeviceObjects();
+                
+                SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
+                m_windowWidth = windowWidth;
+                m_windowHeight = windowHeight;
+            
+                IntPtr imguiContext = ImGui.CreateContext();
+                ImGui.SetCurrentContext(imguiContext);
+                
+                m_guiRenderService.CreateGuiRenderOpenGL(m_window, m_renderer, windowWidth, windowHeight);
+                m_guiRenderService.SetupIOGL(windowWidth, windowHeight);
+                
+                m_camera = m_cameraService.CreateCamera(Vector2.One);
+                m_cameraService.SetActiveCamera(m_camera);
+            
+                m_physicsService.Initialize(9.81f);
+                m_physicsService.CreateWindowBoundaries(windowWidth, windowHeight);
+            }
         }
 
         public void Run(IGame game)
@@ -110,30 +141,61 @@ namespace SDL2Engine.Core
                 
                 while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
                 {
-                    InputManager.Update(e);
+                    if (m_rendererType == RendererType.SDLRenderer)
+                    {
+                        InputManager.Update(e);
+                        HandleWindowEvents(e, ref running); 
+                    }
                     Debug.LogPollEvents(e);
-                    HandleWindowEvents(e, ref running); 
                 }
 
-                SDL.SDL_SetRenderDrawColor(m_renderer, 5, 5, 5, 255);
-                SDL.SDL_RenderClear(m_renderer);
+                if (m_rendererType == RendererType.SDLRenderer)
+                {
+                    SDL.SDL_SetRenderDrawColor(m_renderer, 5, 5, 5, 255);
+                    SDL.SDL_RenderClear(m_renderer);
+                }
+
+                if (m_rendererType == RendererType.OpenGlRenderer)
+                {
+                    GL.ClearColor(0.1f, 0.1f, 0.25f, 1.0f);
+                    GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                }
 
                 var camera = m_cameraService.GetCamera(m_camera);
                 HandleCameraInput(camera);
-
+                
                 game.Update(Time.DeltaTime);
                 game.Render();
 
-                ImGui.NewFrame();
-                game.RenderGui();
-                RenderGUI();
-                SDL.SDL_RenderPresent(m_renderer);
+                if (m_rendererType == RendererType.SDLRenderer)
+                {
+                    ImGui.NewFrame();
+                    game.RenderGui();
+                    RenderGUISDL();
+                }
+
+                if (m_rendererType == RendererType.OpenGlRenderer)
+                {
+                    ImGui.NewFrame();
+                    game.RenderGui();
+                    RenderGUIOpenGL();
+                }
+
+                if (m_rendererType == RendererType.OpenGlRenderer)
+                {
+                    SDL.SDL_GL_SwapWindow(m_window);
+                }
+
+                if (m_rendererType == RendererType.SDLRenderer)
+                {
+                    SDL.SDL_RenderPresent(m_renderer);
+                }
             }
 
             Dispose();
         }
 
-        private void RenderGUI()
+        private void RenderGUISDL()
         {
             ImGui.Render();
 
@@ -147,6 +209,16 @@ namespace SDL2Engine.Core
             {
                 ImGui.UpdatePlatformWindows();
                 ImGui.RenderPlatformWindowsDefault();
+            }
+        }
+
+        private void RenderGUIOpenGL()
+        {
+            ImGui.Render();
+            var drawData = ImGui.GetDrawData();
+            if (drawData.CmdListsCount > 0)
+            {
+                m_guiRenderService.RenderDrawDataGL(m_renderService, drawData);
             }
         }
 

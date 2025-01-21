@@ -25,7 +25,12 @@ public class GameApp
 {
     private readonly Engine _engine;
 
-    public GameApp()
+    /// <summary>
+    /// If using OPENGL, you must use custom opengl bindings
+    /// SDL Renderer makes things much easier, but no custom OPENGL 
+    /// </summary>
+    /// <param name="rendererType"></param>
+    public GameApp(RendererType rendererType = RendererType.SDLRenderer)
     {
         var services = new ServiceCollection();
 
@@ -50,11 +55,17 @@ public class GameApp
 
         var serviceProvider = services.BuildServiceProvider();
         
-        _engine = new Engine(serviceProvider);
+        _engine = new Engine(serviceProvider, rendererType);
     }
 
     public void Run(IGame game)
     {
         _engine?.Run(game);
     }
+}
+
+public enum RendererType
+{
+    SDLRenderer,
+    OpenGlRenderer
 }

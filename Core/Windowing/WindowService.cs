@@ -34,9 +34,20 @@ namespace SDL2Engine.Core.Windowing
         /// <exception cref="InvalidOperationException"></exception>
         public IntPtr CreateWindowOpenGL()
         {
-            SDL.SDL_WindowFlags windowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
+            // opengl version/flags (example: 3.3 core)
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, 3);
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK,
+                (int)SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_CORE);
 
-            IntPtr window = SDL.SDL_CreateWindow(
+            // add more here (e.g., SDL.SDL_GL_DOUBLEBUFFER, 1, etc.)
+
+            var windowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN
+                              | SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL
+                              | SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE
+                              | SDL.SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI;
+
+            m_window = SDL.SDL_CreateWindow(
                 m_windowConfig.Settings.WindowName,
                 SDL.SDL_WINDOWPOS_CENTERED,
                 SDL.SDL_WINDOWPOS_CENTERED,
@@ -45,14 +56,15 @@ namespace SDL2Engine.Core.Windowing
                 windowFlags
             );
 
-            if (window == IntPtr.Zero)
+            if (m_window == IntPtr.Zero)
             {
                 Debug.LogError("Window creation failed! SDL_Error: " + SDL.SDL_GetError());
                 SDL.SDL_Quit();
-                throw new InvalidOperationException("Renderer creation failed! SDL_Error: " + SDL.SDL_GetError());
+                throw new InvalidOperationException("OpenGL Window creation failed! SDL_Error: " + SDL.SDL_GetError());
             }
 
-            return window;
+            SubscribeToEvents();
+            return m_window;
         }
 
         /// <summary>
