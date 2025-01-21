@@ -166,18 +166,15 @@ namespace SDL2Engine.Core
                 
                 game.Update(Time.DeltaTime);
                 game.Render();
-
+                
+                ImGui.NewFrame();
+                game.RenderGui();
                 if (m_rendererType == RendererType.SDLRenderer)
                 {
-                    ImGui.NewFrame();
-                    game.RenderGui();
                     RenderGUISDL();
                 }
-
                 if (m_rendererType == RendererType.OpenGlRenderer)
                 {
-                    ImGui.NewFrame();
-                    game.RenderGui();
                     RenderGUIOpenGL();
                 }
 
@@ -185,7 +182,6 @@ namespace SDL2Engine.Core
                 {
                     SDL.SDL_GL_SwapWindow(m_window);
                 }
-
                 if (m_rendererType == RendererType.SDLRenderer)
                 {
                     SDL.SDL_RenderPresent(m_renderer);
