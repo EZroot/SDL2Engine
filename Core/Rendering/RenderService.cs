@@ -124,22 +124,16 @@ public OpenGLHandle Create2DImageOpenGLDeviceObjects(string vertShaderSrc, strin
 
     GL.BindVertexArray(vao);
 
-    // Bind and upload vertex data
     GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
     GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
-
-    // Bind and upload index data
     GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
     GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices, BufferUsageHint.StaticDraw);
 
     GL.GetBufferParameter(BufferTarget.ArrayBuffer, BufferParameterName.BufferSize, out int vertexBufferSize);
     GL.GetBufferParameter(BufferTarget.ElementArrayBuffer, BufferParameterName.BufferSize, out int indexBufferSize);
-    Debug.Log($"Vertex Buffer Size: {vertexBufferSize}, Index Buffer Size: {indexBufferSize}");
 
-    // Define vertex attributes
     GL.EnableVertexAttribArray(0); // Position
     GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
-
     GL.EnableVertexAttribArray(1); // Texture Coordinates
     GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
 

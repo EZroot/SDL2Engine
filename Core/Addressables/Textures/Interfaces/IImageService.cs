@@ -1,3 +1,4 @@
+using OpenTK.Mathematics;
 using SDL2;
 using SDL2Engine.Core.Addressables.Data;
 using SDL2Engine.Core.Rendering.Interfaces;
@@ -9,7 +10,7 @@ public interface IImageService
     nint LoadImageRaw(string path);
     TextureData LoadTexture(IntPtr renderer, string path);
     int LoadTextureOpenGL(string path);
-    void DrawTextureGL(IRenderService renderService, int textureId, ICamera camera);
+    void DrawTextureGL(IRenderService renderService, int textureId, ICamera camera, Matrix4 modelMatrix);
     void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect);
     void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect, ICamera camera);
     void DrawTextureWithRotation(nint renderer, int textureId, ref SDL.SDL_Rect destRect, float rotation, ref SDL.SDL_Point center);

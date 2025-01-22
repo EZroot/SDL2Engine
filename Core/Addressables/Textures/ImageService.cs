@@ -117,8 +117,7 @@ public class ImageService : IImageService
         Console.WriteLine($"Texture Loaded: ID={texId}, Size={width}x{height}, Path={path}");
         return texId;
     }
-
-    public void DrawTextureGL(IRenderService renderService, int textureId, ICamera camera)
+    public void DrawTextureGL(IRenderService renderService, int textureId, ICamera camera, Matrix4 modelMatrix)
     {
         var cameraGL = (CameraGL)camera;
 
@@ -133,6 +132,11 @@ public class ImageService : IImageService
         int projViewMatrixLocation = GL.GetUniformLocation(glHandler.ShaderHandle, "projViewMatrix");
         if (projViewMatrixLocation >= 0)
             GL.UniformMatrix4(projViewMatrixLocation, false, ref projectionView);
+
+        // Pass the model matrix
+        int modelMatrixLocation = GL.GetUniformLocation(glHandler.ShaderHandle, "modelMatrix");
+        if (modelMatrixLocation >= 0)
+            GL.UniformMatrix4(modelMatrixLocation, false, ref modelMatrix);
 
         // Bind VAO
         GL.BindVertexArray(glHandler.VaoHandle);

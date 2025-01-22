@@ -5,10 +5,11 @@ layout(location = 1) in vec2 inTexCoord;
 
 out vec2 fragTexCoord;
 
-uniform mat4 projViewMatrix; // Combined projection and view matrix
+uniform mat4 projViewMatrix;
+uniform mat4 modelMatrix;  
 
 void main()
 {
-    gl_Position = projViewMatrix * vec4(inPosition, 1.0);
+    gl_Position = projViewMatrix * modelMatrix * vec4(inPosition, 1.0);
     fragTexCoord = inTexCoord;
 }
