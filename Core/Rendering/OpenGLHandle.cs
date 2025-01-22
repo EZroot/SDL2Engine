@@ -1,26 +1,29 @@
 public class OpenGLHandle
 {
-    public int VaoHandle;
-    public int VboHandle;
-    public int ElementsHandle;
-    public int ShaderHandle;
-    public int AttribLocationTex;
-    public int AttribLocationProjMtx;
-    public int AttribLocationPosition;
-    public int AttribLocationUV;
-    public int AttribLocationColor;
+    public int VaoHandle { get; }
+    public int VboHandle { get; }
+    public int ElementsHandle { get; }
+    public int ShaderHandle { get; }
+    public int AttribLocationTex { get; }
+    public int AttribLocationProjMtx { get; }
+    public int AttribLocationPosition { get; }
+    public int AttribLocationUV { get; }
+    public int AttribLocationColor { get; }
+    public int ProjLocation { get; }
 
-    public OpenGLHandle(int vaoHandle, int vboHandle, int elementsHandle, int shaderHandle, int attribLocationTex,
-        int attribLocationProjMtx, int attribLocationPosition, int attribLocationUv, int attribLocationColor)
+    public OpenGLHandle(int vao, int vbo, int elements, int shader,
+        int attribTex, int attribProjMtx, int attribPosition, int attribUV, int attribColor,
+        int modelLocation, int projLocation)
     {
-        VaoHandle = vaoHandle;
-        VboHandle = vboHandle;
-        ElementsHandle = elementsHandle;
-        ShaderHandle = shaderHandle;
-        AttribLocationTex = attribLocationTex;
-        AttribLocationProjMtx = attribLocationProjMtx;
-        AttribLocationPosition = attribLocationPosition;
-        AttribLocationUV = attribLocationUv;
-        AttribLocationColor = attribLocationColor;
+        VaoHandle = vao;
+        VboHandle = vbo;
+        ElementsHandle = elements;
+        ShaderHandle = shader;
+        AttribLocationTex = attribTex;
+        AttribLocationProjMtx = attribProjMtx;
+        AttribLocationPosition = attribPosition;
+        AttribLocationUV = attribUV;
+        AttribLocationColor = attribColor;
+        ProjLocation = projLocation;
     }
 }

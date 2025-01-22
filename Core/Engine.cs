@@ -14,7 +14,8 @@ using OpenTK.Graphics.OpenGL4;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Partitions;
 using SDL2Engine.Core.Partitions.Interfaces;
-using SDL2Engine.Core.Physics.Interfaces;    
+using SDL2Engine.Core.Physics.Interfaces;
+using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core
 {
@@ -96,7 +97,9 @@ namespace SDL2Engine.Core
                 m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/pinkboysingle.png");
                 
                 m_renderer = m_renderService.CreateOpenGLContext(m_window);
-                m_renderService.CreateOpenGLDeviceObjects();
+                m_renderService.CreateOpenGLDeviceObjects(
+                    FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/imgui/imguishader.vert"),
+                    FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/imgui/imguishader.frag"));
                 
                 SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
                 m_windowWidth = windowWidth;

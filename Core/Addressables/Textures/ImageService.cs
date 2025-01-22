@@ -1,9 +1,12 @@
-using System.Numerics;
+using System.Runtime.InteropServices;
+using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using SDL2;
 using SDL2Engine.Core.Addressables.Data;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.Utils;
+using Vector2 = System.Numerics.Vector2;
 
 namespace SDL2Engine.Core.Addressables;
 
@@ -67,6 +70,86 @@ public class ImageService : IImageService
             Debug.Log($"<color=green>Texture Created:</color> Id:{textureData.Id} Size:{textureData.Width}x{textureData.Height} Path:{path}");
             return textureData;
         }
+
+public int LoadTextureOpenGL(string path)
+{
+    // Load surface with SDL_image
+    IntPtr surface = SDL_image.IMG_Load(path);
+    if (surface == IntPtr.Zero)
+        throw new Exception($"Failed to load image: {SDL.SDL_GetError()}");
+
+    // Convert the surface to RGBA format (SDL_PIXELFORMAT_RGBA32)
+    IntPtr convertedSurface = SDL.SDL_ConvertSurfaceFormat(surface, SDL.SDL_PIXELFORMAT_RGBA8888, 0);
+    if (convertedSurface == IntPtr.Zero)
+    {
+        SDL.SDL_FreeSurface(surface);
+        throw new Exception($"Failed to convert surface format: {SDL.SDL_GetError()}");
+    }
+
+    // Free the original surface as it's no longer needed
+    SDL.SDL_FreeSurface(surface);
+
+    // Marshal the converted surface to access its properties
+    SDL.SDL_Surface converted = Marshal.PtrToStructure<SDL.SDL_Surface>(convertedSurface);
+    int width = converted.w;
+    int height = converted.h;
+    IntPtr pixels = converted.pixels;
+
+    // Create OpenGL texture
+    int texId = GL.GenTexture();
+    GL.BindTexture(TextureTarget.Texture2D, texId);
+
+    // Set texture parameters
+    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+
+    // Upload pixel data to OpenGL
+    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
+        width, height, 0,
+        PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
+
+    // Generate mipmaps if desired
+    GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+
+    // Unbind the texture
+    GL.BindTexture(TextureTarget.Texture2D, 0);
+
+    // Free the converted surface
+    SDL.SDL_FreeSurface(convertedSurface);
+
+    Debug.Log($"<color=green>OpenGL Texture Created:</color> ID:{texId} Size:{width}x{height} Path:{path}");
+    return texId;
+}
+
+public void DrawTextureGL(IRenderService renderService, int textureId)
+{
+    var glHandler = renderService.OpenGLHandle;
+    
+    // Activate shader program
+    GL.UseProgram(glHandler.ShaderHandle);
+
+    // Bind texture to texture unit 0
+    GL.ActiveTexture(TextureUnit.Texture0);
+    GL.BindTexture(TextureTarget.Texture2D, textureId);
+    GL.Uniform1(GL.GetUniformLocation(glHandler.ShaderHandle, "Texture"), 0); // Ensure uniform name matches shader
+
+    // Create projection matrix (orthographic)
+    Matrix4 projection = Matrix4.CreateOrthographicOffCenter(0.0f, 800, 600, 0.0f, -1.0f, 1.0f);
+    GL.UniformMatrix4(glHandler.ProjLocation, false, ref projection);
+
+    // Bind VAO
+    GL.BindVertexArray(glHandler.VaoHandle);
+
+    // Draw the textured quad (assuming you have set up EBO with 6 indices for two triangles)
+    GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
+
+    // Unbind VAO and shader
+    GL.BindVertexArray(0);
+    GL.UseProgram(0);
+    GL.BindTexture(TextureTarget.Texture2D, 0);
+}
 
         /// <summary>
         /// Draw a texture to a destination by ID

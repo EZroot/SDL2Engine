@@ -13,7 +13,15 @@ public static class MathHelper
         t = Clamp((t - edge0) / (edge1 - edge0), 0.0f, 1.0f);
         return t * t * (3.0f - 2.0f * t);
     }
-
+    
+    /// <summary>
+    /// Converts degrees to radians.
+    /// </summary>
+    public static float DegreesToRadians(float degrees)
+    {
+        return degrees * (Pi / 180f);
+    }
+    
     /// <summary>
     /// Clamps a value between a minimum float and a maximum float.
     /// </summary>

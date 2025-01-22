@@ -15,7 +15,7 @@ namespace SDL2Engine.Core.AI
         private const float AlignmentWeight = 2.5f;
         private const float CohesionWeight = 2.0f;
         private const float SeparationWeight = 4.5f;
-        private const float DebugMousePullWeight = 2.5f;
+        private const float DebugMousePullWeight = 1f;
         private const float MinSeparationDistance = 1f; 
 
         private readonly List<GameObject> _boids = new();
@@ -84,6 +84,7 @@ namespace SDL2Engine.Core.AI
 
                 boid.Update(deltaTime);
             }
+            _boids.Sort((a, b) => a.Position.Y.CompareTo(b.Position.Y));
         }
 
         public void RenderBoids(nint renderer, ICameraService cameraService)

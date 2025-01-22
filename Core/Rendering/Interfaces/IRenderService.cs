@@ -8,6 +8,6 @@ namespace SDL2Engine.Core.Rendering.Interfaces
         OpenGLHandle OpenGLHandle { get; }
         IntPtr CreateRendererSDL(IntPtr window, SDL.SDL_RendererFlags renderFlags = SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
         nint CreateOpenGLContext(nint window);
-        OpenGLHandle CreateOpenGLDeviceObjects();
+        OpenGLHandle CreateOpenGLDeviceObjects(string vertShaderSrc, string fragShaderSrc);
     }
 }

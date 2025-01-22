@@ -79,45 +79,46 @@ namespace SDL2Engine.Core.Rendering
             Debug.Log("OpenGL bindings successfully initialized.");
         }
 
-        public OpenGLHandle CreateOpenGLDeviceObjects()
+        public OpenGLHandle CreateOpenGLDeviceObjects(string vertShaderSrc, string fragShaderSrc)
         {
-            // 1. Create a simple ImGui shader program
-            //    (Here you’d compile your own vertex/fragment shader & link them)
             var g_ShaderHandle = GL.CreateProgram();
-            int vert = CompileShader(ShaderType.VertexShader, MyImGuiVertexShaderSrc);
-            int frag = CompileShader(ShaderType.FragmentShader, MyImGuiFragmentShaderSrc);
+            int vert = CompileShader(ShaderType.VertexShader, vertShaderSrc);
+            int frag = CompileShader(ShaderType.FragmentShader, fragShaderSrc);
             GL.AttachShader(g_ShaderHandle, vert);
             GL.AttachShader(g_ShaderHandle, frag);
             GL.LinkProgram(g_ShaderHandle);
+            GL.GetProgram(g_ShaderHandle, GetProgramParameterName.LinkStatus, out int linkStatus);
+            if (linkStatus == 0)
+            {
+                string infoLog = GL.GetProgramInfoLog(g_ShaderHandle);
+                throw new Exception($"Shader program linking failed: {infoLog}");
+            }
+
             GL.DetachShader(g_ShaderHandle, vert);
             GL.DetachShader(g_ShaderHandle, frag);
             GL.DeleteShader(vert);
             GL.DeleteShader(frag);
             Debug.Log("Shaders finished compiling.");
-            // 2. Get uniform/attribute locations
             var g_AttribLocationTex = GL.GetUniformLocation(g_ShaderHandle, "Texture");
             var g_AttribLocationProjMtx = GL.GetUniformLocation(g_ShaderHandle, "ProjMtx");
             var g_AttribLocationPosition = GL.GetAttribLocation(g_ShaderHandle, "Position");
             var g_AttribLocationUV = GL.GetAttribLocation(g_ShaderHandle, "UV");
             var g_AttribLocationColor = GL.GetAttribLocation(g_ShaderHandle, "Color");
 
-            // 3. Create buffers/arrays
+            int modelLocation = GL.GetUniformLocation(g_ShaderHandle, "model");
+            int projLocation = GL.GetUniformLocation(g_ShaderHandle, "ProjMtx");
+
             var g_VaoHandle = GL.GenVertexArray();
             var g_VboHandle = GL.GenBuffer();
             var g_ElementsHandle = GL.GenBuffer();
 
             GL.BindVertexArray(g_VaoHandle);
 
-            // 4. Setup VBO
             GL.BindBuffer(BufferTarget.ArrayBuffer, g_VboHandle);
-            // Just allocate empty for now
             GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)0, IntPtr.Zero, BufferUsageHint.StreamDraw);
 
             Debug.Log("GL Vao/Vbo created.");
 
-            // 5. Setup attributes to match ImDrawVert layout:
-            //    struct ImDrawVert { ImVec2 pos; ImVec2 uv; ImU32 col; }
-            //    Typically 20 bytes per vertex: (2 floats + 2 floats + 4 bytes color)
             GL.EnableVertexAttribArray(g_AttribLocationPosition);
             GL.VertexAttribPointer(g_AttribLocationPosition,
                 2, VertexAttribPointerType.Float,
@@ -129,58 +130,25 @@ namespace SDL2Engine.Core.Rendering
                 false, 20, (IntPtr)8);
 
             GL.EnableVertexAttribArray(g_AttribLocationColor);
-            // Note the 'true' in VertexAttribPointer means normalized for unsigned bytes
             GL.VertexAttribPointer(g_AttribLocationColor,
                 4, VertexAttribPointerType.UnsignedByte,
                 true, 20, (IntPtr)16);
 
-            // 6. Setup IBO
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, g_ElementsHandle);
             GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)0, IntPtr.Zero, BufferUsageHint.StreamDraw);
 
-            // Unbind
             GL.BindVertexArray(0);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
 
-            m_glHandle = new OpenGLHandle(g_VaoHandle, g_VboHandle, g_ElementsHandle, g_ShaderHandle,
+            m_glHandle = new OpenGLHandle(
+                g_VaoHandle, g_VboHandle, g_ElementsHandle, g_ShaderHandle,
                 g_AttribLocationTex, g_AttribLocationProjMtx, g_AttribLocationPosition, g_AttribLocationUV,
-                g_AttribLocationColor);
+                g_AttribLocationColor, modelLocation, projLocation);
 
             return m_glHandle;
         }
 
-        private const string MyImGuiVertexShaderSrc = @"
-#version 450 core
-layout (location = 0) in vec2 Position;
-layout (location = 1) in vec2 UV;
-layout (location = 2) in vec4 Color;
-
-uniform mat4 ProjMtx;
-
-out vec2 Frag_UV;
-out vec4 Frag_Color;
-
-void main()
-{
-    Frag_UV = UV;
-    Frag_Color = Color;
-    gl_Position = ProjMtx * vec4(Position, 0.0, 1.0);
-}";
-
-        private const string MyImGuiFragmentShaderSrc = @"
-#version 450 core
-in vec2 Frag_UV;
-in vec4 Frag_Color;
-
-uniform sampler2D Texture;
-
-out vec4 Out_Color;
-
-void main()
-{
-    Out_Color = Frag_Color * texture(Texture, Frag_UV);
-}";
         private int CompileShader(ShaderType type, string src)
         {
             int shader = GL.CreateShader(type);

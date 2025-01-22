@@ -8,6 +8,8 @@ public interface IImageService
 {
     nint LoadImageRaw(string path);
     TextureData LoadTexture(IntPtr renderer, string path);
+    int LoadTextureOpenGL(string path);
+    void DrawTextureGL(IRenderService renderService, int textureId);
     void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect);
     void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect, ICamera camera);
     void DrawTextureWithRotation(nint renderer, int textureId, ref SDL.SDL_Rect destRect, float rotation, ref SDL.SDL_Point center);
