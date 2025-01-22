@@ -325,7 +325,7 @@ namespace SDL2Engine.Core.GuiRenderer
 
             GL.Disable(EnableCap.CullFace);
             GL.Disable(EnableCap.DepthTest);
-            // GL.Enable(EnableCap.ScissorTest);
+            GL.Enable(EnableCap.ScissorTest);
 
             // 3. Setup viewport & orthographic projection
             GL.Viewport(0, 0, (int)drawData.DisplaySize.X, (int)drawData.DisplaySize.Y);
@@ -385,12 +385,12 @@ namespace SDL2Engine.Core.GuiRenderer
                         float clipW = pcmd.ClipRect.Z - clipX;
                         float clipH = pcmd.ClipRect.W - clipY;
                         int fbHeight = (int)drawData.DisplaySize.Y;
-                        // GL.Scissor(
-                        //     (int)clipX,
-                        //     (int)(fbHeight - (clipY + clipH)),
-                        //     (int)clipW,
-                        //     (int)clipH
-                        // );
+                        GL.Scissor(
+                            (int)clipX,
+                            (int)(fbHeight - (clipY + clipH)),
+                            (int)clipW,
+                            (int)clipH
+                        );
 
 
                         // Bind texture
