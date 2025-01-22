@@ -4,6 +4,7 @@ using OpenTK.Mathematics;
 using SDL2;
 using SDL2Engine.Core.Addressables.Data;
 using SDL2Engine.Core.Addressables.Interfaces;
+using SDL2Engine.Core.Rendering;
 using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.Utils;
 using Vector2 = System.Numerics.Vector2;
@@ -117,19 +118,21 @@ public class ImageService : IImageService
         return texId;
     }
 
-    public void DrawTextureGL(IRenderService renderService, int textureId)
+    public void DrawTextureGL(IRenderService renderService, int textureId, ICamera camera)
     {
+        var cameraGL = (CameraGL)camera;
+
         GL.Enable(EnableCap.Blend);
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
         var glHandler = renderService.OpenGLHandle2D;
         GL.UseProgram(glHandler.ShaderHandle);
 
-        // Set the projection matrix
-        Matrix4 projection = Matrix4.CreateOrthographicOffCenter(0, 800, 600, 0, -1, 1);
-        int projMatrixLocation = GL.GetUniformLocation(glHandler.ShaderHandle, "projMatrix");
-        if (projMatrixLocation >= 0)
-            GL.UniformMatrix4(projMatrixLocation, false, ref projection);
+        // Combine projection and view matrices
+        Matrix4 projectionView = cameraGL.View * cameraGL.Projection;
+        int projViewMatrixLocation = GL.GetUniformLocation(glHandler.ShaderHandle, "projViewMatrix");
+        if (projViewMatrixLocation >= 0)
+            GL.UniformMatrix4(projViewMatrixLocation, false, ref projectionView);
 
         // Bind VAO
         GL.BindVertexArray(glHandler.VaoHandle);

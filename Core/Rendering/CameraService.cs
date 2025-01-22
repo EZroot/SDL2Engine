@@ -1,4 +1,5 @@
 using SDL2Engine.Core.Rendering.Interfaces;
+using System.Collections.Generic;
 using System.Numerics;
 using SDL2Engine.Core.Utils;
 
@@ -7,7 +8,7 @@ namespace SDL2Engine.Core.Rendering
     public class CameraService : ICameraService
     {
         private readonly Dictionary<int, ICamera> _idToCamera;
-        private readonly Dictionary<string, int> _nameToId; 
+        private readonly Dictionary<string, int> _nameToId;
         private int _nextId;
         private int? _activeCameraId;
 
@@ -19,7 +20,9 @@ namespace SDL2Engine.Core.Rendering
             _activeCameraId = null;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Creates a standard 2D camera.
+        /// </summary>
         public int CreateCamera(Vector2 initialPosition, float initialZoom = 1.0f)
         {
             int cameraId = _nextId++;
@@ -30,7 +33,22 @@ namespace SDL2Engine.Core.Rendering
             return cameraId;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Creates an OpenGL-specific camera with a projection matrix.
+        /// </summary>
+        public int CreateOpenGLCamera(Vector2 initialPosition, float viewportWidth, float viewportHeight, float initialZoom = 1.0f)
+        {
+            int cameraId = _nextId++;
+            var camera = new CameraGL(initialPosition, viewportWidth, viewportHeight, initialZoom);
+            _idToCamera[cameraId] = camera;
+
+            Debug.Log($"<color=green>OpenGL Camera Created:</color> ID={cameraId}, Position={camera.Position}, Zoom={camera.Zoom}, Viewport={viewportWidth}x{viewportHeight}");
+            return cameraId;
+        }
+
+        /// <summary>
+        /// Retrieves a camera by ID.
+        /// </summary>
         public ICamera GetCamera(int cameraId)
         {
             if (_idToCamera.TryGetValue(cameraId, out var camera))
@@ -41,7 +59,9 @@ namespace SDL2Engine.Core.Rendering
             return null;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Removes a camera by ID.
+        /// </summary>
         public bool RemoveCamera(int cameraId)
         {
             if (_idToCamera.Remove(cameraId))
@@ -61,7 +81,9 @@ namespace SDL2Engine.Core.Rendering
             return false;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Sets the active camera by ID.
+        /// </summary>
         public bool SetActiveCamera(int cameraId)
         {
             if (_idToCamera.ContainsKey(cameraId))
@@ -75,7 +97,9 @@ namespace SDL2Engine.Core.Rendering
             return false;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Retrieves the active camera.
+        /// </summary>
         public ICamera GetActiveCamera()
         {
             if (_activeCameraId.HasValue && _idToCamera.TryGetValue(_activeCameraId.Value, out var camera))
@@ -87,7 +111,9 @@ namespace SDL2Engine.Core.Rendering
             return null;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Cleans up all cameras.
+        /// </summary>
         public void Cleanup()
         {
             _idToCamera.Clear();

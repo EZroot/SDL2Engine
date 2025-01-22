@@ -107,8 +107,6 @@ namespace SDL2Engine.Core
                 SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
                 m_windowWidth = windowWidth;
                 m_windowHeight = windowHeight;
-                GL.Viewport(0, 0, m_windowWidth, m_windowHeight); 
-
             
                 IntPtr imguiContext = ImGui.CreateContext();
                 ImGui.SetCurrentContext(imguiContext);
@@ -116,7 +114,7 @@ namespace SDL2Engine.Core
                 m_guiRenderService.CreateGuiRenderOpenGL(m_window, m_renderer, windowWidth, windowHeight);
                 m_guiRenderService.SetupIOGL(windowWidth, windowHeight);
                 
-                m_camera = m_cameraService.CreateCamera(Vector2.One);
+                m_camera = m_cameraService.CreateOpenGLCamera(Vector2.One, m_windowWidth, m_windowHeight);
                 m_cameraService.SetActiveCamera(m_camera);
             
                 m_physicsService.Initialize(9.81f);

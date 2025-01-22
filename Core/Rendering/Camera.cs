@@ -21,7 +21,7 @@ namespace SDL2Engine.Core.Rendering
         /// Moves the camera by the specified delta.
         /// </summary>
         /// <param name="delta">Change in position.</param>
-        public void Move(Vector2 delta)
+        public virtual void Move(Vector2 delta)
         {
             Position += delta;
         }
@@ -30,7 +30,7 @@ namespace SDL2Engine.Core.Rendering
         /// Sets the camera's position.
         /// </summary>
         /// <param name="newPosition">New position.</param>
-        public void SetPosition(Vector2 newPosition)
+        public virtual void SetPosition(Vector2 newPosition)
         {
             Position = newPosition;
         }
@@ -39,7 +39,7 @@ namespace SDL2Engine.Core.Rendering
         /// Sets the camera's zoom level.
         /// </summary>
         /// <param name="newZoom">New zoom level.</param>
-        public void SetZoom(float newZoom)
+        public virtual void SetZoom(float newZoom)
         {
             Zoom = Math.Clamp(newZoom, 0.1f, 10.0f); // Clamp to reasonable zoom levels
         }
@@ -48,7 +48,7 @@ namespace SDL2Engine.Core.Rendering
         /// Gets the camera transformation offset.
         /// </summary>
         /// <returns>Offset vector.</returns>
-        public Vector2 GetOffset()
+        public virtual Vector2 GetOffset()
         {
             return Position * Zoom;
         }
@@ -57,7 +57,7 @@ namespace SDL2Engine.Core.Rendering
         /// Sets the camera's name.
         /// </summary>
         /// <param name="name">Name of the camera.</param>
-        public void SetName(string name)
+        public virtual void SetName(string name)
         {
             Name = name;
         }
