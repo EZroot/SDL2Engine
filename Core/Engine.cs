@@ -15,6 +15,7 @@ using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Partitions;
 using SDL2Engine.Core.Partitions.Interfaces;
 using SDL2Engine.Core.Physics.Interfaces;
+using SDL2Engine.Core.Rendering;
 using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core
@@ -239,7 +240,12 @@ namespace SDL2Engine.Core
 
                 m_windowWidth = e.window.data1;
                 m_windowHeight = e.window.data2;
-                GL.Viewport(0, 0, m_windowWidth, m_windowHeight); 
+                if (m_rendererType == RendererType.OpenGlRenderer)
+                {
+                    GL.Viewport(0, 0, m_windowWidth, m_windowHeight);
+                    ((CameraGL)(m_cameraService.GetActiveCamera())).UpdateProjection();
+                }
+
                 m_guiRenderService.OnWindowResize(m_windowWidth, m_windowHeight);
                 m_physicsService.CreateWindowBoundaries(m_windowWidth, m_windowHeight);
 

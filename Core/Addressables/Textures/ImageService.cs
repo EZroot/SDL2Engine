@@ -141,7 +141,7 @@ public class ImageService : IImageService
         // Bind VAO
         GL.BindVertexArray(glHandler.VaoHandle);
 
-        // Bind texture if applicable
+        // Bind texture
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2D, textureId);
 

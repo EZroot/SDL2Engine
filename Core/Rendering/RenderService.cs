@@ -18,7 +18,7 @@ namespace SDL2Engine.Core.Rendering
         private IntPtr m_render;
         private OpenGLHandle m_glHandleGui;
         private OpenGLHandle m_glHandle2D;
-        
+
         public IntPtr RenderPtr => m_render;
         public OpenGLHandle OpenGLHandleGui => m_glHandleGui;
         public OpenGLHandle OpenGLHandle2D => m_glHandle2D;
@@ -83,65 +83,70 @@ namespace SDL2Engine.Core.Rendering
             Debug.Log("OpenGL bindings successfully initialized.");
         }
 
-public OpenGLHandle Create2DImageOpenGLDeviceObjects(string vertShaderSrc, string fragShaderSrc)
-{
-    var g_ShaderHandle = GL.CreateProgram();
-    int vert = CompileShader(ShaderType.VertexShader, vertShaderSrc);
-    int frag = CompileShader(ShaderType.FragmentShader, fragShaderSrc);
-    GL.AttachShader(g_ShaderHandle, vert);
-    GL.AttachShader(g_ShaderHandle, frag);
-    GL.LinkProgram(g_ShaderHandle);
+        public OpenGLHandle Create2DImageOpenGLDeviceObjects(string vertShaderSrc, string fragShaderSrc)
+        {
+            var g_ShaderHandle = GL.CreateProgram();
+            int vert = CompileShader(ShaderType.VertexShader, vertShaderSrc);
+            int frag = CompileShader(ShaderType.FragmentShader, fragShaderSrc);
+            GL.AttachShader(g_ShaderHandle, vert);
+            GL.AttachShader(g_ShaderHandle, frag);
+            GL.LinkProgram(g_ShaderHandle);
 
-    GL.GetProgram(g_ShaderHandle, GetProgramParameterName.LinkStatus, out int linkStatus);
-    if (linkStatus == 0)
-    {
-        string infoLog = GL.GetProgramInfoLog(g_ShaderHandle);
-        throw new Exception($"Shader program linking failed: {infoLog}");
-    }
+            GL.GetProgram(g_ShaderHandle, GetProgramParameterName.LinkStatus, out int linkStatus);
+            if (linkStatus == 0)
+            {
+                string infoLog = GL.GetProgramInfoLog(g_ShaderHandle);
+                throw new Exception($"Shader program linking failed: {infoLog}");
+            }
 
-    GL.DetachShader(g_ShaderHandle, vert);
-    GL.DetachShader(g_ShaderHandle, frag);
-    GL.DeleteShader(vert);
-    GL.DeleteShader(frag);
+            GL.DetachShader(g_ShaderHandle, vert);
+            GL.DetachShader(g_ShaderHandle, frag);
+            GL.DeleteShader(vert);
+            GL.DeleteShader(frag);
 
-    // Vertex and Index data
-    float[] vertices = {
-        0.0f,  0.0f, 0.0f,  0.0f, 1.0f, // Bottom-left
-        32.0f, 0.0f, 0.0f,  1.0f, 1.0f, // Bottom-right
-        32.0f, 32.0f, 0.0f,  1.0f, 0.0f, // Top-right
-        0.0f,  32.0f, 0.0f,  0.0f, 0.0f  // Top-left
-    };
+            // Vertex and Index data
+            float[] vertices =
+            {
+                0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+                1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f, 0.0f
+            };
 
-    int[] indices = {
-        0, 1, 2, // First triangle
-        2, 3, 0  // Second triangle
-    };
+            int[] indices =
+            {
+                0, 1, 2,
+                2, 3, 0
+            };
 
-    // Set up VAO, VBO, and EBO
-    var vao = GL.GenVertexArray();
-    var vbo = GL.GenBuffer();
-    var ebo = GL.GenBuffer();
+            // Set up VAO, VBO, and EBO
+            var vao = GL.GenVertexArray();
+            var vbo = GL.GenBuffer();
+            var ebo = GL.GenBuffer();
 
-    GL.BindVertexArray(vao);
+            GL.BindVertexArray(vao);
 
-    GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
-    GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
-    GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
-    GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices, BufferUsageHint.StaticDraw);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices,
+                BufferUsageHint.StaticDraw);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices,
+                BufferUsageHint.StaticDraw);
 
-    GL.GetBufferParameter(BufferTarget.ArrayBuffer, BufferParameterName.BufferSize, out int vertexBufferSize);
-    GL.GetBufferParameter(BufferTarget.ElementArrayBuffer, BufferParameterName.BufferSize, out int indexBufferSize);
+            GL.GetBufferParameter(BufferTarget.ArrayBuffer, BufferParameterName.BufferSize, out int vertexBufferSize);
+            GL.GetBufferParameter(BufferTarget.ElementArrayBuffer, BufferParameterName.BufferSize,
+                out int indexBufferSize);
 
-    GL.EnableVertexAttribArray(0); // Position
-    GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
-    GL.EnableVertexAttribArray(1); // Texture Coordinates
-    GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(1);
+            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
 
-    GL.BindVertexArray(0);
+            GL.BindVertexArray(0);
 
-    m_glHandle2D = new OpenGLHandle(vao, vbo, ebo, g_ShaderHandle);
-    return m_glHandle2D;
-}
+            m_glHandle2D = new OpenGLHandle(vao, vbo, ebo, g_ShaderHandle);
+            return m_glHandle2D;
+        }
 
         public OpenGLHandle CreateOpenGLDeviceObjects(string vertShaderSrc, string fragShaderSrc)
         {
