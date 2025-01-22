@@ -14,10 +14,14 @@ namespace SDL2Engine.Core.Rendering
         private readonly ISysInfo m_sysInfo;
         private readonly IWindowConfig m_windowConfig; // Replace with a renderer config if I need to
 
-        private OpenGLHandle m_glHandle;
+
         private IntPtr m_render;
+        private OpenGLHandle m_glHandleGui;
+        private OpenGLHandle m_glHandle2D;
+        
         public IntPtr RenderPtr => m_render;
-        public OpenGLHandle OpenGLHandle => m_glHandle;
+        public OpenGLHandle OpenGLHandleGui => m_glHandleGui;
+        public OpenGLHandle OpenGLHandle2D => m_glHandle2D;
 
         public RenderService(ISysInfo sysInfo, IWindowConfig windowConfig)
         {
@@ -79,6 +83,72 @@ namespace SDL2Engine.Core.Rendering
             Debug.Log("OpenGL bindings successfully initialized.");
         }
 
+public OpenGLHandle Create2DImageOpenGLDeviceObjects(string vertShaderSrc, string fragShaderSrc)
+{
+    var g_ShaderHandle = GL.CreateProgram();
+    int vert = CompileShader(ShaderType.VertexShader, vertShaderSrc);
+    int frag = CompileShader(ShaderType.FragmentShader, fragShaderSrc);
+    GL.AttachShader(g_ShaderHandle, vert);
+    GL.AttachShader(g_ShaderHandle, frag);
+    GL.LinkProgram(g_ShaderHandle);
+
+    GL.GetProgram(g_ShaderHandle, GetProgramParameterName.LinkStatus, out int linkStatus);
+    if (linkStatus == 0)
+    {
+        string infoLog = GL.GetProgramInfoLog(g_ShaderHandle);
+        throw new Exception($"Shader program linking failed: {infoLog}");
+    }
+
+    GL.DetachShader(g_ShaderHandle, vert);
+    GL.DetachShader(g_ShaderHandle, frag);
+    GL.DeleteShader(vert);
+    GL.DeleteShader(frag);
+
+    // Vertex and Index data
+    float[] vertices = {
+        0.0f,  0.0f, 0.0f,  0.0f, 1.0f, // Bottom-left
+        32.0f, 0.0f, 0.0f,  1.0f, 1.0f, // Bottom-right
+        32.0f, 32.0f, 0.0f,  1.0f, 0.0f, // Top-right
+        0.0f,  32.0f, 0.0f,  0.0f, 0.0f  // Top-left
+    };
+
+    int[] indices = {
+        0, 1, 2, // First triangle
+        2, 3, 0  // Second triangle
+    };
+
+    // Set up VAO, VBO, and EBO
+    var vao = GL.GenVertexArray();
+    var vbo = GL.GenBuffer();
+    var ebo = GL.GenBuffer();
+
+    GL.BindVertexArray(vao);
+
+    // Bind and upload vertex data
+    GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+    GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+
+    // Bind and upload index data
+    GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
+    GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices, BufferUsageHint.StaticDraw);
+
+    GL.GetBufferParameter(BufferTarget.ArrayBuffer, BufferParameterName.BufferSize, out int vertexBufferSize);
+    GL.GetBufferParameter(BufferTarget.ElementArrayBuffer, BufferParameterName.BufferSize, out int indexBufferSize);
+    Debug.Log($"Vertex Buffer Size: {vertexBufferSize}, Index Buffer Size: {indexBufferSize}");
+
+    // Define vertex attributes
+    GL.EnableVertexAttribArray(0); // Position
+    GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+
+    GL.EnableVertexAttribArray(1); // Texture Coordinates
+    GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+
+    GL.BindVertexArray(0);
+
+    m_glHandle2D = new OpenGLHandle(vao, vbo, ebo, g_ShaderHandle);
+    return m_glHandle2D;
+}
+
         public OpenGLHandle CreateOpenGLDeviceObjects(string vertShaderSrc, string fragShaderSrc)
         {
             var g_ShaderHandle = GL.CreateProgram();
@@ -105,7 +175,6 @@ namespace SDL2Engine.Core.Rendering
             var g_AttribLocationUV = GL.GetAttribLocation(g_ShaderHandle, "UV");
             var g_AttribLocationColor = GL.GetAttribLocation(g_ShaderHandle, "Color");
 
-            int modelLocation = GL.GetUniformLocation(g_ShaderHandle, "model");
             int projLocation = GL.GetUniformLocation(g_ShaderHandle, "ProjMtx");
 
             var g_VaoHandle = GL.GenVertexArray();
@@ -141,12 +210,12 @@ namespace SDL2Engine.Core.Rendering
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
 
-            m_glHandle = new OpenGLHandle(
+            m_glHandleGui = new OpenGLHandle(
                 g_VaoHandle, g_VboHandle, g_ElementsHandle, g_ShaderHandle,
                 g_AttribLocationTex, g_AttribLocationProjMtx, g_AttribLocationPosition, g_AttribLocationUV,
-                g_AttribLocationColor, modelLocation, projLocation);
+                g_AttribLocationColor, projLocation);
 
-            return m_glHandle;
+            return m_glHandleGui;
         }
 
         private int CompileShader(ShaderType type, string src)

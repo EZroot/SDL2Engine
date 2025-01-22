@@ -303,7 +303,7 @@ namespace SDL2Engine.Core.GuiRenderer
 
         public void RenderDrawDataGL(IRenderService renderService, ImDrawDataPtr drawData)
         {
-            var glHandle = renderService.OpenGLHandle;
+            var glHandle = renderService.OpenGLHandleGui;
 
             // 1. Backup GL state you care about (blend, scissor, etc.)
             bool blendEnabled = GL.IsEnabled(EnableCap.Blend);
@@ -327,9 +327,6 @@ namespace SDL2Engine.Core.GuiRenderer
             GL.Disable(EnableCap.DepthTest);
             GL.Enable(EnableCap.ScissorTest);
 
-            // 3. Setup viewport & orthographic projection
-            GL.Viewport(0, 0, (int)drawData.DisplaySize.X, (int)drawData.DisplaySize.Y);
-
             float L = 0.0f;
             float R = drawData.DisplaySize.X;
             float T = 0.0f;
@@ -344,8 +341,8 @@ namespace SDL2Engine.Core.GuiRenderer
 
             // 4. Use our ImGui shader & set uniforms
             GL.UseProgram(glHandle.ShaderHandle);
-            GL.Uniform1(glHandle.AttribLocationTex, 0); // set 'Texture' sampler to 0
-            GL.UniformMatrix4(glHandle.AttribLocationProjMtx, false, ref ortho);
+            GL.Uniform1((int)glHandle.AttribLocationTex, 0); // set 'Texture' sampler to 0
+            GL.UniformMatrix4((int)glHandle.AttribLocationProjMtx, false, ref ortho);
 
             // 5. Render command lists
             GL.BindVertexArray(glHandle.VaoHandle);

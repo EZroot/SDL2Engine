@@ -100,10 +100,15 @@ namespace SDL2Engine.Core
                 m_renderService.CreateOpenGLDeviceObjects(
                     FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/imgui/imguishader.vert"),
                     FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/imgui/imguishader.frag"));
+                m_renderService.Create2DImageOpenGLDeviceObjects(
+                    FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/2d/2dshader.vert"),
+                    FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/2d/2dshader.frag"));
                 
                 SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
                 m_windowWidth = windowWidth;
                 m_windowHeight = windowHeight;
+                GL.Viewport(0, 0, m_windowWidth, m_windowHeight); 
+
             
                 IntPtr imguiContext = ImGui.CreateContext();
                 ImGui.SetCurrentContext(imguiContext);
@@ -236,6 +241,7 @@ namespace SDL2Engine.Core
 
                 m_windowWidth = e.window.data1;
                 m_windowHeight = e.window.data2;
+                GL.Viewport(0, 0, m_windowWidth, m_windowHeight); 
                 m_guiRenderService.OnWindowResize(m_windowWidth, m_windowHeight);
                 m_physicsService.CreateWindowBoundaries(m_windowWidth, m_windowHeight);
 
