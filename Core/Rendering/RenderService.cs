@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using OpenTK;
 using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using SDL2;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.Rendering.Interfaces;
@@ -19,10 +20,15 @@ namespace SDL2Engine.Core.Rendering
         private IntPtr m_render;
         private OpenGLHandle m_glHandleGui;
         private OpenGLHandle m_glHandle2D;
+        private OpenGLHandle m_glHandleDebug;
+        
+        private List<(Vector2 Start, Vector2 End, Color4 Color)> m_debugLines = new List<(Vector2, Vector2, Color4)>();
+        private List<(Vector2 TopLeft, Vector2 BottomRight, Color4 Color)> m_debugRects = new List<(Vector2, Vector2, Color4)>();
 
         public IntPtr RenderPtr => m_render;
         public OpenGLHandle OpenGLHandleGui => m_glHandleGui;
         public OpenGLHandle OpenGLHandle2D => m_glHandle2D;
+        public OpenGLHandle OpenGlHandleDebug => m_glHandleDebug;
 
         public RenderService(ISysInfo sysInfo, IWindowConfig windowConfig)
         {
@@ -49,6 +55,9 @@ namespace SDL2Engine.Core.Rendering
                 Create2DGLBindings(
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/2d/2dshader.vert"),
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/2d/2dshader.frag"));
+                CreateDebugGLBindings(
+                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/debugging/debug.vert"),
+                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/debugging/debug.frag"));
                 
                 GL.Enable(EnableCap.Blend);
                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -59,6 +68,133 @@ namespace SDL2Engine.Core.Rendering
             return CreateRendererSDL(window, renderFlags);
         }
         
+        public void DrawLine(Vector2 start, Vector2 end, Color4 color)
+        {
+            m_debugLines.Add((start, end, color));
+        }
+
+        public void DrawRect(Vector2 topLeft, Vector2 bottomRight, Color4 color)
+        {
+            m_debugRects.Add((topLeft, bottomRight, color));
+        }
+public void RenderDebugPrimitives(Matrix4 projection)
+{
+    if (m_glHandleDebug == null)
+        return;
+    
+    GL.UseProgram(m_glHandleDebug.Handles.Shader);
+    
+    // Set projection matrix uniform
+    int projLocation = GL.GetUniformLocation(m_glHandleDebug.Handles.Shader, "uProjection");
+    GL.UniformMatrix4(projLocation, false, ref projection);
+    
+    GL.BindVertexArray(m_glHandleDebug.Handles.Vao);
+    GL.BindBuffer(BufferTarget.ArrayBuffer, m_glHandleDebug.Handles.Vbo);
+    
+    List<float> vertices = new List<float>();
+    
+    // Add lines
+    foreach (var line in m_debugLines)
+    {
+        vertices.Add(line.Start.X);
+        vertices.Add(line.Start.Y);
+        vertices.Add(line.Color.R);
+        vertices.Add(line.Color.G);
+        vertices.Add(line.Color.B);
+        vertices.Add(line.Color.A);
+        
+        vertices.Add(line.End.X);
+        vertices.Add(line.End.Y);
+        vertices.Add(line.Color.R);
+        vertices.Add(line.Color.G);
+        vertices.Add(line.Color.B);
+        vertices.Add(line.Color.A);
+    }
+    
+    // Add rectangles as lines
+    foreach (var rect in m_debugRects)
+    {
+        Vector2 topRight = new Vector2(rect.BottomRight.X, rect.TopLeft.Y);
+        Vector2 bottomLeft = new Vector2(rect.TopLeft.X, rect.BottomRight.Y);
+        
+        // Top
+        vertices.Add(rect.TopLeft.X);
+        vertices.Add(rect.TopLeft.Y);
+        vertices.Add(rect.Color.R);
+        vertices.Add(rect.Color.G);
+        vertices.Add(rect.Color.B);
+        vertices.Add(rect.Color.A);
+        
+        vertices.Add(topRight.X);
+        vertices.Add(topRight.Y);
+        vertices.Add(rect.Color.R);
+        vertices.Add(rect.Color.G);
+        vertices.Add(rect.Color.B);
+        vertices.Add(rect.Color.A);
+        
+        // Right
+        vertices.Add(topRight.X);
+        vertices.Add(topRight.Y);
+        vertices.Add(rect.Color.R);
+        vertices.Add(rect.Color.G);
+        vertices.Add(rect.Color.B);
+        vertices.Add(rect.Color.A);
+        
+        vertices.Add(rect.BottomRight.X);
+        vertices.Add(rect.BottomRight.Y);
+        vertices.Add(rect.Color.R);
+        vertices.Add(rect.Color.G);
+        vertices.Add(rect.Color.B);
+        vertices.Add(rect.Color.A);
+        
+        // Bottom
+        vertices.Add(rect.BottomRight.X);
+        vertices.Add(rect.BottomRight.Y);
+        vertices.Add(rect.Color.R);
+        vertices.Add(rect.Color.G);
+        vertices.Add(rect.Color.B);
+        vertices.Add(rect.Color.A);
+        
+        vertices.Add(bottomLeft.X);
+        vertices.Add(bottomLeft.Y);
+        vertices.Add(rect.Color.R);
+        vertices.Add(rect.Color.G);
+        vertices.Add(rect.Color.B);
+        vertices.Add(rect.Color.A);
+        
+        // Left
+        vertices.Add(bottomLeft.X);
+        vertices.Add(bottomLeft.Y);
+        vertices.Add(rect.Color.R);
+        vertices.Add(rect.Color.G);
+        vertices.Add(rect.Color.B);
+        vertices.Add(rect.Color.A);
+        
+        vertices.Add(rect.TopLeft.X);
+        vertices.Add(rect.TopLeft.Y);
+        vertices.Add(rect.Color.R);
+        vertices.Add(rect.Color.G);
+        vertices.Add(rect.Color.B);
+        vertices.Add(rect.Color.A);
+    }
+    
+    // Update buffer data
+    GL.BindBuffer(BufferTarget.ArrayBuffer, m_glHandleDebug.Handles.Vbo);
+    GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertices.Count * sizeof(float), vertices.ToArray());
+    
+    // Draw lines
+    GL.DrawArrays(PrimitiveType.Lines, 0, vertices.Count / 6);
+    
+    // Cleanup
+    GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+    GL.BindVertexArray(0);
+    GL.UseProgram(0);
+    
+    // Clear debug primitives after rendering
+    m_debugLines.Clear();
+    m_debugRects.Clear();
+}
+
         private IntPtr CreateRendererSDL(IntPtr window, SDL.SDL_RendererFlags renderFlags =
             SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED)
         {
@@ -158,6 +294,33 @@ namespace SDL2Engine.Core.Rendering
             var mandatoryHandle = new OpenGLMandatoryHandles(vao, vbo, ebo, shaderProgram);
             m_glHandle2D = new OpenGLHandle(mandatoryHandle);
             return m_glHandle2D;
+        }
+        
+        public OpenGLHandle CreateDebugGLBindings(string vertShaderSrc, string fragShaderSrc)
+        {
+            var shaderProgram = GLHelper.CreateShaderProgram(vertShaderSrc, fragShaderSrc);
+    
+            var vao = GL.GenVertexArray();
+            var vbo = GL.GenBuffer();
+    
+            GL.BindVertexArray(vao);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+            // Allocate initial buffer size, can be resized dynamically
+            GL.BufferData(BufferTarget.ArrayBuffer, sizeof(float) * 6 * 1000, IntPtr.Zero, BufferUsageHint.DynamicDraw);
+    
+            // Position attribute
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
+    
+            // Color attribute
+            GL.EnableVertexAttribArray(1);
+            GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, 6 * sizeof(float), 2 * sizeof(float));
+    
+            GL.BindVertexArray(0);
+    
+            var mandatoryHandles = new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram);
+            m_glHandleDebug = new OpenGLHandle(mandatoryHandles);
+            return m_glHandleDebug;
         }
         
         public OpenGLHandle CreateImGuiGLBindings(string vertShaderSrc, string fragShaderSrc)

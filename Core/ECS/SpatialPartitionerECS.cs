@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
+using OpenTK.Mathematics;
 using SDL2;
 using SDL2Engine.Core.ECS;
 using SDL2Engine.Core.ECS.Components;
 using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.Utils;
+using Vector2 = System.Numerics.Vector2;
 
 namespace SDL2Engine.Core.Partitions
 {
@@ -163,10 +164,11 @@ namespace SDL2Engine.Core.Partitions
             return Enumerable.Empty<Entity>();
         }
 
-        public void RenderDebug(nint renderer, ICameraService cameraService = null)
+        public void RenderDebug(IRenderService renderService, Matrix4 projection, ICameraService cameraService = null)
         {
-            var rectColor = new SDL.SDL_Color { r = 255, g = 0, b = 0, a = 255 };
-            var lineColor = new SDL.SDL_Color { r = 0, g = 255, b = 0, a = 255 };
+            // Define colors using OpenTK's Color4
+            Color4 rectColor = new Color4(1.0f, 0.0f, 0.0f, 1.0f); // Red
+            Color4 lineColor = new Color4(0.0f, 1.0f, 0.0f, 1.0f); // Green
 
             Vector2 cameraOffset = Vector2.Zero;
 
@@ -180,18 +182,14 @@ namespace SDL2Engine.Core.Partitions
                 var cell = kvp.Key;
                 var entities = kvp.Value;
 
-                var rect = new SDL.SDL_Rect
-                {
-                    x = (int)(cell.Item1 * cellSize - cameraOffset.X),
-                    y = (int)(cell.Item2 * cellSize - cameraOffset.Y),
-                    w = (int)cellSize,
-                    h = (int)cellSize
-                };
-                SDL.SDL_SetRenderDrawColor(renderer, rectColor.r, rectColor.g, rectColor.b, rectColor.a);
+                // Calculate top-left and bottom-right positions of the cell
+                Vector2 topLeft = new Vector2(cell.Item1 * cellSize, cell.Item2 * cellSize) - cameraOffset;
+                Vector2 bottomRight = topLeft + new Vector2(cellSize, cellSize);
 
-                SDL.SDL_RenderDrawRect(renderer, ref rect);
-
-                SDL.SDL_SetRenderDrawColor(renderer, lineColor.r, lineColor.g, lineColor.b, lineColor.a);
+                // Draw rectangle for the cell
+                var tl = new OpenTK.Mathematics.Vector2(topLeft.X, topLeft.Y);
+                var br = new OpenTK.Mathematics.Vector2(bottomRight.X, bottomRight.Y);
+                renderService.DrawRect(tl, br, rectColor);
 
                 foreach (var entity in entities)
                 {
@@ -207,39 +205,14 @@ namespace SDL2Engine.Core.Partitions
                             {
                                 Vector2 otherPosition = otherPosComp.Position - cameraOffset;
 
-                                SDL.SDL_RenderDrawLine(renderer,
-                                    (int)objPosition.X, (int)objPosition.Y,
-                                    (int)otherPosition.X, (int)otherPosition.Y);
+                                // Draw line between entities
+                                var objPos = new OpenTK.Mathematics.Vector2(objPosition.X,objPosition.Y);
+                                var otherPos = new OpenTK.Mathematics.Vector2(otherPosition.X,otherPosition.Y);
+                                renderService.DrawLine(objPos, otherPos, lineColor);
                             }
                         }
                     }
                 }
-            }
-        }
-        /// <summary>
-        /// Prints the current state of the spatial grid to the console.
-        /// </summary>
-        public void PrintDebugInfo()
-        {
-            Console.WriteLine("Spatial Partitioner Debug Information:");
-            Console.WriteLine($"Cell Size: {cellSize}");
-            Console.WriteLine($"Total Cells: {grid.Count}");
-            Console.WriteLine();
-
-            foreach (var kvp in grid)
-            {
-                var cell = kvp.Key;
-                var entities = kvp.Value;
-
-                Console.WriteLine($"Cell ({cell.Item1}, {cell.Item2}): {entities.Count} entities");
-                foreach (var entity in entities)
-                {
-                    if (componentManager.TryGetComponent(entity, out PositionComponent posComp))
-                    {
-                        Console.WriteLine($"\tEntity ID: {entity.Id}, Position: ({posComp.Position.X}, {posComp.Position.Y})");
-                    }
-                }
-                Console.WriteLine();
             }
         }
     }

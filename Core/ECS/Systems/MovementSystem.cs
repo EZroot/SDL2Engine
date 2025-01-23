@@ -1,5 +1,6 @@
 using System.Numerics;
 using SDL2Engine.Core.ECS.Components;
+using SDL2Engine.Core.Rendering.Interfaces;
 
 namespace SDL2Engine.Core.ECS.Systems
 {
@@ -29,7 +30,7 @@ namespace SDL2Engine.Core.ECS.Systems
             }
         }
 
-        public void Render(nint renderer)
+        public void Render(IRenderService renderService, ICameraService cameraService)
         {
             // does not handle rendering.
         }

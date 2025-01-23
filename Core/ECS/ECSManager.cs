@@ -13,7 +13,7 @@ namespace SDL2Engine.Core.ECS
         private readonly ComponentManager componentManager = new ComponentManager();
         private readonly SystemManager systemManager;
 
-        private readonly nint renderer;
+        private readonly IRenderService rendererService;
         private readonly ICameraService cameraService;
         private readonly IImageService imageService;
         
@@ -21,7 +21,7 @@ namespace SDL2Engine.Core.ECS
 
         public ECSManager(IRenderService renderService, IImageService imageService, ICameraService cameraService)
         {
-            this.renderer = renderService.RenderPtr;
+            this.rendererService = renderService;
             this.cameraService = cameraService;
             this.imageService = imageService;
             systemManager = new SystemManager();
@@ -60,7 +60,7 @@ namespace SDL2Engine.Core.ECS
 
         public void Render()
         {
-            systemManager.Render(renderer);
+            systemManager.Render(rendererService, cameraService);
         }
 
         public IEnumerable<Entity> GetEntitiesWith<T1, T2>() 

@@ -3,6 +3,7 @@ using System.Numerics;
 using SDL2Engine.Core.ECS.Components;
 using SDL2Engine.Core.ECS.Systems;
 using SDL2Engine.Core.Partitions;
+using SDL2Engine.Core.Rendering;
 using SDL2Engine.Core.Rendering.Interfaces;
 
 namespace SDL2Engine.Core.ECS.Systems
@@ -41,12 +42,11 @@ namespace SDL2Engine.Core.ECS.Systems
             }
         }
 
-        public void Render(nint renderer)
+        public void Render(IRenderService renderService, ICameraService cameraService)
         {
-            // spatialPartitioner.RenderDebug(renderer);
-            spatialPartitioner.PrintDebugInfo();
+            var camera = (CameraGL)cameraService.GetActiveCamera();
+            spatialPartitioner.RenderDebug(renderService, camera.Projection, cameraService);
+            // spatialPartitioner.PrintDebugInfo();
         }
-        
-        
     }
 }

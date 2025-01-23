@@ -26,11 +26,11 @@ namespace SDL2Engine.Core.ECS.Systems
             }
         }
 
-        public void Render(nint renderer)
+        public void Render(IRenderService renderService, ICameraService cameraService)
         {
             foreach (var system in systems)
             {
-                system.Render(renderer);
+                system.Render(renderService, cameraService);
             }
         }
     }
