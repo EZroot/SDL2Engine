@@ -58,6 +58,42 @@ namespace SDL2Engine.Core.ECS.Components
             }
         }
 
+
+        /// <summary>
+        /// Retrieves all entities that have all specified component types.
+        /// </summary>
+        public IEnumerable<Entity> GetEntitiesWith<T1>()
+            where T1 : struct, IComponent
+        {
+            var dict1 = GetComponentDictionary<T1>();
+
+            foreach (var entityId in dict1.Keys)
+            {
+                yield return new Entity(entityId);
+            }
+        }
+
+        /// <summary>
+        /// Retrieves all entities that have all specified component types.
+        /// </summary>
+        public IEnumerable<Entity> GetEntitiesWith<T1, T2, T3>()
+            where T1 : struct, IComponent
+            where T2 : struct, IComponent
+            where T3 : struct, IComponent
+        {
+            var dict1 = GetComponentDictionary<T1>();
+            var dict2 = GetComponentDictionary<T2>();
+            var dict3 = GetComponentDictionary<T3>();
+
+            foreach (var entityId in dict1.Keys)
+            {
+                if (dict2.ContainsKey(entityId) && dict3.ContainsKey(entityId))
+                {
+                    yield return new Entity(entityId);
+                }
+            }
+        }
+
         public Dictionary<int, T> GetComponentDictionary<T>() where T : struct, IComponent
         {
             int typeId = ComponentType.GetId<T>();

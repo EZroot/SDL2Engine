@@ -40,39 +40,81 @@ public class ImageService : IImageService
     /// <returns>TextureData object</returns>
     public TextureData LoadTexture(IntPtr renderer, string path)
     {
-        if (_pathToId.ContainsKey(path))
+        if (PlatformInfo.RendererType == RendererType.SDLRenderer)
         {
-            int existingId = _pathToId[path];
-            Debug.LogWarning($"Texture already loaded {path} with ID {existingId} </color>");
-            return _idToTexture[existingId];
+            if (_pathToId.ContainsKey(path))
+            {
+                int existingId = _pathToId[path];
+                Debug.LogWarning($"Texture already loaded {path} with ID {existingId} </color>");
+                return _idToTexture[existingId];
+            }
+
+            IntPtr surface = m_imageLoader.LoadImage(path);
+            if (surface == IntPtr.Zero)
+            {
+                Debug.Throw<ArgumentNullException>(new ArgumentNullException(), $"Failed to load image: {path}");
+                return null;
+            }
+
+            IntPtr texture = SDL.SDL_CreateTextureFromSurface(renderer, surface);
+            SDL.SDL_FreeSurface(surface);
+
+            if (texture == IntPtr.Zero)
+                Debug.Throw<ArgumentNullException>(new ArgumentNullException(),
+                    $"Failed to create texture: {SDL.SDL_GetError()}");
+
+            int id = _nextId++;
+
+            SDL.SDL_QueryTexture(texture, out _, out _, out int width, out int height);
+            SDL.SDL_Rect srcRect = new SDL.SDL_Rect { x = 0, y = 0, w = width, h = height };
+
+            var textureData = new TextureData(id, texture, width, height, srcRect);
+            _idToTexture[id] = textureData;
+            _pathToId[path] = id;
+
+            Debug.Log(
+                $"<color=green>Texture Created:</color> Id:{textureData.Id} Size:{textureData.Width}x{textureData.Height} Path:{path}");
+            return textureData;
         }
 
-        IntPtr surface = m_imageLoader.LoadImage(path);
-        if (surface == IntPtr.Zero)
+        if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
         {
-            Debug.Throw<ArgumentNullException>(new ArgumentNullException(), $"Failed to load image: {path}");
-            return null;
+            // Load the image as an SDL surface
+            IntPtr surface = SDL_image.IMG_Load(path);
+            if (surface == IntPtr.Zero)
+                throw new Exception($"Failed to load image: {SDL.SDL_GetError()}");
+
+            IntPtr convertedSurface = SDL.SDL_ConvertSurfaceFormat(surface, SDL.SDL_PIXELFORMAT_ABGR8888, 0);
+            SDL.SDL_FreeSurface(surface); // Free original surface
+            if (convertedSurface == IntPtr.Zero)
+                throw new Exception($"Failed to convert surface format: {SDL.SDL_GetError()}");
+
+            SDL.SDL_Surface converted = Marshal.PtrToStructure<SDL.SDL_Surface>(convertedSurface);
+            int width = converted.w;
+            int height = converted.h;
+            IntPtr pixels = converted.pixels;
+
+            int texId = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, texId);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+
+            SDL.SDL_FreeSurface(convertedSurface);
+
+            Console.WriteLine($"Texture Loaded: ID={texId}, Size={width}x{height}, Path={path}");
+            var textureData = new TextureData(texId, texId, width, height, null);
+            return textureData;
         }
 
-        IntPtr texture = SDL.SDL_CreateTextureFromSurface(renderer, surface);
-        SDL.SDL_FreeSurface(surface);
-
-        if (texture == IntPtr.Zero)
-            Debug.Throw<ArgumentNullException>(new ArgumentNullException(),
-                $"Failed to create texture: {SDL.SDL_GetError()}");
-
-        int id = _nextId++;
-
-        SDL.SDL_QueryTexture(texture, out _, out _, out int width, out int height);
-        SDL.SDL_Rect srcRect = new SDL.SDL_Rect { x = 0, y = 0, w = width, h = height };
-
-        var textureData = new TextureData(id, texture, width, height, srcRect);
-        _idToTexture[id] = textureData;
-        _pathToId[path] = id;
-
-        Debug.Log(
-            $"<color=green>Texture Created:</color> Id:{textureData.Id} Size:{textureData.Width}x{textureData.Height} Path:{path}");
-        return textureData;
+        return null;
     }
 
     public int LoadTextureOpenGL(string path)
@@ -193,7 +235,7 @@ public class ImageService : IImageService
         }
 
         SDL.SDL_Rect transformedDstRect = ApplyCameraTransform(dstRect, camera);
-        SDL.SDL_Rect srcRect = textureData.SrcRect;
+        SDL.SDL_Rect srcRect = textureData.SrcRect.Value;
         SDL.SDL_RenderCopy(renderer, textureData.Texture, ref srcRect, ref transformedDstRect);
     }
 
@@ -215,7 +257,7 @@ public class ImageService : IImageService
         float angleInDegrees = rotation * (180f / (float)Math.PI);
 
         SDL.SDL_Rect transformedDstRect = ApplyCameraTransform(destRect, camera);
-        var srcRec = textureData.SrcRect;
+        var srcRec = textureData.SrcRect.Value;
         SDL.SDL_RenderCopyEx(renderer, textureData.Texture, ref srcRec, ref transformedDstRect, angleInDegrees,
             ref center,
             SDL.SDL_RendererFlip.SDL_FLIP_NONE);

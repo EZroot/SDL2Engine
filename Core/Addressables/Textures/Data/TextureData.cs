@@ -8,9 +8,9 @@ public class TextureData
     public IntPtr Texture { get; }
     public int Width { get; }
     public int Height { get; }
-    public SDL.SDL_Rect SrcRect { get; private set; }
+    public SDL.SDL_Rect? SrcRect { get; private set; }
 
-    public TextureData(int id, IntPtr texture, int width, int height, SDL.SDL_Rect srcRect)
+    public TextureData(int id, IntPtr texture, int width, int height, SDL.SDL_Rect? srcRect)
     {
         Id = id;
         Texture = texture;
