@@ -243,7 +243,7 @@ namespace SDL2Engine.Core
                 if (m_rendererType == RendererType.OpenGlRenderer)
                 {
                     GL.Viewport(0, 0, m_windowWidth, m_windowHeight);
-                    ((CameraGL)(m_cameraService.GetActiveCamera())).UpdateProjection();
+                    ((CameraGL)(m_cameraService.GetActiveCamera())).ResizeViewport(m_windowWidth, m_windowHeight);
                 }
 
                 m_guiRenderService.OnWindowResize(m_windowWidth, m_windowHeight);
