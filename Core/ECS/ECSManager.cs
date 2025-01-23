@@ -1,67 +1,82 @@
+using System;
+using System.Collections.Generic;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.ECS.Components;
 using SDL2Engine.Core.ECS.Systems;
 using SDL2Engine.Core.Rendering.Interfaces;
 
-namespace SDL2Engine.Core.ECS;
+namespace SDL2Engine.Core.ECS
+{
     public class ECSManager
     {
-        public ComponentManager<PositionComponent> PositionComponents { get; } = new ComponentManager<PositionComponent>();
-        public ComponentManager<SpriteComponent> SpriteComponents { get; } = new ComponentManager<SpriteComponent>();
-
-        private readonly List<Entity> entities = new List<Entity>();
-        private readonly MovementSystem movementSystem;
-        private readonly RenderingSystem renderingSystem;
+        private readonly EntityManager entityManager = new EntityManager();
+        private readonly ComponentManager componentManager = new ComponentManager();
+        private readonly SystemManager systemManager;
 
         private readonly nint renderer;
         private readonly ICameraService cameraService;
         private readonly IImageService imageService;
+        
+        public ComponentManager ComponentManager => componentManager;
+
         public ECSManager(IRenderService renderService, IImageService imageService, ICameraService cameraService)
         {
             this.renderer = renderService.RenderPtr;
             this.cameraService = cameraService;
             this.imageService = imageService;
-            movementSystem = new MovementSystem();
-            renderingSystem = new RenderingSystem(imageService, renderService);
+            systemManager = new SystemManager();
         }
 
         public Entity CreateEntity()
         {
-            var entity = new Entity(entities.Count);
-            entities.Add(entity);
-            return entity;
+            return entityManager.CreateEntity();
         }
 
-        public void AddComponent<T>(Entity entity, T component) where T : struct
+        public void DestroyEntity(Entity entity)
         {
-            if (typeof(T) == typeof(PositionComponent))
-            {
-                PositionComponents.AddComponent(entity.Id, (PositionComponent)(object)component);
-            }
-            else if (typeof(T) == typeof(SpriteComponent))
-            {
-                SpriteComponents.AddComponent(entity.Id, (SpriteComponent)(object)component);
-            }
+            entityManager.DestroyEntity(entity);
+            componentManager.RemoveAllComponents(entity);
+        }
+
+        public void AddComponent<T>(Entity entity, T component) where T : struct, IComponent
+        {
+            componentManager.AddComponent(entity, component);
+        }
+
+        public bool TryGetComponent<T>(Entity entity, out T component) where T : struct, IComponent
+        {
+            return componentManager.TryGetComponent(entity, out component);
+        }
+
+        public void RegisterSystem(ISystem system)
+        {
+            systemManager.RegisterSystem(system);
         }
 
         public void Update(float deltaTime)
         {
-            movementSystem.Update(entities, PositionComponents);
+            systemManager.Update(deltaTime);
         }
 
         public void Render()
         {
-            renderingSystem.Render(entities, PositionComponents, SpriteComponents, renderer, cameraService);
+            systemManager.Render(renderer);
         }
 
-        public IEnumerable<Entity> GetEntitiesWith<T1, T2>() where T1 : struct where T2 : struct
+        public IEnumerable<Entity> GetEntitiesWith<T1, T2>() 
+            where T1 : struct, IComponent 
+            where T2 : struct, IComponent
         {
-            foreach (var entity in entities)
+            var dict1 = componentManager.GetComponentDictionary<T1>();
+            var dict2 = componentManager.GetComponentDictionary<T2>();
+
+            foreach (var entityId in dict1.Keys)
             {
-                if (PositionComponents.TryGetComponent(entity.Id, out _) && SpriteComponents.TryGetComponent(entity.Id, out _))
+                if (dict2.ContainsKey(entityId))
                 {
-                    yield return entity;
+                    yield return new Entity(entityId);
                 }
             }
         }
     }
+}

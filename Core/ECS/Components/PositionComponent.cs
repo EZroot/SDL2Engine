@@ -1,15 +1,14 @@
+using System.Numerics;
 
-
-using OpenTK.Mathematics;
-
-namespace SDL2Engine.Core.ECS.Components;
-
-public struct PositionComponent
+namespace SDL2Engine.Core.ECS.Components
 {
-    public Vector2 Position;
-
-    public PositionComponent(Vector2 position)
+    public struct PositionComponent : IComponent
     {
-        Position = position;
+        public Vector2 Position;
+
+        public PositionComponent(Vector2 position)
+        {
+            Position = position;
+        }
     }
 }

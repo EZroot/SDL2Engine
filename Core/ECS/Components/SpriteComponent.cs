@@ -3,7 +3,7 @@ using SDL2Engine.Core.Addressables.Interfaces;
 
 namespace SDL2Engine.Core.ECS.Components;
 
-public struct SpriteComponent
+public struct SpriteComponent : IComponent
 {
     public ISprite Sprite;
     public Vector2 Scale;

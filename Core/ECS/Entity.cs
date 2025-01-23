@@ -1,11 +1,22 @@
-namespace SDL2Engine.Core.ECS;
-
-public class Entity
+namespace SDL2Engine.Core.ECS
 {
-    public int Id { get; private set; }
-        
-    public Entity(int id)
+    public struct Entity
     {
-        Id = id;
+        public int Id { get; }
+
+        internal Entity(int id)
+        {
+            Id = id;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Entity entity && Id == entity.Id;
+        }
+
+        public override int GetHashCode()
+        {
+            return Id;
+        }
     }
 }

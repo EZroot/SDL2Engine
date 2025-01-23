@@ -1,5 +1,5 @@
+using System.Collections.Generic;
 using System.Numerics;
-using Box2DSharp.Common;
 using OpenTK.Mathematics;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.ECS.Components;
@@ -7,64 +7,77 @@ using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.Utils;
 using Vector2 = System.Numerics.Vector2;
 
-namespace SDL2Engine.Core.ECS.Systems;
-
-public class RenderingSystem
+namespace SDL2Engine.Core.ECS.Systems
 {
-    IImageService m_imageService;
-    IRenderService m_renderService;
-    public RenderingSystem(IImageService imageService, IRenderService renderService)
+    public class RenderingSystem : ISystem
     {
-        m_imageService = imageService;
-        m_renderService = renderService;
-    }
-    
-    public void Render(IEnumerable<Entity> entities, 
-        ComponentManager<PositionComponent> positionComponents, 
-        ComponentManager<SpriteComponent> spriteComponents,
-        nint renderer,
-        ICameraService cameraService)
-    {
-        var positions = positionComponents.GetAllComponents(entities).ToDictionary(p => p.EntityId, p => p.Component);
-        var sprites = spriteComponents.GetAllComponents(entities).ToDictionary(s => s.EntityId, s => s.Component);
+        private readonly ComponentManager componentManager;
+        private readonly IImageService imageService;
+        private readonly IRenderService renderService;
+        private readonly ICameraService cameraService;
 
-        // Batch processing for OpenGL renderer
-        if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
+        public RenderingSystem(ComponentManager componentManager, IImageService imageService, IRenderService renderService, ICameraService cameraService)
         {
-            var glHandle = m_renderService.OpenGLHandle2D;
-            var modelMatrices = new List<Matrix4>();
-            var textureIds = new List<int>();
+            this.componentManager = componentManager;
+            this.imageService = imageService;
+            this.renderService = renderService;
+            this.cameraService = cameraService;
+        }
 
-            foreach (var entity in entities)
+        public void Update(float deltaTime)
+        {
+            // doesnt handle updates
+        }
+
+        public void Render(nint renderer)
+        {
+            var positions = componentManager.GetComponentDictionary<PositionComponent>();
+            var sprites = componentManager.GetComponentDictionary<SpriteComponent>();
+
+            // Batch processing for OpenGL renderer
+            if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
             {
-                if (positions.TryGetValue(entity.Id, out var position) && 
-                    sprites.TryGetValue(entity.Id, out var sprite))
+                var glHandle = renderService.OpenGLHandle2D;
+                var modelMatrices = new List<Matrix4>();
+                var textureIds = new List<int>();
+
+                foreach (var entityId in sprites.Keys)
                 {
-                    //todo: fix proper scale here 
-                    var matrixTranslate = MathHelper.GetMatrixTranslation(position.Position, sprite.Scale.X);
-                    modelMatrices.Add(matrixTranslate);
-                    textureIds.Add((int)sprite.Sprite.TextureId);
+                    if (positions.TryGetValue(entityId, out var position) && sprites.TryGetValue(entityId, out var sprite))
+                    {
+                        // TODO: Implement proper scaling logic
+                        OpenTK.Mathematics.Vector2 vec =
+                            new OpenTK.Mathematics.Vector2(position.Position.X, position.Position.Y);
+                        var matrixTranslate = MathHelper.GetMatrixTranslation(vec, sprite.Scale.X);
+                        modelMatrices.Add(matrixTranslate);
+                        textureIds.Add((int)sprite.Sprite.TextureId);
+                    }
+                }
+
+                if (modelMatrices.Count > 0)
+                {
+                    imageService.DrawTexturesGLBatched(
+                        glHandle, 
+                        textureIds.ToArray(), 
+                        cameraService.GetActiveCamera(), 
+                        modelMatrices.ToArray()
+                    );
                 }
             }
 
-            if (modelMatrices.Count > 0)
+            // Render using SDL Renderer
+            if (PlatformInfo.RendererType == RendererType.SDLRenderer)
             {
-                m_imageService.DrawTexturesGLBatched(glHandle, textureIds.ToArray(), cameraService.GetActiveCamera(), modelMatrices.ToArray());
-            }
-        }
-
-        if (PlatformInfo.RendererType == RendererType.SDLRenderer)
-        {
-            foreach (var entity in entities)
-            {
-                if (positions.TryGetValue(entity.Id, out var position) &&
-                    sprites.TryGetValue(entity.Id, out var sprite))
+                foreach (var entityId in sprites.Keys)
                 {
-                    var pos = new Vector2(position.Position.X, position.Position.Y);
-                    sprite.Sprite.Render(renderer, pos, 0, sprite.Scale);
+                    if (positions.TryGetValue(entityId, out var position) &&
+                        sprites.TryGetValue(entityId, out var sprite))
+                    {
+                        var pos = new Vector2(position.Position.X, position.Position.Y);
+                        sprite.Sprite.Render(renderer, pos, 0, sprite.Scale);
+                    }
                 }
             }
         }
-
     }
 }
