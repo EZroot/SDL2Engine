@@ -49,6 +49,9 @@ namespace SDL2Engine.Core.Rendering
                 Create2DGLBindings(
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/2d/2dshader.vert"),
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/2d/2dshader.frag"));
+                
+                GL.Enable(EnableCap.Blend);
+                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
                 return renderer;
             }
             

@@ -14,6 +14,7 @@ public class AnimatedSprite : ISprite
     private float frameTime;  // Time each frame is displayed
     private float timeSinceLastFrame;
 
+    public nint TextureId => texture;
     public int Width => frameWidth;
     public int Height => frameHeight;
     

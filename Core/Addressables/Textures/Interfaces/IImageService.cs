@@ -10,7 +10,7 @@ public interface IImageService
     nint LoadImageRaw(string path);
     TextureData LoadTexture(IntPtr renderer, string path);
     int LoadTextureOpenGL(string path);
-    void DrawTextureGL(OpenGLHandle glHandler, int textureId, ICamera camera, Matrix4 modelMatrix);
+    void DrawTextureGL(OpenGLHandle glHandler, nint textureId, ICamera camera, Matrix4 modelMatrix);
     void DrawTexturesGLBatched(OpenGLHandle glHandler, int[] textureIds, ICamera camera, Matrix4[] modelMatrices);
     
     void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect, ICamera camera);

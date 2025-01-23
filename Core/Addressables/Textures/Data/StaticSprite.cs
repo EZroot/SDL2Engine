@@ -11,6 +11,7 @@ public class StaticSprite : ISprite
     private int textureWidth;
     private int textureHeight;
 
+    public nint TextureId => texture;
     public int Width => textureWidth;
     public int Height => textureHeight;
 

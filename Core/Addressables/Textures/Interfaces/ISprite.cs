@@ -4,6 +4,7 @@ namespace SDL2Engine.Core.Addressables.Interfaces;
 
 public interface ISprite
 {
+    nint TextureId { get; }
     int Width { get; }
     int Height { get; }
     void Update(float deltaTime);

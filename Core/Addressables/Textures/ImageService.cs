@@ -111,12 +111,9 @@ public class ImageService : IImageService
         return texId;
     }
     
-    public void DrawTextureGL(OpenGLHandle glHandler, int textureId, ICamera camera, Matrix4 modelMatrix)
+    public void DrawTextureGL(OpenGLHandle glHandler, nint textureId, ICamera camera, Matrix4 modelMatrix)
     {
         var cameraGL = (CameraGL)camera;
-
-        GL.Enable(EnableCap.Blend);
-        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
         GL.UseProgram(glHandler.Handles.Shader);
 
@@ -136,7 +133,7 @@ public class ImageService : IImageService
 
         // Bind texture
         GL.ActiveTexture(TextureUnit.Texture0);
-        GL.BindTexture(TextureTarget.Texture2D, textureId);
+        GL.BindTexture(TextureTarget.Texture2D, (int)textureId);
 
         // Draw only the quad
         GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
