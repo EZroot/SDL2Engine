@@ -30,7 +30,7 @@ public static class MathHelper
     /// <param name="position">The position of the object in 2D space.</param>
     /// <param name="scale">The uniform scale of the object. Defaults to 1.</param>
     /// <returns>The model matrix.</returns>
-    public static Matrix4 GetMatrixModel(Vector2 position, float scale = 1.0f)
+    public static Matrix4 GetMatrixTranslation(Vector2 position, float scale = 1.0f)
     {
         // Create the model matrix with translation and scale
         return Matrix4.CreateScale(scale, scale, 1.0f) * Matrix4.CreateTranslation(position.X, position.Y, 0.0f);

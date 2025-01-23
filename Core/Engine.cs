@@ -12,8 +12,6 @@ using System.Numerics;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTK.Graphics.OpenGL4;
 using SDL2Engine.Core.Input;
-using SDL2Engine.Core.Partitions;
-using SDL2Engine.Core.Partitions.Interfaces;
 using SDL2Engine.Core.Physics.Interfaces;
 using SDL2Engine.Core.Rendering;
 using SDL2Engine.Core.Utils;
@@ -22,7 +20,6 @@ namespace SDL2Engine.Core
 {
     internal class Engine : IDisposable
     {
-        private const string RESOURCES_FOLDER = "/home/anon/Repos/SDL_Engine/SDL2Engine/resources";
 
         public enum ExampleEnum { OptionA, OptionB, OptionC };
         
@@ -41,8 +38,6 @@ namespace SDL2Engine.Core
         private int m_windowWidth, m_windowHeight;
         private int m_camera;
         
-        private RendererType m_rendererType;
-        
         private bool disposed = false;
         private bool TEST_window_isopen = true;
 
@@ -59,7 +54,7 @@ namespace SDL2Engine.Core
             m_cameraService = m_serviceProvider.GetService<ICameraService>();
             m_physicsService = m_serviceProvider.GetService<IPhysicsService>();
 
-            m_rendererType = rendererType;
+            PlatformInfo.SetRenderType(rendererType);
         }
 
         private void Initialize()
@@ -70,57 +65,26 @@ namespace SDL2Engine.Core
                 return;
             }
 
-            if (m_rendererType == RendererType.SDLRenderer)
-            {
-                m_window = m_windowService.CreateWindowSDL();
-                m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/pinkboysingle.png");
-                m_renderer = m_renderService.CreateRendererSDL(m_window, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
-                IntPtr imguiContext = ImGui.CreateContext();
-                ImGui.SetCurrentContext(imguiContext);
+            m_window = m_windowService.CreateWindow();
+            m_windowService.SetWindowIcon(m_window, PlatformInfo.RESOURCES_FOLDER + "/pinkboysingle.png");
+            m_renderer = m_renderService.CreateRenderer(m_window,
+                SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
 
-                SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
-                m_windowWidth = windowWidth;
-                m_windowHeight = windowHeight;
-            
-                m_guiRenderService.CreateGuiRenderSDL(m_window, m_renderer, windowWidth, windowHeight);
-                m_guiRenderService.SetupIOSDL(windowWidth, windowHeight);
-            
-                m_camera = m_cameraService.CreateCamera(Vector2.One);
-                m_cameraService.SetActiveCamera(m_camera);
-            
-                m_physicsService.Initialize(9.81f);
-                m_physicsService.CreateWindowBoundaries(windowWidth, windowHeight);   
-            }
+            SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
+            m_windowWidth = windowWidth;
+            m_windowHeight = windowHeight;
 
-            if (m_rendererType == RendererType.OpenGlRenderer)
-            {
-                m_window = m_windowService.CreateWindowOpenGL();
-                m_windowService.SetWindowIcon(m_window, RESOURCES_FOLDER + "/pinkboysingle.png");
-                
-                m_renderer = m_renderService.CreateOpenGLContext(m_window);
-                m_renderService.CreateOpenGLDeviceObjects(
-                    FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/imgui/imguishader.vert"),
-                    FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/imgui/imguishader.frag"));
-                m_renderService.Create2DImageOpenGLDeviceObjects(
-                    FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/2d/2dshader.vert"),
-                    FileHelper.ReadFileContents(RESOURCES_FOLDER+"/shaders/2d/2dshader.frag"));
-                
-                SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
-                m_windowWidth = windowWidth;
-                m_windowHeight = windowHeight;
-            
-                IntPtr imguiContext = ImGui.CreateContext();
-                ImGui.SetCurrentContext(imguiContext);
-                
-                m_guiRenderService.CreateGuiRenderOpenGL(m_window, m_renderer, windowWidth, windowHeight);
-                m_guiRenderService.SetupIOGL(windowWidth, windowHeight);
-                
-                m_camera = m_cameraService.CreateOpenGLCamera(Vector2.One, m_windowWidth, m_windowHeight);
-                m_cameraService.SetActiveCamera(m_camera);
-            
-                m_physicsService.Initialize(9.81f);
-                m_physicsService.CreateWindowBoundaries(windowWidth, windowHeight);
-            }
+            IntPtr imguiContext = ImGui.CreateContext();
+            ImGui.SetCurrentContext(imguiContext);
+
+            m_guiRenderService.CreateGuiRender(m_window, m_renderer, windowWidth, windowHeight);
+            m_guiRenderService.SetupIO(windowWidth, windowHeight);
+
+            m_camera = m_cameraService.CreateCamera(windowWidth, windowHeight);
+            m_cameraService.SetActiveCamera(m_camera);
+
+            m_physicsService.Initialize(9.81f);
+            m_physicsService.CreateWindowBoundaries(windowWidth, windowHeight);
         }
 
         public void Run(IGame game)
@@ -153,13 +117,13 @@ namespace SDL2Engine.Core
                     Debug.LogPollEvents(e);
                 }
 
-                if (m_rendererType == RendererType.SDLRenderer)
+                if (PlatformInfo.RendererType == RendererType.SDLRenderer)
                 {
                     SDL.SDL_SetRenderDrawColor(m_renderer, 5, 5, 5, 255);
                     SDL.SDL_RenderClear(m_renderer);
                 }
 
-                if (m_rendererType == RendererType.OpenGlRenderer)
+                if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
                 {
                     GL.ClearColor(0.1f, 0.1f, 0.25f, 1.0f);
                     GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -173,53 +137,25 @@ namespace SDL2Engine.Core
                 
                 ImGui.NewFrame();
                 game.RenderGui();
-                if (m_rendererType == RendererType.SDLRenderer)
+                
+                ImGui.Render();
+                var drawData = ImGui.GetDrawData();
+                if (drawData.CmdListsCount > 0)
                 {
-                    RenderGUISDL();
-                }
-                if (m_rendererType == RendererType.OpenGlRenderer)
-                {
-                    RenderGUIOpenGL();
+                    m_guiRenderService.RenderDrawData(m_renderService, drawData);
                 }
 
-                if (m_rendererType == RendererType.OpenGlRenderer)
+                if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
                 {
                     SDL.SDL_GL_SwapWindow(m_window);
                 }
-                if (m_rendererType == RendererType.SDLRenderer)
+                if (PlatformInfo.RendererType == RendererType.SDLRenderer)
                 {
                     SDL.SDL_RenderPresent(m_renderer);
                 }
             }
 
             Dispose();
-        }
-
-        private void RenderGUISDL()
-        {
-            ImGui.Render();
-
-            var drawData = ImGui.GetDrawData();
-            if (drawData.CmdListsCount > 0)
-            {
-                m_guiRenderService.RenderDrawData(drawData);
-            }
-
-            if ((ImGui.GetIO().ConfigFlags & ImGuiConfigFlags.ViewportsEnable) != 0)
-            {
-                ImGui.UpdatePlatformWindows();
-                ImGui.RenderPlatformWindowsDefault();
-            }
-        }
-
-        private void RenderGUIOpenGL()
-        {
-            ImGui.Render();
-            var drawData = ImGui.GetDrawData();
-            if (drawData.CmdListsCount > 0)
-            {
-                m_guiRenderService.RenderDrawDataGL(m_renderService, drawData);
-            }
         }
 
         private void HandleWindowEvents(SDL.SDL_Event e, ref bool isRunning)
@@ -240,7 +176,7 @@ namespace SDL2Engine.Core
 
                 m_windowWidth = e.window.data1;
                 m_windowHeight = e.window.data2;
-                if (m_rendererType == RendererType.OpenGlRenderer)
+                if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
                 {
                     GL.Viewport(0, 0, m_windowWidth, m_windowHeight);
                     ((CameraGL)(m_cameraService.GetActiveCamera())).ResizeViewport(m_windowWidth, m_windowHeight);

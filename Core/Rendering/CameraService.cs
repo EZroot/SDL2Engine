@@ -1,6 +1,7 @@
 using SDL2Engine.Core.Rendering.Interfaces;
 using System.Collections.Generic;
 using System.Numerics;
+using SDL2;
 using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.Rendering
@@ -20,29 +21,19 @@ namespace SDL2Engine.Core.Rendering
             _activeCameraId = null;
         }
 
-        /// <summary>
-        /// Creates a standard 2D camera.
-        /// </summary>
-        public int CreateCamera(Vector2 initialPosition, float initialZoom = 1.0f)
+        public int CreateCamera(int windowWidth, int windowHeight)
         {
             int cameraId = _nextId++;
-            var camera = new Camera(initialPosition, initialZoom);
+            
+            //  Default camera (SDL)
+            ICamera camera = new Camera(Vector2.Zero);
+            if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
+            {
+                // Camera with some additional GL params (Viewport, Projection)
+                camera = new CameraGL(Vector2.Zero, windowWidth,windowHeight);
+            }
             _idToCamera[cameraId] = camera;
-
-            Debug.Log($"<color=green>Camera Created:</color> ID={cameraId}, Position={camera.Position}, Zoom={camera.Zoom}");
-            return cameraId;
-        }
-
-        /// <summary>
-        /// Creates an OpenGL-specific camera with a projection matrix.
-        /// </summary>
-        public int CreateOpenGLCamera(Vector2 initialPosition, float viewportWidth, float viewportHeight, float initialZoom = 1.0f)
-        {
-            int cameraId = _nextId++;
-            var camera = new CameraGL(initialPosition, viewportWidth, viewportHeight, initialZoom);
-            _idToCamera[cameraId] = camera;
-
-            Debug.Log($"<color=green>OpenGL Camera Created:</color> ID={cameraId}, Position={camera.Position}, Zoom={camera.Zoom}, Viewport={viewportWidth}x{viewportHeight}");
+            Debug.Log($"<color=green>OpenGL Camera Created:</color> ID={cameraId}, Position={camera.Position}, Zoom={camera.Zoom}");
             return cameraId;
         }
 

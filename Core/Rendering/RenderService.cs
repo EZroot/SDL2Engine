@@ -1,3 +1,4 @@
+using System.Diagnostics.Tracing;
 using System.Runtime.InteropServices;
 using System.Text;
 using OpenTK;
@@ -29,8 +30,33 @@ namespace SDL2Engine.Core.Rendering
             m_sysInfo = sysInfo ?? throw new ArgumentNullException(nameof(sysInfo));
         }
 
-
-        public IntPtr CreateRendererSDL(IntPtr window, SDL.SDL_RendererFlags renderFlags =
+        /// <summary>
+        /// Create and return the handle of a renderer based on the platforminfo rendertype (SDL, or OPENGL)
+        /// SDL render flags will be ignored if the render type is OPENGL
+        /// </summary>
+        /// <param name="window"></param>
+        /// <param name="renderFlags"></param>
+        /// <returns>Renderer handle</returns>
+        public nint CreateRenderer(nint window, SDL.SDL_RendererFlags renderFlags =
+            SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED)
+        {
+            if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
+            {
+                var renderer =  CreateOpenGLContext(window);
+                CreateImGuiGLBindings(
+                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/imgui/imguishader.vert"),
+                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/imgui/imguishader.frag"));
+                Create2DGLBindings(
+                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/2d/2dshader.vert"),
+                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER+"/shaders/2d/2dshader.frag"));
+                return renderer;
+            }
+            
+            // Assume default is sdl
+            return CreateRendererSDL(window, renderFlags);
+        }
+        
+        private IntPtr CreateRendererSDL(IntPtr window, SDL.SDL_RendererFlags renderFlags =
             SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED)
         {
             SDL.SDL_SetHint(SDL.SDL_HINT_RENDER_DRIVER, "opengl");
@@ -48,7 +74,7 @@ namespace SDL2Engine.Core.Rendering
             return m_render;
         }
 
-        public nint CreateOpenGLContext(nint window)
+        private nint CreateOpenGLContext(nint window)
         {
             IntPtr glContext = SDL.SDL_GL_CreateContext(window);
             if (glContext == IntPtr.Zero)
@@ -83,27 +109,9 @@ namespace SDL2Engine.Core.Rendering
             Debug.Log("OpenGL bindings successfully initialized.");
         }
 
-        public OpenGLHandle Create2DImageOpenGLDeviceObjects(string vertShaderSrc, string fragShaderSrc)
+        public OpenGLHandle Create2DGLBindings(string vertShaderSrc, string fragShaderSrc)
         {
-            var g_ShaderHandle = GL.CreateProgram();
-            int vert = CompileShader(ShaderType.VertexShader, vertShaderSrc);
-            int frag = CompileShader(ShaderType.FragmentShader, fragShaderSrc);
-            GL.AttachShader(g_ShaderHandle, vert);
-            GL.AttachShader(g_ShaderHandle, frag);
-            GL.LinkProgram(g_ShaderHandle);
-
-            GL.GetProgram(g_ShaderHandle, GetProgramParameterName.LinkStatus, out int linkStatus);
-            if (linkStatus == 0)
-            {
-                string infoLog = GL.GetProgramInfoLog(g_ShaderHandle);
-                throw new Exception($"Shader program linking failed: {infoLog}");
-            }
-
-            GL.DetachShader(g_ShaderHandle, vert);
-            GL.DetachShader(g_ShaderHandle, frag);
-            GL.DeleteShader(vert);
-            GL.DeleteShader(frag);
-
+            var shaderProgram = GLHelper.CreateShaderProgram(vertShaderSrc, fragShaderSrc);
             // Vertex and Index data
             float[] vertices =
             {
@@ -144,95 +152,63 @@ namespace SDL2Engine.Core.Rendering
 
             GL.BindVertexArray(0);
 
-            m_glHandle2D = new OpenGLHandle(vao, vbo, ebo, g_ShaderHandle);
+            var mandatoryHandle = new OpenGLMandatoryHandles(vao, vbo, ebo, shaderProgram);
+            m_glHandle2D = new OpenGLHandle(mandatoryHandle);
             return m_glHandle2D;
         }
-
-        public OpenGLHandle CreateOpenGLDeviceObjects(string vertShaderSrc, string fragShaderSrc)
+        
+        public OpenGLHandle CreateImGuiGLBindings(string vertShaderSrc, string fragShaderSrc)
         {
-            var g_ShaderHandle = GL.CreateProgram();
-            int vert = CompileShader(ShaderType.VertexShader, vertShaderSrc);
-            int frag = CompileShader(ShaderType.FragmentShader, fragShaderSrc);
-            GL.AttachShader(g_ShaderHandle, vert);
-            GL.AttachShader(g_ShaderHandle, frag);
-            GL.LinkProgram(g_ShaderHandle);
-            GL.GetProgram(g_ShaderHandle, GetProgramParameterName.LinkStatus, out int linkStatus);
-            if (linkStatus == 0)
-            {
-                string infoLog = GL.GetProgramInfoLog(g_ShaderHandle);
-                throw new Exception($"Shader program linking failed: {infoLog}");
-            }
+            var shaderProgram = GLHelper.CreateShaderProgram(vertShaderSrc, fragShaderSrc);
+            var attribLocationTex = GL.GetUniformLocation(shaderProgram, "Texture");
+            var attribLocationProjMtx = GL.GetUniformLocation(shaderProgram, "ProjMtx");
+            var attribLocationPosition = GL.GetAttribLocation(shaderProgram, "Position");
+            var attribLocationUV = GL.GetAttribLocation(shaderProgram, "UV");
+            var attribLocationColor = GL.GetAttribLocation(shaderProgram, "Color");
 
-            GL.DetachShader(g_ShaderHandle, vert);
-            GL.DetachShader(g_ShaderHandle, frag);
-            GL.DeleteShader(vert);
-            GL.DeleteShader(frag);
-            Debug.Log("Shaders finished compiling.");
-            var g_AttribLocationTex = GL.GetUniformLocation(g_ShaderHandle, "Texture");
-            var g_AttribLocationProjMtx = GL.GetUniformLocation(g_ShaderHandle, "ProjMtx");
-            var g_AttribLocationPosition = GL.GetAttribLocation(g_ShaderHandle, "Position");
-            var g_AttribLocationUV = GL.GetAttribLocation(g_ShaderHandle, "UV");
-            var g_AttribLocationColor = GL.GetAttribLocation(g_ShaderHandle, "Color");
+            int projLocation = GL.GetUniformLocation(shaderProgram, "ProjMtx");
 
-            int projLocation = GL.GetUniformLocation(g_ShaderHandle, "ProjMtx");
+            var vao = GL.GenVertexArray();
+            var vbo = GL.GenBuffer();
+            var ebo = GL.GenBuffer();
 
-            var g_VaoHandle = GL.GenVertexArray();
-            var g_VboHandle = GL.GenBuffer();
-            var g_ElementsHandle = GL.GenBuffer();
-
-            GL.BindVertexArray(g_VaoHandle);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, g_VboHandle);
+            GL.BindVertexArray(vao);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
             GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)0, IntPtr.Zero, BufferUsageHint.StreamDraw);
 
             Debug.Log("GL Vao/Vbo created.");
 
-            GL.EnableVertexAttribArray(g_AttribLocationPosition);
-            GL.VertexAttribPointer(g_AttribLocationPosition,
+            GL.EnableVertexAttribArray(attribLocationPosition);
+            GL.VertexAttribPointer(attribLocationPosition,
                 2, VertexAttribPointerType.Float,
                 false, 20, (IntPtr)0);
 
-            GL.EnableVertexAttribArray(g_AttribLocationUV);
-            GL.VertexAttribPointer(g_AttribLocationUV,
+            GL.EnableVertexAttribArray(attribLocationUV);
+            GL.VertexAttribPointer(attribLocationUV,
                 2, VertexAttribPointerType.Float,
                 false, 20, (IntPtr)8);
 
-            GL.EnableVertexAttribArray(g_AttribLocationColor);
-            GL.VertexAttribPointer(g_AttribLocationColor,
+            GL.EnableVertexAttribArray(attribLocationColor);
+            GL.VertexAttribPointer(attribLocationColor,
                 4, VertexAttribPointerType.UnsignedByte,
                 true, 20, (IntPtr)16);
 
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, g_ElementsHandle);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
             GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)0, IntPtr.Zero, BufferUsageHint.StreamDraw);
 
             GL.BindVertexArray(0);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
 
-            m_glHandleGui = new OpenGLHandle(
-                g_VaoHandle, g_VboHandle, g_ElementsHandle, g_ShaderHandle,
-                g_AttribLocationTex, g_AttribLocationProjMtx, g_AttribLocationPosition, g_AttribLocationUV,
-                g_AttribLocationColor, projLocation);
+            var mandatoryHandles =
+                new OpenGLMandatoryHandles(vao, vbo, ebo, shaderProgram);
+            var attributeLocations = new OpenGLAttributeLocations(attribLocationTex, attribLocationProjMtx,
+                attribLocationPosition, attribLocationUV, attribLocationColor, projLocation);
+            m_glHandleGui = new OpenGLHandle(mandatoryHandles, attributeLocations);
 
             return m_glHandleGui;
         }
-
-        private int CompileShader(ShaderType type, string src)
-        {
-            int shader = GL.CreateShader(type);
-            GL.ShaderSource(shader, src);
-            GL.CompileShader(shader);
-
-            GL.GetShader(shader, ShaderParameter.CompileStatus, out int success);
-            if (success == 0)
-            {
-                string infoLog = GL.GetShaderInfoLog(shader);
-                throw new Exception($"Compile error ({type}): {infoLog}");
-            }
-
-            return shader;
-        }
-
+        
         private void PrintRenderDriver(IntPtr renderer)
         {
             SDL.SDL_RendererInfo rendererInfo;

@@ -26,13 +26,24 @@ namespace SDL2Engine.Core.Windowing
             m_imageService = imageService ?? throw new ArgumentNullException(nameof(imageService));
         }
 
+        public IntPtr CreateWindow()
+        {
+            if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
+            {
+                return CreateWindowOpenGL();
+            }
+            
+            // assume default is SDL
+            return CreateWindowSDL();
+        }
+
         /// <summary>
         /// Create a window using OpenGL Renderer.
         /// Requires manual opengl management.
         /// </summary>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public IntPtr CreateWindowOpenGL()
+        private IntPtr CreateWindowOpenGL()
         {
             // opengl version/flags OPENGL 4.5 requested
             SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -72,7 +83,7 @@ namespace SDL2Engine.Core.Windowing
         /// </summary>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public IntPtr CreateWindowSDL()
+        private IntPtr CreateWindowSDL()
         {
             m_window = SDL.SDL_CreateWindow(
                 m_windowConfig.Settings.WindowName,

@@ -82,36 +82,29 @@ public class ImageService : IImageService
         if (surface == IntPtr.Zero)
             throw new Exception($"Failed to load image: {SDL.SDL_GetError()}");
 
-        // Convert the surface to ABGR format for OpenGL compatibility
         IntPtr convertedSurface = SDL.SDL_ConvertSurfaceFormat(surface, SDL.SDL_PIXELFORMAT_ABGR8888, 0);
         SDL.SDL_FreeSurface(surface); // Free original surface
         if (convertedSurface == IntPtr.Zero)
             throw new Exception($"Failed to convert surface format: {SDL.SDL_GetError()}");
 
-        // Get surface details
         SDL.SDL_Surface converted = Marshal.PtrToStructure<SDL.SDL_Surface>(convertedSurface);
         int width = converted.w;
         int height = converted.h;
         IntPtr pixels = converted.pixels;
 
-        // Create OpenGL texture
         int texId = GL.GenTexture();
         GL.BindTexture(TextureTarget.Texture2D, texId);
 
-        // Set texture parameters
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
-        // Upload texture data
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
         GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
-        // Unbind the texture
         GL.BindTexture(TextureTarget.Texture2D, 0);
 
-        // Free the converted SDL surface
         SDL.SDL_FreeSurface(convertedSurface);
 
         Console.WriteLine($"Texture Loaded: ID={texId}, Size={width}x{height}, Path={path}");
@@ -125,21 +118,21 @@ public class ImageService : IImageService
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
         var glHandler = renderService.OpenGLHandle2D;
-        GL.UseProgram(glHandler.ShaderHandle);
+        GL.UseProgram(glHandler.Handles.Shader);
 
         // Combine projection and view matrices
         Matrix4 projectionView = cameraGL.View * cameraGL.Projection;
-        int projViewMatrixLocation = GL.GetUniformLocation(glHandler.ShaderHandle, "projViewMatrix");
+        int projViewMatrixLocation = GL.GetUniformLocation(glHandler.Handles.Shader, "projViewMatrix");
         if (projViewMatrixLocation >= 0)
             GL.UniformMatrix4(projViewMatrixLocation, false, ref projectionView);
 
         // Pass the model matrix
-        int modelMatrixLocation = GL.GetUniformLocation(glHandler.ShaderHandle, "modelMatrix");
+        int modelMatrixLocation = GL.GetUniformLocation(glHandler.Handles.Shader, "modelMatrix");
         if (modelMatrixLocation >= 0)
             GL.UniformMatrix4(modelMatrixLocation, false, ref modelMatrix);
 
         // Bind VAO
-        GL.BindVertexArray(glHandler.VaoHandle);
+        GL.BindVertexArray(glHandler.Handles.Vao);
 
         // Bind texture
         GL.ActiveTexture(TextureUnit.Texture0);
