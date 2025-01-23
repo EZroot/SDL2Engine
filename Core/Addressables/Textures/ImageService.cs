@@ -110,14 +110,14 @@ public class ImageService : IImageService
         Console.WriteLine($"Texture Loaded: ID={texId}, Size={width}x{height}, Path={path}");
         return texId;
     }
-    public void DrawTextureGL(IRenderService renderService, int textureId, ICamera camera, Matrix4 modelMatrix)
+    
+    public void DrawTextureGL(OpenGLHandle glHandler, int textureId, ICamera camera, Matrix4 modelMatrix)
     {
         var cameraGL = (CameraGL)camera;
 
         GL.Enable(EnableCap.Blend);
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-        var glHandler = renderService.OpenGLHandle2D;
         GL.UseProgram(glHandler.Handles.Shader);
 
         // Combine projection and view matrices
@@ -146,25 +146,41 @@ public class ImageService : IImageService
         GL.BindVertexArray(0);
         GL.UseProgram(0);
     }
-
-    /// <summary>
-    /// Draw a texture to a destination by ID
-    /// </summary>
-    /// <param name="renderer">SDL Renderer</param>
-    /// <param name="textureId">Unique texture ID</param>
-    /// <param name="dstRect">Destination rectangle</param>
-    public void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect)
+    
+    public void DrawTexturesGLBatched(OpenGLHandle glHandler, int[] textureIds, ICamera camera, Matrix4[] modelMatrices)
     {
-        if (!_idToTexture.TryGetValue(textureId, out var textureData))
+        var cameraGL = (CameraGL)camera;
+
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        GL.UseProgram(glHandler.Handles.Shader);
+
+        // Combine projection and view matrices once if they are the same for all textures
+        Matrix4 projectionView = cameraGL.View * cameraGL.Projection;
+        int projViewMatrixLocation = GL.GetUniformLocation(glHandler.Handles.Shader, "projViewMatrix");
+        if (projViewMatrixLocation >= 0)
+            GL.UniformMatrix4(projViewMatrixLocation, false, ref projectionView);
+
+        GL.BindVertexArray(glHandler.Handles.Vao);
+
+        for (int i = 0; i < textureIds.Length; i++)
         {
-            Debug.LogError($"Texture ID {textureId} not found.");
-            return;
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, textureIds[i]);
+
+            int modelMatrixLocation = GL.GetUniformLocation(glHandler.Handles.Shader, "modelMatrix");
+            if (modelMatrixLocation >= 0)
+                GL.UniformMatrix4(modelMatrixLocation, false, ref modelMatrices[i]);
+
+            GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
         }
 
-        SDL.SDL_Rect srcRect = textureData.SrcRect;
-        SDL.SDL_RenderCopy(renderer, textureData.Texture, ref srcRect, ref dstRect);
+        // Cleanup
+        GL.BindTexture(TextureTarget.Texture2D, 0);
+        GL.BindVertexArray(0);
+        GL.UseProgram(0);
     }
-
+    
     public void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect, ICamera camera)
     {
         if (!_idToTexture.TryGetValue(textureId, out var textureData))
@@ -205,23 +221,6 @@ public class ImageService : IImageService
         var srcRec = textureData.SrcRect;
         SDL.SDL_RenderCopyEx(renderer, textureData.Texture, ref srcRec, ref transformedDstRect, angleInDegrees,
             ref center,
-            SDL.SDL_RendererFlip.SDL_FLIP_NONE);
-    }
-
-
-    public void DrawTextureWithRotation(nint renderer, int textureId, ref SDL.SDL_Rect destRect, float rotation,
-        ref SDL.SDL_Point center)
-    {
-        if (!_idToTexture.TryGetValue(textureId, out var textureData))
-        {
-            Debug.LogError($"Texture ID {textureId} not found.");
-            return;
-        }
-
-        float angleInDegrees = rotation * (180f / (float)Math.PI);
-
-        var srcRec = textureData.SrcRect;
-        SDL.SDL_RenderCopyEx(renderer, textureData.Texture, ref srcRec, ref destRect, angleInDegrees, ref center,
             SDL.SDL_RendererFlip.SDL_FLIP_NONE);
     }
 
