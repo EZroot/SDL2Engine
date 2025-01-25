@@ -1,187 +1,146 @@
-// namespace SDL2Engine.Core.ECS.Systems;
-//
-// // BoidMovementSystem.cs
-// using System;
-// using System.Collections.Generic;
-// using System.Numerics;
-// using System.Threading.Tasks;
-// using SDL2Engine.Core.ECS.Components;
-// using SDL2Engine.Core.Partitions;
-// using SDL2Engine.Core.Input;
-// using SDL2Engine.Core.Rendering.Interfaces;
-//
-// public class BoidMovementSystem : ISystem
-// {
-//     private readonly ComponentManager _componentManager;
-//     private readonly SpatialPartitioner<Entity> _partitioner;
-//     private readonly float _worldSize;
-//     private readonly float _boidSpeed;
-//
-//     private const float NeighborRadius = 32f;
-//     private const float NeighborRadiusSquared = NeighborRadius * NeighborRadius;
-//     private const float AlignmentWeight = 2.5f;
-//     private const float CohesionWeight = 2.0f;
-//     private const float SeparationWeight = 4.5f;
-//     private const float DebugMousePullWeight = 1f;
-//     private const float MinSeparationDistance = 1f;
-//
-//     public BoidMovementSystem(ComponentManager componentManager, float worldSize, float boidSpeed,
-//         int spatialPartitionSize = 32)
-//     {
-//         _componentManager = componentManager;
-//         _worldSize = worldSize;
-//         _boidSpeed = boidSpeed;
-//         // _partitioner = new SpatialPartitioner<Entity>(spatialPartitionSize);
-//     }
-//
-//     public void Update(float deltaTime)
-//     {
-//         var boids = _componentManager.GetEntitiesWith<PositionComponent, VelocityComponent, BoidComponent>();
-//         _partitioner.Clear();
-//
-//         // Insert all boids into the spatial partitioner
-//         foreach (var boid in boids)
-//         {
-//             if (_componentManager.TryGetComponent(boid, out PositionComponent position))
-//             {
-//                 _partitioner.Insert(boid.Id, position.Position);
-//             }
-//         }
-//
-//         var boidSteerings = new Vector2[boids.Count];
-//         Vector2 mousePosition = new Vector2(InputManager.MouseX, InputManager.MouseY);
-//
-//         // Parallel processing for performance
-//         Parallel.For(0, boids.Count, i =>
-//         {
-//             var boid = boids[i];
-//             if (!_componentManager.TryGetComponent(boid, out PositionComponent position) ||
-//                 !_componentManager.TryGetComponent(boid, out VelocityComponent velocity))
-//             {
-//                 boidSteerings[i] = Vector2.Zero;
-//                 return;
-//             }
-//
-//             var neighbors = _partitioner.GetNeighbors(position.Position, NeighborRadius);
-//             Vector2 alignment = CalculateAlignment(boid, neighbors) * AlignmentWeight;
-//             Vector2 cohesion = CalculateCohesion(boid, neighbors) * CohesionWeight;
-//             Vector2 separation = CalculateSeparation(boid, neighbors) * SeparationWeight;
-//
-//             Vector2 toMouse = mousePosition - position.Position;
-//             Vector2 mouseAttraction = Vector2.Zero;
-//             if (toMouse.LengthSquared() > 0)
-//                 mouseAttraction = Vector2.Normalize(toMouse) * DebugMousePullWeight;
-//
-//             boidSteerings[i] = alignment + cohesion + separation + mouseAttraction;
-//         });
-//
-//         // Apply the steering to each boid
-//         for (int i = 0; i < boids.Count; i++)
-//         {
-//             var boid = boids[i];
-//             if (_componentManager.TryGetComponent(boid, out VelocityComponent velocity) &&
-//                 _componentManager.TryGetComponent(boid, out PositionComponent position))
-//             {
-//                 velocity.Velocity += boidSteerings[i] * deltaTime;
-//
-//                 float speedSq = velocity.Velocity.LengthSquared();
-//                 if (speedSq > _boidSpeed * _boidSpeed)
-//                 {
-//                     velocity.Velocity = Vector2.Normalize(velocity.Velocity) * _boidSpeed;
-//                 }
-//
-//                 // Update position
-//                 position.Position += velocity.Velocity * deltaTime;
-//
-//                 // Optional: Handle world boundaries
-//                 position.Position = Vector2.Clamp(position.Position, Vector2.Zero, new Vector2(_worldSize));
-//
-//                 _componentManager.AddComponent(boid, velocity);
-//                 _componentManager.AddComponent(boid, position);
-//             }
-//         }
-//     }
-//
-//     private Vector2 CalculateAlignment(Entity boid, IEnumerable<int> neighbors)
-//     {
-//         Vector2 averageVelocity = Vector2.Zero;
-//         int count = 0;
-//         foreach (var neighborId in neighbors)
-//         {
-//             if (_componentManager.TryGetComponent(neighborId, out VelocityComponent neighborVelocity))
-//             {
-//                 averageVelocity += neighborVelocity.Velocity;
-//                 count++;
-//             }
-//         }
-//
-//         if (count == 0) return Vector2.Zero;
-//         averageVelocity /= count;
-//         if (_componentManager.TryGetComponent(boid, out VelocityComponent boidVelocity))
-//         {
-//             return averageVelocity - boidVelocity.Velocity;
-//         }
-//
-//         return Vector2.Zero;
-//     }
-//
-//     private Vector2 CalculateCohesion(Entity boid, IEnumerable<int> neighbors)
-//     {
-//         Vector2 centerOfMass = Vector2.Zero;
-//         int count = 0;
-//         foreach (var neighborId in neighbors)
-//         {
-//             if (_componentManager.TryGetComponent(neighborId, out PositionComponent neighborPosition))
-//             {
-//                 centerOfMass += neighborPosition.Position;
-//                 count++;
-//             }
-//         }
-//
-//         if (count == 0) return Vector2.Zero;
-//         centerOfMass /= count;
-//
-//         if (_componentManager.TryGetComponent(boid, out PositionComponent boidPosition))
-//         {
-//             Vector2 direction = centerOfMass - boidPosition.Position;
-//             return (direction.LengthSquared() > 0) ? Vector2.Normalize(direction) : Vector2.Zero;
-//         }
-//
-//         return Vector2.Zero;
-//     }
-//
-//     private Vector2 CalculateSeparation(Entity boid, IEnumerable<int> neighbors)
-//     {
-//         Vector2 separation = Vector2.Zero;
-//
-//         if (!_componentManager.TryGetComponent(boid, out PositionComponent boidPosition))
-//             return Vector2.Zero;
-//
-//         foreach (var neighborId in neighbors)
-//         {
-//             if (neighborId == boid.Id) continue;
-//
-//             if (_componentManager.TryGetComponent(neighborId, out PositionComponent neighborPosition))
-//             {
-//                 Vector2 diff = boidPosition.Position - neighborPosition.Position;
-//                 float distanceSquared = diff.LengthSquared();
-//                 if (distanceSquared > 0 && distanceSquared < NeighborRadiusSquared)
-//                 {
-//                     float distance = MathF.Sqrt(distanceSquared);
-//                     if (distance < MinSeparationDistance)
-//                     {
-//                         float strength = (MinSeparationDistance - distance) / MinSeparationDistance;
-//                         separation += Vector2.Normalize(diff) * strength * 10.0f;
-//                     }
-//                     else
-//                     {
-//                         float strength = 1.0f / distanceSquared;
-//                         separation += diff * strength;
-//                     }
-//                 }
-//             }
-//         }
-//
-//         return (separation.LengthSquared() > 0) ? Vector2.Normalize(separation) : Vector2.Zero;
-//     }
-// }
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+using System.Threading.Tasks;
+using SDL2Engine.Core.ECS.Components;
+using SDL2Engine.Core.Partitions;
+using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Utils;
+
+namespace SDL2Engine.Core.ECS.Systems
+{
+    public class BoidMovementSystem : ISystem
+    {
+        private readonly ComponentManager _componentManager;
+        private readonly SpatialPartitionerECS _partitioner;
+
+        // Boid behavior constants
+        private const float NeighborRadius = 32f;
+        private const float NeighborRadiusSquared = NeighborRadius * NeighborRadius;
+        private const float AlignmentWeight = 2.5f;
+        private const float CohesionWeight = 2.0f;
+        private const float SeparationWeight = 4.5f;
+        private const float MinSeparationDistance = 1f;
+        private const float MaxSpeed = 20f;
+        private const float Damping = 0.8f;
+
+        public BoidMovementSystem(ComponentManager componentManager, SpatialPartitionerECS partitioner)
+        {
+            _componentManager = componentManager;
+            _partitioner = partitioner;
+        }
+
+        public void Update(float deltaTime)
+        {
+            var positions = _componentManager.GetComponentDictionary<PositionComponent>();
+            var velocities = _componentManager.GetComponentDictionary<VelocityComponent>();
+            var boids = _componentManager.GetComponentDictionary<BoidTag>();
+            
+            // Collect all boid entity IDs with necessary components
+            var boidEntityIds = new List<int>();
+            foreach (var entityId in boids.Keys)
+            {
+                if (positions.ContainsKey(entityId) && velocities.ContainsKey(entityId))
+                {
+                    boidEntityIds.Add(entityId);
+                }
+            }
+
+            int boidCount = boidEntityIds.Count;
+            Vector2[] boidSteerings = new Vector2[boidCount];
+            Vector2[] boidPositions = new Vector2[boidCount];
+            Vector2[] boidVelocities = new Vector2[boidCount];
+
+            for (int i = 0; i < boidCount; i++)
+            {
+                int entityId = boidEntityIds[i];
+                boidPositions[i] = positions[entityId].Position;
+                boidVelocities[i] = velocities[entityId].Velocity;
+            }
+
+            // TODO: ADD/REMOVE OVERFLOWS! Which causes the entities to 'dissapear' 
+            // TODO: Look in to what the fk is causing overflow (Spatial paritioner)
+            Parallel.For(0, boidCount, i =>
+            {
+                Vector2 alignment = Vector2.Zero;
+                Vector2 cohesion = Vector2.Zero;
+                Vector2 separation = Vector2.Zero;
+
+                Vector2 currentPosition = boidPositions[i];
+                Vector2 currentVelocity = boidVelocities[i];
+
+                var neighbors = _partitioner.GetNeighbors(currentPosition, NeighborRadius);
+
+                int neighborCount = 0;
+                Vector2 averageVelocity = Vector2.Zero;
+                Vector2 centerOfMass = Vector2.Zero;
+
+                foreach (var neighbor in neighbors)
+                {
+                    if (neighbor.Id == boidEntityIds[i])
+                        continue; // Skip self
+
+                    if (positions.TryGetValue(neighbor.Id, out var positionComp) &&
+                        velocities.TryGetValue(neighbor.Id, out var velocityComp))
+                    {
+                        Vector2 neighborPosition = positionComp.Position;
+                        Vector2 neighborVelocity = velocityComp.Velocity;
+
+                        Vector2 diff = neighborPosition - currentPosition;
+                        float distanceSq = diff.LengthSquared();
+
+                        if (distanceSq > NeighborRadiusSquared)
+                            continue; // Outside neighbor radius
+
+                        averageVelocity += neighborVelocity;
+                        neighborCount++;
+                        centerOfMass += neighborPosition;
+                        float distance = MathF.Sqrt(distanceSq);
+                        if (distance < MinSeparationDistance && distance > 0)
+                        {
+                            separation -= Vector2.Normalize(diff) * (MinSeparationDistance - distance) / MinSeparationDistance;
+                        }
+                        else if (distance > 0)
+                        {
+                            separation -= diff / distanceSq;
+                        }
+                    }
+                }
+
+                if (neighborCount > 0)
+                {
+                    averageVelocity /= neighborCount;
+                    alignment = Vector2.Normalize(averageVelocity) * AlignmentWeight;
+                    centerOfMass /= neighborCount;
+                    Vector2 directionToCenter = centerOfMass - currentPosition;
+                    if (directionToCenter.LengthSquared() > 0)
+                        cohesion = Vector2.Normalize(directionToCenter) * CohesionWeight;
+                }
+                if (separation.LengthSquared() > 0)
+                    separation = Vector2.Normalize(separation) * SeparationWeight;
+
+                boidSteerings[i] = alignment + cohesion + separation;
+            });
+
+            for (int i = 0; i < boidCount; i++)
+            {
+                int entityId = boidEntityIds[i];
+                var velocityComponent = velocities[entityId];
+                var positionComponent = positions[entityId];
+                velocityComponent.Velocity += boidSteerings[i] * deltaTime;
+                velocityComponent.Velocity *= MathF.Pow(Damping, deltaTime);
+                if (velocityComponent.Velocity.Length() > MaxSpeed)
+                {
+                    velocityComponent.Velocity = Vector2.Normalize(velocityComponent.Velocity) * MaxSpeed;
+                }
+                _componentManager.AddComponent(new Entity(entityId), velocityComponent);
+                // _partitioner.UpdateEntity(new Entity(entityId), positionComponent.Position - velocityComponent.Velocity * deltaTime);
+            }
+        }
+
+        public void Render(IRenderService renderService, ICameraService cameraService)
+        {
+            // rendering handled elsewhere
+        }
+    }
+}

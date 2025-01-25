@@ -69,25 +69,25 @@ namespace SDL2Engine.Core.ECS.Systems
                         modelMatrices.Add(matrixTranslate);
                         textureIds.Add((int)sprite.Sprite.TextureId);
 
-                        Vector2 dbgcenteredPosition = position.Position - cameraOffset
-                                                                        - new Vector2(
-                                                                            spriteWidth * 0.5f * sprite.Scale.X,
-                                                                            spriteHeight * 0.5f * sprite.Scale.Y);
-                        Vector2 topLeft = dbgcenteredPosition;
-                        Vector2 topRight = topLeft + new Vector2(spriteWidth * sprite.Scale.X, 0);
-                        Vector2 bottomRight = topLeft +
-                                              new Vector2(spriteWidth * sprite.Scale.X, spriteHeight * sprite.Scale.Y);
-                        Vector2 bottomLeft = topLeft + new Vector2(0, spriteHeight * sprite.Scale.Y);
-
-                        OpenTK.Mathematics.Vector2 tl = new OpenTK.Mathematics.Vector2(topLeft.X, topLeft.Y);
-                        OpenTK.Mathematics.Vector2 tr = new OpenTK.Mathematics.Vector2(topRight.X, topRight.Y);
-                        OpenTK.Mathematics.Vector2 br = new OpenTK.Mathematics.Vector2(bottomRight.X, bottomRight.Y);
-                        OpenTK.Mathematics.Vector2 bl = new OpenTK.Mathematics.Vector2(bottomLeft.X, bottomLeft.Y);
-
-                        renderService.DrawLine(tl, tr, debugRectColor);
-                        renderService.DrawLine(tr, br, debugRectColor);
-                        renderService.DrawLine(br, bl, debugRectColor);
-                        renderService.DrawLine(bl, tl, debugRectColor);
+                        // Vector2 dbgcenteredPosition = position.Position - cameraOffset
+                        //                                                 - new Vector2(
+                        //                                                     spriteWidth * 0.5f * sprite.Scale.X,
+                        //                                                     spriteHeight * 0.5f * sprite.Scale.Y);
+                        // Vector2 topLeft = dbgcenteredPosition;
+                        // Vector2 topRight = topLeft + new Vector2(spriteWidth * sprite.Scale.X, 0);
+                        // Vector2 bottomRight = topLeft +
+                        //                       new Vector2(spriteWidth * sprite.Scale.X, spriteHeight * sprite.Scale.Y);
+                        // Vector2 bottomLeft = topLeft + new Vector2(0, spriteHeight * sprite.Scale.Y);
+                        //
+                        // OpenTK.Mathematics.Vector2 tl = new OpenTK.Mathematics.Vector2(topLeft.X, topLeft.Y);
+                        // OpenTK.Mathematics.Vector2 tr = new OpenTK.Mathematics.Vector2(topRight.X, topRight.Y);
+                        // OpenTK.Mathematics.Vector2 br = new OpenTK.Mathematics.Vector2(bottomRight.X, bottomRight.Y);
+                        // OpenTK.Mathematics.Vector2 bl = new OpenTK.Mathematics.Vector2(bottomLeft.X, bottomLeft.Y);
+                        //
+                        // renderService.DrawLine(tl, tr, debugRectColor);
+                        // renderService.DrawLine(tr, br, debugRectColor);
+                        // renderService.DrawLine(br, bl, debugRectColor);
+                        // renderService.DrawLine(bl, tl, debugRectColor);
                     }
                 }
 
