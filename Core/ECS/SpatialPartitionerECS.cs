@@ -84,11 +84,14 @@ namespace SDL2Engine.Core.Partitions
                 set = new HashSet<Entity>();
                 grid[cell] = set;
             }
+
+            Debug.Log($"Adding entity to cell: {entity.Id} {cell.Item1} {cell.Item2}");
             set.Add(entity);
         }
 
         private void RemoveFromCell(Entity entity, (int, int) cell)
         {
+            Debug.Log($"Removing entity from cell: {entity.Id} {cell.Item1} {cell.Item2}");
             if (grid.TryGetValue(cell, out var set))
             {
                 set.Remove(entity);
@@ -112,6 +115,7 @@ namespace SDL2Engine.Core.Partitions
             var oldCell = GetCell(oldPosition);
             var newCell = GetCell(newPositionComp.Position);
 
+            Utils.Debug.Log($"Updating entity {oldCell} {newCell}");
             if (oldCell != newCell)
             {
                 RemoveFromCell(entity, oldCell);
@@ -161,12 +165,12 @@ namespace SDL2Engine.Core.Partitions
             {
                 return set;
             }
+
             return Enumerable.Empty<Entity>();
         }
 
         public void RenderDebug(IRenderService renderService, Matrix4 projection, ICameraService cameraService = null)
         {
-            // Define colors using OpenTK's Color4
             Color4 rectColor = new Color4(1.0f, 0.0f, 0.0f, 1.0f); // Red
             Color4 lineColor = new Color4(0.0f, 1.0f, 0.0f, 1.0f); // Green
 
@@ -182,11 +186,9 @@ namespace SDL2Engine.Core.Partitions
                 var cell = kvp.Key;
                 var entities = kvp.Value;
 
-                // Calculate top-left and bottom-right positions of the cell
                 Vector2 topLeft = new Vector2(cell.Item1 * cellSize, cell.Item2 * cellSize) - cameraOffset;
                 Vector2 bottomRight = topLeft + new Vector2(cellSize, cellSize);
 
-                // Draw rectangle for the cell
                 var tl = new OpenTK.Mathematics.Vector2(topLeft.X, topLeft.Y);
                 var br = new OpenTK.Mathematics.Vector2(bottomRight.X, bottomRight.Y);
                 renderService.DrawRect(tl, br, rectColor);
@@ -205,9 +207,8 @@ namespace SDL2Engine.Core.Partitions
                             {
                                 Vector2 otherPosition = otherPosComp.Position - cameraOffset;
 
-                                // Draw line between entities
-                                var objPos = new OpenTK.Mathematics.Vector2(objPosition.X,objPosition.Y);
-                                var otherPos = new OpenTK.Mathematics.Vector2(otherPosition.X,otherPosition.Y);
+                                var objPos = new OpenTK.Mathematics.Vector2(objPosition.X, objPosition.Y);
+                                var otherPos = new OpenTK.Mathematics.Vector2(otherPosition.X, otherPosition.Y);
                                 renderService.DrawLine(objPos, otherPos, lineColor);
                             }
                         }

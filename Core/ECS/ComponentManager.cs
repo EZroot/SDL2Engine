@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.ECS.Components
 {
@@ -106,7 +107,6 @@ namespace SDL2Engine.Core.ECS.Components
                     result[kvp.Key] = (T)kvp.Value;
                 }
             }
-
             return result;
         }
 

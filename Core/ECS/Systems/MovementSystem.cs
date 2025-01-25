@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using SDL2Engine.Core.ECS.Components;
 using SDL2Engine.Core.Rendering.Interfaces;
@@ -20,10 +21,11 @@ namespace SDL2Engine.Core.ECS.Systems
 
             foreach (var entityId in velocities.Keys)
             {
-                if (positions.TryGetValue(entityId, out var position) && velocities.TryGetValue(entityId, out var velocity))
+                if (positions.TryGetValue(entityId, out var position) &&
+                    velocities.TryGetValue(entityId, out var velocity))
                 {
                     position.Position += velocity.Velocity * deltaTime;
-                    
+
                     // This will overwrite a component if it exists
                     componentManager.AddComponent(new Entity(entityId), position);
                 }

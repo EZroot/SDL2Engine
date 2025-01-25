@@ -1,10 +1,8 @@
-using System.Collections.Generic;
-using System.Numerics;
 using SDL2Engine.Core.ECS.Components;
-using SDL2Engine.Core.ECS.Systems;
 using SDL2Engine.Core.Partitions;
 using SDL2Engine.Core.Rendering;
 using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.ECS.Systems
 {
@@ -28,10 +26,9 @@ namespace SDL2Engine.Core.ECS.Systems
             {
                 if (componentManager.TryGetComponent(entity, out PositionComponent positionComponent))
                 {
-
                     if (componentManager.TryGetComponent(entity, out CurrentCellComponent currentCellComp))
                     {
-                        spatialPartitioner.UpdateEntity(entity, positionComponent.Position);
+                        spatialPartitioner.UpdateEntity(entity, positionComponent.OldPosition);
                     }
                     else
                     {
