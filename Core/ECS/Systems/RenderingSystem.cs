@@ -117,6 +117,5 @@ namespace SDL2Engine.Core.ECS.Systems
                 }
             }
         }
-
     }
 }

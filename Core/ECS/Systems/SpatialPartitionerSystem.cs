@@ -41,9 +41,11 @@ namespace SDL2Engine.Core.ECS.Systems
 
         public void Render(IRenderService renderService, ICameraService cameraService)
         {
-            var camera = (CameraGL)cameraService.GetActiveCamera();
-            spatialPartitioner.RenderDebug(renderService, camera.Projection, cameraService);
-            // spatialPartitioner.PrintDebugInfo();
+            if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
+            {
+                var camera = (CameraGL)cameraService.GetActiveCamera();
+                spatialPartitioner.RenderDebug(renderService, camera.Projection, cameraService);
+            }
         }
     }
 }
