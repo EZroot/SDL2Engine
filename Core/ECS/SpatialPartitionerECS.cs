@@ -85,13 +85,11 @@ namespace SDL2Engine.Core.Partitions
                 grid[cell] = set;
             }
 
-            Debug.Log($"Adding entity to cell: {entity.Id} {cell.Item1} {cell.Item2}");
             set.Add(entity);
         }
 
         private void RemoveFromCell(Entity entity, (int, int) cell)
         {
-            Debug.Log($"Removing entity from cell: {entity.Id} {cell.Item1} {cell.Item2}");
             if (grid.TryGetValue(cell, out var set))
             {
                 set.Remove(entity);
@@ -115,7 +113,6 @@ namespace SDL2Engine.Core.Partitions
             var oldCell = GetCell(oldPosition);
             var newCell = GetCell(newPositionComp.Position);
 
-            Utils.Debug.Log($"Updating entity {oldCell} {newCell}");
             if (oldCell != newCell)
             {
                 RemoveFromCell(entity, oldCell);
