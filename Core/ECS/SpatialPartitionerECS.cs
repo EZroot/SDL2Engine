@@ -74,10 +74,9 @@ namespace SDL2Engine.Core.Partitions
             {
                 cellList = new List<Entity>();
                 grid[cell] = cellList;
-                Debug.Log($"Created new cell {cell} and added entity {entity.Id}");
             }
+
             cellList.Add(entity);
-            Debug.Log($"Added entity {entity.Id} to cell {cell}");
         }
 
         private void RemoveFromCell(Entity entity, (int, int) cell)
@@ -85,11 +84,9 @@ namespace SDL2Engine.Core.Partitions
             if (grid.TryGetValue(cell, out var cellList))
             {
                 cellList.Remove(entity);
-                Debug.Log($"Removed entity {entity.Id} from cell {cell}");
                 if (cellList.Count == 0)
                 {
                     grid.Remove(cell);
-                    Debug.Log($"Removed empty cell {cell}");
                 }
             }
             else
@@ -161,68 +158,54 @@ namespace SDL2Engine.Core.Partitions
             return Enumerable.Empty<Entity>();
         }
 
-public void RenderDebug(IRenderService renderService, Matrix4 projection, ICameraService cameraService = null)
-{
-    Color4 rectColor = new Color4(1.0f, 0.0f, 0.0f, 1.0f); // Red for grid cells
-    Color4 lineColor = new Color4(0.0f, 1.0f, 0.0f, 1.0f); // Green for lines between entities
-
-    Vector2 cameraOffset = Vector2.Zero;
-
-    if (cameraService != null)
-    {
-        cameraOffset = cameraService.GetActiveCamera().GetOffset();
-    }
-
-    foreach (var cell in grid.Keys)
-    {
-        // Calculate the top-left and bottom-right coordinates of the cell
-        Vector2 topLeft = new Vector2(cell.Item1 * cellSize, cell.Item2 * cellSize) - cameraOffset;
-        Vector2 bottomRight = topLeft + new Vector2(cellSize, cellSize);
-
-        // Convert to OpenTK Vector2 for rendering
-        var tl = new OpenTK.Mathematics.Vector2(topLeft.X, topLeft.Y);
-        var br = new OpenTK.Mathematics.Vector2(bottomRight.X, bottomRight.Y);
-
-        // Draw the cell rectangle
-        renderService.DrawRect(tl, br, rectColor);
-
-        // Retrieve the list of entities in the current cell
-        var entitiesInCell = grid[cell];
-
-        // If there are at least two entities, draw lines between each unique pair
-        if (entitiesInCell.Count > 1)
+        public void RenderDebug(IRenderService renderService, Matrix4 projection, ICameraService cameraService = null)
         {
-            for (int i = 0; i < entitiesInCell.Count; i++)
+            Color4 rectColor = new Color4(1.0f, 0.0f, 0.0f, 1.0f);
+            Color4 lineColor = new Color4(0.0f, 1.0f, 0.0f, 1.0f);
+
+            Vector2 cameraOffset = Vector2.Zero;
+
+            if (cameraService != null)
             {
-                var entityA = entitiesInCell[i];
+                cameraOffset = cameraService.GetActiveCamera().GetOffset();
+            }
 
-                // Attempt to get the PositionComponent of the first entity
-                if (!componentManager.TryGetComponent(entityA, out PositionComponent posCompA))
-                    continue;
+            foreach (var cell in grid.Keys)
+            {
+                // Calculate the top-left and bottom-right coordinates of the cell
+                Vector2 topLeft = new Vector2(cell.Item1 * cellSize, cell.Item2 * cellSize) - cameraOffset;
+                Vector2 bottomRight = topLeft + new Vector2(cellSize, cellSize);
 
-                // Adjust the position based on the camera offset
-                Vector2 posA = posCompA.Position - cameraOffset;
-                var vA = new OpenTK.Mathematics.Vector2(posA.X, posA.Y);
+                // Convert to OpenTK Vector2 for rendering
+                var tl = new OpenTK.Mathematics.Vector2(topLeft.X, topLeft.Y);
+                var br = new OpenTK.Mathematics.Vector2(bottomRight.X, bottomRight.Y);
 
-                for (int j = i + 1; j < entitiesInCell.Count; j++)
+                renderService.DrawRect(tl, br, rectColor);
+                var entitiesInCell = grid[cell];
+                if (entitiesInCell.Count > 1)
                 {
-                    var entityB = entitiesInCell[j];
+                    for (int i = 0; i < entitiesInCell.Count; i++)
+                    {
+                        var entityA = entitiesInCell[i];
+                        if (!componentManager.TryGetComponent(entityA, out PositionComponent posCompA))
+                            continue;
+                        Vector2 posA = posCompA.Position - cameraOffset;
+                        var vA = new OpenTK.Mathematics.Vector2(posA.X, posA.Y);
 
-                    // Attempt to get the PositionComponent of the second entity
-                    if (!componentManager.TryGetComponent(entityB, out PositionComponent posCompB))
-                        continue;
+                        for (int j = i + 1; j < entitiesInCell.Count; j++)
+                        {
+                            var entityB = entitiesInCell[j];
+                            if (!componentManager.TryGetComponent(entityB, out PositionComponent posCompB))
+                                continue;
+                            Vector2 posB = posCompB.Position - cameraOffset;
+                            var vB = new OpenTK.Mathematics.Vector2(posB.X, posB.Y);
 
-                    // Adjust the position based on the camera offset
-                    Vector2 posB = posCompB.Position - cameraOffset;
-                    var vB = new OpenTK.Mathematics.Vector2(posB.X, posB.Y);
-
-                    // Draw a line between the two entities
-                    renderService.DrawLine(vA, vB, lineColor);
+                            renderService.DrawLine(vA, vB, lineColor);
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
     }
 }
