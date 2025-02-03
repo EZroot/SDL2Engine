@@ -601,7 +601,7 @@ namespace SDL2Engine.Core.Rendering
             Matrix4 model = Matrix4.Identity;
             Matrix4 view = Matrix4.CreateTranslation(0f, 0f, -3f);
             Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(
-                MathHelper.DegreesToRadians(90f), aspect, 0.1f, 100f);
+                MathHelper.DegreesToRadians(70f), aspect, 0.1f, 2000f);
 
             GL.UseProgram(shaderProgram);
             GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "model"), false, ref model);

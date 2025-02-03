@@ -186,51 +186,6 @@ public class ImageService : IImageService
         GL.UseProgram(0);
     }
     
-    public void DrawCubeGL(OpenGLHandle glHandler, Matrix4 modelMatrix, CameraGL3D camera, nint texturePointer)
-    {
-        // Rotate cube over time.
-        float angle = (float)DateTime.Now.TimeOfDay.TotalSeconds;
-        modelMatrix = Matrix4.CreateRotationY(angle) * modelMatrix;
-
-        GL.UseProgram(glHandler.Handles.Shader);
-
-        // Update transformation matrices.
-        int modelLoc = GL.GetUniformLocation(glHandler.Handles.Shader, "model");
-        int viewLoc  = GL.GetUniformLocation(glHandler.Handles.Shader, "view");
-        int projLoc  = GL.GetUniformLocation(glHandler.Handles.Shader, "projection");
-
-        Matrix4 camView = camera.View;
-        Matrix4 proj    = camera.Projection;
-        GL.UniformMatrix4(modelLoc, false, ref modelMatrix);
-        GL.UniformMatrix4(viewLoc,  false, ref camView);
-        GL.UniformMatrix4(projLoc,  false, ref proj);
-
-        // Set lighting uniforms.
-        int lightDirLoc     = GL.GetUniformLocation(glHandler.Handles.Shader, "lightDir");
-        int lightColorLoc   = GL.GetUniformLocation(glHandler.Handles.Shader, "lightColor");
-        int ambientColorLoc = GL.GetUniformLocation(glHandler.Handles.Shader, "ambientColor");
-
-        Vector3 lightDir     = new Vector3(-0.2f, -1.0f, -0.3f);
-        Vector3 lightColor   = new Vector3(1.0f, 1.0f, 1.0f);
-        Vector3 ambientColor = new Vector3(0.2f, 0.2f, 0.2f);
-        GL.Uniform3(lightDirLoc, ref lightDir);
-        GL.Uniform3(lightColorLoc, ref lightColor);
-        GL.Uniform3(ambientColorLoc, ref ambientColor);
-
-        // Bind texture to TextureUnit 0.
-        GL.ActiveTexture(TextureUnit.Texture0);
-        GL.BindTexture(TextureTarget.Texture2D, (int)texturePointer);
-        int texLoc = GL.GetUniformLocation(glHandler.Handles.Shader, "Texture");
-        GL.Uniform1(texLoc, 0);
-
-        GL.BindVertexArray(glHandler.Handles.Vao);
-        GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-        GL.BindVertexArray(0);
-
-        GL.BindTexture(TextureTarget.Texture2D, 0);
-        GL.UseProgram(0);
-    }
-
     public void DrawTexturesGLBatched(OpenGLHandle glHandler, int[] textureIds, ICamera camera, Matrix4[] modelMatrices)
     {
         var cameraGL = (CameraGL)camera;
