@@ -7,13 +7,15 @@ public struct OpenGLMandatoryHandles
     public int Vbo { get; }
     public int Ebo { get; }
     public int Shader { get; }
+    public int VertexCount { get; }  // new
 
-    public OpenGLMandatoryHandles(int vao, int vbo, int ebo, int shader)
+    public OpenGLMandatoryHandles(int vao, int vbo, int ebo, int shader, int vertexCount)
     {
         Vao = ValidateHandle(vao);
         Vbo = ValidateHandle(vbo);
         Ebo = ValidateHandle(ebo);
         Shader = ValidateHandle(shader);
+        VertexCount = vertexCount;
     }
 
     private int ValidateHandle(int handle)

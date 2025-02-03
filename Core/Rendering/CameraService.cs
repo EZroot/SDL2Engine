@@ -38,7 +38,7 @@ namespace SDL2Engine.Core.Rendering
             if (PlatformInfo.RendererType == RendererType.OpenGlRenderer &&
                 PlatformInfo.PipelineType == PipelineType.Pipe3D)
             {
-                camera = new CameraGL3D(Vector3.Zero, new Vector3(0, 0, 1), new Vector3(0, 1, 0), 90, 1f, 0.01f, 5000f);
+                camera = new CameraGL3D(Vector3.Zero, new Vector3(0, 0, 1), new Vector3(0, 1, 0), 70, 1f, 0.01f, 5000f);
             }
             _idToCamera[cameraId] = camera;
             Debug.Log($"<color=green>OpenGL Camera Created:</color> ID={cameraId}, Position={camera.Position}, Zoom={camera.Zoom}");

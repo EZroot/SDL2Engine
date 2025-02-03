@@ -3,6 +3,8 @@ using SDL2Engine.Core.Addressables;
 using SDL2Engine.Core.Addressables.Fonts;
 using SDL2Engine.Core.Addressables.Fonts.Interfaces;
 using SDL2Engine.Core.Addressables.Interfaces;
+using SDL2Engine.Core.Addressables.Models;
+using SDL2Engine.Core.Addressables.Models.Interfaces;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.GuiRenderer;
 using SDL2Engine.Core.GuiRenderer.Interfaces;
@@ -40,6 +42,7 @@ public class GameApp
         services.AddSingleton<IFontService, FontService>();
         services.AddSingleton<IImageService, ImageService>();
         services.AddSingleton<IAudioService, AudioService>();
+        services.AddSingleton<IModelService, ModelService>();
         
         services.AddSingleton<ICameraService, CameraService>();
         

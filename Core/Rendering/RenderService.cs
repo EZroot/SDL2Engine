@@ -28,7 +28,9 @@ namespace SDL2Engine.Core.Rendering
         private int m_fboHeight;
 
         private List<(Vector2 Start, Vector2 End, Color4 Color)> m_debugLines = new List<(Vector2, Vector2, Color4)>();
-        private List<(Vector2 TopLeft, Vector2 BottomRight, Color4 Color)> m_debugRects = new List<(Vector2, Vector2, Color4)>();
+
+        private List<(Vector2 TopLeft, Vector2 BottomRight, Color4 Color)> m_debugRects =
+            new List<(Vector2, Vector2, Color4)>();
 
         // Fields for screen quad rendering
         private int m_screenQuadShader;
@@ -66,7 +68,7 @@ namespace SDL2Engine.Core.Rendering
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/2d/2dshader.frag"));
                 Create3DGLBindings(
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.vert"),
-                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.frag"), 1f);
+                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.frag"), 32);
                 CreateDebugGLBindings(
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.vert"),
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.frag"));
@@ -103,24 +105,29 @@ namespace SDL2Engine.Core.Rendering
             m_fboTexture2D = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, m_fboTexture2D);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, m_fboWidth, m_fboHeight, 0,
-                          PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+                PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
 
             // Set texture parameters
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+                (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+                (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS,
+                (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT,
+                (int)TextureWrapMode.ClampToEdge);
 
             // Attach texture to framebuffer
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
-                                    TextureTarget.Texture2D, m_fboTexture2D, 0);
+                TextureTarget.Texture2D, m_fboTexture2D, 0);
 
             // Create and attach a renderbuffer for depth and stencil (optional, if needed)
             int rbo = GL.GenRenderbuffer();
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, rbo);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, m_fboWidth, m_fboHeight);
+            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, m_fboWidth,
+                m_fboHeight);
             GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment,
-                                       RenderbufferTarget.Renderbuffer, rbo);
+                RenderbufferTarget.Renderbuffer, rbo);
 
             // Check framebuffer completeness
             if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
@@ -147,7 +154,7 @@ namespace SDL2Engine.Core.Rendering
             // Resize framebuffer texture
             GL.BindTexture(TextureTarget.Texture2D, m_fboTexture2D);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, m_fboWidth, m_fboHeight, 0,
-                          PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+                PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
             GL.BindTexture(TextureTarget.Texture2D, 0);
 
             Debug.Log($"Framebuffer resized to {m_fboWidth}x{m_fboHeight}.");
@@ -165,7 +172,8 @@ namespace SDL2Engine.Core.Rendering
 
             // 2. Clear framebuffer
             GL.ClearColor(Color4.Black);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit |
+                     ClearBufferMask.StencilBufferBit);
 
             // 3. Render 2D content
             Render2DContent(projection);
@@ -255,19 +263,21 @@ namespace SDL2Engine.Core.Rendering
 
             m_screenQuadShader = GLHelper.CreateShaderProgram(vertexShaderSrc, fragmentShaderSrc);
 
-            float[] quadVertices = {
+            float[] quadVertices =
+            {
                 // positions   // texCoords
-                -1.0f,  1.0f,  0.0f, 1.0f,
-                -1.0f, -1.0f,  0.0f, 0.0f,
-                 1.0f,  1.0f,  1.0f, 1.0f,
-                 1.0f, -1.0f,  1.0f, 0.0f,
+                -1.0f, 1.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f,
+                1.0f, 1.0f, 1.0f, 1.0f,
+                1.0f, -1.0f, 1.0f, 0.0f,
             };
 
             m_screenQuadVao = GL.GenVertexArray();
             int screenQuadVbo = GL.GenBuffer();
             GL.BindVertexArray(m_screenQuadVao);
             GL.BindBuffer(BufferTarget.ArrayBuffer, screenQuadVbo);
-            GL.BufferData(BufferTarget.ArrayBuffer, quadVertices.Length * sizeof(float), quadVertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, quadVertices.Length * sizeof(float), quadVertices,
+                BufferUsageHint.StaticDraw);
             GL.EnableVertexAttribArray(0);
             GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
             GL.EnableVertexAttribArray(1);
@@ -503,7 +513,7 @@ namespace SDL2Engine.Core.Rendering
 
             GL.BindVertexArray(0);
 
-            var mandatoryHandle = new OpenGLMandatoryHandles(vao, vbo, ebo, shaderProgram);
+            var mandatoryHandle = new OpenGLMandatoryHandles(vao, vbo, ebo, shaderProgram, vertices.Length);
             m_glHandle2D = new OpenGLHandle(mandatoryHandle);
             return m_glHandle2D;
         }
@@ -512,86 +522,94 @@ namespace SDL2Engine.Core.Rendering
         {
             var shaderProgram = GLHelper.CreateShaderProgram(vertShaderSrc, fragShaderSrc);
 
-            // Full cube vertex data (36 vertices: 6 faces * 2 triangles * 3 vertices)
+            // Cube vertex data: 36 vertices, each with:
+            // Position (3), Normal (3), TexCoord (2) = 8 floats per vertex.
             float[] vertices =
             {
-                // Front face
-                -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-                0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-                0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-                0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-                -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
-                -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+                // Front face (normal: 0,0,1)
+                -0.5f, -0.5f, 0.5f, 0f, 0f, 1f, 0.0f, 0.0f,
+                0.5f, -0.5f, 0.5f, 0f, 0f, 1f, 1.0f, 0.0f,
+                0.5f, 0.5f, 0.5f, 0f, 0f, 1f, 1.0f, 1.0f,
+                0.5f, 0.5f, 0.5f, 0f, 0f, 1f, 1.0f, 1.0f,
+                -0.5f, 0.5f, 0.5f, 0f, 0f, 1f, 0.0f, 1.0f,
+                -0.5f, -0.5f, 0.5f, 0f, 0f, 1f, 0.0f, 0.0f,
 
-                // Back face
-                -0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-                0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-                0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-                0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-                -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
+                // Back face (normal: 0,0,-1)
+                -0.5f, -0.5f, -0.5f, 0f, 0f, -1f, 1.0f, 0.0f,
+                0.5f, -0.5f, -0.5f, 0f, 0f, -1f, 0.0f, 0.0f,
+                0.5f, 0.5f, -0.5f, 0f, 0f, -1f, 0.0f, 1.0f,
+                0.5f, 0.5f, -0.5f, 0f, 0f, -1f, 0.0f, 1.0f,
+                -0.5f, 0.5f, -0.5f, 0f, 0f, -1f, 1.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f, 0f, 0f, -1f, 1.0f, 0.0f,
 
-                // Left face
-                -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-                -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-                -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-                -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+                // Left face (normal: -1,0,0)
+                -0.5f, 0.5f, 0.5f, -1f, 0f, 0f, 1.0f, 0.0f,
+                -0.5f, 0.5f, -0.5f, -1f, 0f, 0f, 1.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f, -1f, 0f, 0f, 0.0f, 1.0f,
+                -0.5f, -0.5f, -0.5f, -1f, 0f, 0f, 0.0f, 1.0f,
+                -0.5f, -0.5f, 0.5f, -1f, 0f, 0f, 0.0f, 0.0f,
+                -0.5f, 0.5f, 0.5f, -1f, 0f, 0f, 1.0f, 0.0f,
 
-                // Right face
-                0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-                0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-                0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-                0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-                0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+                // Right face (normal: 1,0,0)
+                0.5f, 0.5f, 0.5f, 1f, 0f, 0f, 1.0f, 0.0f,
+                0.5f, 0.5f, -0.5f, 1f, 0f, 0f, 1.0f, 1.0f,
+                0.5f, -0.5f, -0.5f, 1f, 0f, 0f, 0.0f, 1.0f,
+                0.5f, -0.5f, -0.5f, 1f, 0f, 0f, 0.0f, 1.0f,
+                0.5f, -0.5f, 0.5f, 1f, 0f, 0f, 0.0f, 0.0f,
+                0.5f, 0.5f, 0.5f, 1f, 0f, 0f, 1.0f, 0.0f,
 
-                // Top face
-                -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-                0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-                0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-                0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-                -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
-                -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
+                // Top face (normal: 0,1,0)
+                -0.5f, 0.5f, -0.5f, 0f, 1f, 0f, 0.0f, 1.0f,
+                0.5f, 0.5f, -0.5f, 0f, 1f, 0f, 1.0f, 1.0f,
+                0.5f, 0.5f, 0.5f, 0f, 1f, 0f, 1.0f, 0.0f,
+                0.5f, 0.5f, 0.5f, 0f, 1f, 0f, 1.0f, 0.0f,
+                -0.5f, 0.5f, 0.5f, 0f, 1f, 0f, 0.0f, 0.0f,
+                -0.5f, 0.5f, -0.5f, 0f, 1f, 0f, 0.0f, 1.0f,
 
-                // Bottom face
-                -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-                0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
-                0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-                0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-                -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-                -0.5f, -0.5f, -0.5f, 0.0f, 1.0f
+                // Bottom face (normal: 0,-1,0)
+                -0.5f, -0.5f, -0.5f, 0f, -1f, 0f, 0.0f, 1.0f,
+                0.5f, -0.5f, -0.5f, 0f, -1f, 0f, 1.0f, 1.0f,
+                0.5f, -0.5f, 0.5f, 0f, -1f, 0f, 1.0f, 0.0f,
+                0.5f, -0.5f, 0.5f, 0f, -1f, 0f, 1.0f, 0.0f,
+                -0.5f, -0.5f, 0.5f, 0f, -1f, 0f, 0.0f, 0.0f,
+                -0.5f, -0.5f, -0.5f, 0f, -1f, 0f, 0.0f, 1.0f
             };
 
             int vao = GL.GenVertexArray();
             int vbo = GL.GenBuffer();
+
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Less);
 
             GL.BindVertexArray(vao);
             GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices,
                 BufferUsageHint.StaticDraw);
 
-            // Position attribute
+            // Position attribute: 3 floats, offset 0, stride 8 floats.
             GL.EnableVertexAttribArray(0);
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
-            // Texture coordinate attribute
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
+            // Normal attribute: 3 floats, offset 3 floats.
             GL.EnableVertexAttribArray(1);
-            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+            GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
+            // Texture coordinate attribute: 2 floats, offset 6 floats.
+            GL.EnableVertexAttribArray(2);
+            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 6 * sizeof(float));
             GL.BindVertexArray(0);
 
-            // Set up transformation matrices
+            // Setup initial transformation matrices.
             Matrix4 model = Matrix4.Identity;
             Matrix4 view = Matrix4.CreateTranslation(0f, 0f, -3f);
             Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(
-                MathHelper.DegreesToRadians(45f), aspect, 0.1f, 100f);
+                MathHelper.DegreesToRadians(90f), aspect, 0.1f, 100f);
 
             GL.UseProgram(shaderProgram);
             GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "model"), false, ref model);
             GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "view"), false, ref view);
             GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "projection"), false, ref projection);
+            GL.UseProgram(0);
 
-            m_glHandle3D = new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram));
+            m_glHandle3D = new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram, vertices.Length));
             return m_glHandle3D;
         }
 
@@ -613,11 +631,12 @@ namespace SDL2Engine.Core.Rendering
 
             // Color attribute
             GL.EnableVertexAttribArray(1);
-            GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, 6 * sizeof(float), 2 * sizeof(float));
+            GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, 6 * sizeof(float),
+                2 * sizeof(float));
 
             GL.BindVertexArray(0);
 
-            var mandatoryHandles = new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram);
+            var mandatoryHandles = new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram,0);
             m_glHandleDebug = new OpenGLHandle(mandatoryHandles);
             return m_glHandleDebug;
         }
@@ -666,7 +685,7 @@ namespace SDL2Engine.Core.Rendering
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
 
             var mandatoryHandles =
-                new OpenGLMandatoryHandles(vao, vbo, ebo, shaderProgram);
+                new OpenGLMandatoryHandles(vao, vbo, ebo, shaderProgram,0);
             var attributeLocations = new OpenGLAttributeLocations(attribLocationTex, attribLocationProjMtx,
                 attribLocationPosition, attribLocationUV, attribLocationColor, projLocation);
             m_glHandleGui = new OpenGLHandle(mandatoryHandles, attributeLocations);

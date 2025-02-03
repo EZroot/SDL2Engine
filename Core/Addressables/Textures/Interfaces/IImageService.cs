@@ -11,7 +11,7 @@ public interface IImageService
     TextureData LoadTexture(IntPtr renderer, string path);
     void DrawTextureGL(OpenGLHandle glHandler, nint textureId, ICamera camera, Matrix4 modelMatrix);
     void DrawTexturesGLBatched(OpenGLHandle glHandler, int[] textureIds, ICamera camera, Matrix4[] modelMatrices);
-    void DrawCubeGL(OpenGLHandle glHandler, Matrix4 modelMatrix, CameraGL3D camera);
+    void DrawCubeGL(OpenGLHandle glHandler, Matrix4 modelMatrix, CameraGL3D camera, nint texturePointer);
     void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect, ICamera camera);
     void DrawTextureWithRotation(nint renderer, int textureId, ref SDL.SDL_Rect destRect, float rotation, ref SDL.SDL_Point center, ICamera camera);
     void UnloadTexture(int id);

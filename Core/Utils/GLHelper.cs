@@ -33,7 +33,7 @@ public class GLHelper
         Debug.Log("Shaders finished compiling.");
         return g_ShaderHandle;
     }
-    
+
     private static int CompileShader(ShaderType type, string src)
     {
         int shader = GL.CreateShader(type);
@@ -49,5 +49,4 @@ public class GLHelper
 
         return shader;
     }
-
 }
