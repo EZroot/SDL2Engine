@@ -188,6 +188,11 @@ public class ImageService : IImageService
     
     public void DrawCubeGL(OpenGLHandle glHandler, Matrix4 modelMatrix, CameraGL3D camera)
     {
+        // Rotate around Y axis over time:
+        float angle = (float)DateTime.Now.TimeOfDay.TotalSeconds;
+        Matrix4 rotation = Matrix4.CreateRotationY(angle);
+        modelMatrix = rotation * modelMatrix;
+
         GL.UseProgram(glHandler.Handles.Shader);
 
         int modelLoc = GL.GetUniformLocation(glHandler.Handles.Shader, "model");
@@ -205,6 +210,7 @@ public class ImageService : IImageService
         GL.BindVertexArray(0);
         GL.UseProgram(0);
     }
+
 
     public void DrawTexturesGLBatched(OpenGLHandle glHandler, int[] textureIds, ICamera camera, Matrix4[] modelMatrices)
     {

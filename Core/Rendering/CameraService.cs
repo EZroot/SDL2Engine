@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using SDL2;
 using SDL2Engine.Core.Utils;
+using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace SDL2Engine.Core.Rendering
 {
@@ -27,10 +28,17 @@ namespace SDL2Engine.Core.Rendering
             
             //  Default camera (SDL)
             ICamera camera = new Camera(OpenTK.Mathematics.Vector3.Zero);
-            if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
+            if (PlatformInfo.RendererType == RendererType.OpenGlRenderer && PlatformInfo.PipelineType == PipelineType.Pipe2D)
             {
                 // Camera with some additional GL params (Viewport, Projection)
                 camera = new CameraGL(OpenTK.Mathematics.Vector3.Zero, windowWidth,windowHeight);
+            }
+            
+            // 3D Pipeline
+            if (PlatformInfo.RendererType == RendererType.OpenGlRenderer &&
+                PlatformInfo.PipelineType == PipelineType.Pipe3D)
+            {
+                camera = new CameraGL3D(Vector3.Zero, new Vector3(0, 0, 1), new Vector3(0, 1, 0), 90, 1f, 0.01f, 5000f);
             }
             _idToCamera[cameraId] = camera;
             Debug.Log($"<color=green>OpenGL Camera Created:</color> ID={cameraId}, Position={camera.Position}, Zoom={camera.Zoom}");

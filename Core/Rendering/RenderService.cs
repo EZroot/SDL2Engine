@@ -66,7 +66,7 @@ namespace SDL2Engine.Core.Rendering
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/2d/2dshader.frag"));
                 Create3DGLBindings(
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.vert"),
-                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/2d/2dshader.frag"), 1f);
+                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.frag"), 1f);
                 CreateDebugGLBindings(
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.vert"),
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.frag"));

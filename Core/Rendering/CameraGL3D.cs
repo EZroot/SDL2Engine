@@ -44,26 +44,23 @@ public class CameraGL3D : ICamera
     }
     public void Move(OpenTK.Mathematics.Vector3 delta)
     {
-        throw new NotImplementedException();
     }
 
-    public void SetPosition(OpenTK.Mathematics.Vector3 newPosition)
+    public void SetPosition(Vector3 newPosition)
     {
-        throw new NotImplementedException();
     }
 
     public void SetZoom(float newZoom)
     {
-        throw new NotImplementedException();
     }
 
+    
     public OpenTK.Mathematics.Vector3 GetOffset()
     {
-        throw new NotImplementedException();
+        return Vector3.Zero;
     }
 
     public void SetName(string name)
     {
-        throw new NotImplementedException();
     }
 }

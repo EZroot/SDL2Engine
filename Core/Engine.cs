@@ -180,7 +180,16 @@ namespace SDL2Engine.Core
                 if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
                 {
                     GL.Viewport(0, 0, m_windowWidth, m_windowHeight);
-                    ((CameraGL)(m_cameraService.GetActiveCamera())).ResizeViewport(m_windowWidth, m_windowHeight);
+                    if (PlatformInfo.PipelineType == PipelineType.Pipe2D)
+                    {
+                        ((CameraGL)(m_cameraService.GetActiveCamera())).ResizeViewport(m_windowWidth, m_windowHeight);
+                    }
+
+                    if (PlatformInfo.PipelineType == PipelineType.Pipe3D)
+                    {
+                        // TOdo: Implement this
+                        // ((CameraGL3D)(m_cameraService.GetActiveCamera())).ResizeViewport(m_windowWidth, m_windowHeight);
+                    }
                 }
 
                 m_guiRenderService.OnWindowResize(m_windowWidth, m_windowHeight);

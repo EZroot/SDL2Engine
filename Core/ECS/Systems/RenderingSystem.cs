@@ -63,7 +63,7 @@ namespace SDL2Engine.Core.ECS.Systems
                             position.Position.Y - (spriteHeight * 0.5f * sprite.Scale.Y)
                         );
 
-                        var matrixTranslate = MathHelper.GetMatrixTranslation(centeredPosition, sprite.Sprite.Width);
+                        var matrixTranslate = MathHelper.GetMatrixTranslation(new Vector3(centeredPosition.X, centeredPosition.Y,0), sprite.Sprite.Width);
                         modelMatrices.Add(matrixTranslate);
                         textureIds.Add((int)sprite.Sprite.TextureId);
 
