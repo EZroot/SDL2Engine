@@ -1,4 +1,4 @@
-using System.Numerics;
+using OpenTK.Mathematics;
 using SDL2;
 using SDL2Engine.Core.Addressables.Interfaces;
 
@@ -41,7 +41,7 @@ public class AnimatedSprite : ISprite
         }
     }
 
-    public void Render(IntPtr renderer, Vector2 position, float rotation, Vector2 scale)
+    public void Render(IntPtr renderer, Vector3 position, float rotation, Vector2 scale)
     {
         SDL.SDL_Rect sourceRect = new SDL.SDL_Rect
         {

@@ -1,16 +1,16 @@
 using System;
-using System.Numerics;
+using OpenTK.Mathematics;
 using SDL2Engine.Core.Rendering.Interfaces;
 
 namespace SDL2Engine.Core.Rendering
 {
     public class Camera : ICamera
     {
-        public Vector2 Position { get; private set; }
+        public Vector3 Position { get; private set; }
         public float Zoom { get; private set; }
         public string Name { get; private set; }
 
-        public Camera(Vector2 initialPosition, float initialZoom = 1.0f, string name = null)
+        public Camera(Vector3 initialPosition, float initialZoom = 1.0f, string name = null)
         {
             Position = initialPosition;
             Zoom = initialZoom;
@@ -21,7 +21,7 @@ namespace SDL2Engine.Core.Rendering
         /// Moves the camera by the specified delta.
         /// </summary>
         /// <param name="delta">Change in position.</param>
-        public virtual void Move(Vector2 delta)
+        public virtual void Move(Vector3 delta)
         {
             Position += delta;
         }
@@ -30,7 +30,7 @@ namespace SDL2Engine.Core.Rendering
         /// Sets the camera's position.
         /// </summary>
         /// <param name="newPosition">New position.</param>
-        public virtual void SetPosition(Vector2 newPosition)
+        public virtual void SetPosition(Vector3 newPosition)
         {
             Position = newPosition;
         }
@@ -48,7 +48,7 @@ namespace SDL2Engine.Core.Rendering
         /// Gets the camera transformation offset.
         /// </summary>
         /// <returns>Offset vector.</returns>
-        public virtual Vector2 GetOffset()
+        public virtual Vector3 GetOffset()
         {
             return Position * Zoom;
         }

@@ -41,7 +41,7 @@ namespace SDL2Engine.Core
         private bool disposed = false;
         private bool TEST_window_isopen = true;
 
-        public Engine(IServiceProvider serviceProvider, RendererType rendererType)
+        public Engine(IServiceProvider serviceProvider, RendererType rendererType, PipelineType pipelineType)
         {
             m_serviceProvider = serviceProvider;
             m_windowService = m_serviceProvider.GetService<IWindowService>();
@@ -55,6 +55,7 @@ namespace SDL2Engine.Core
             m_physicsService = m_serviceProvider.GetService<IPhysicsService>();
 
             PlatformInfo.SetRenderType(rendererType);
+            PlatformInfo.SetPipelineType(pipelineType);
         }
 
         private void Initialize()
@@ -196,7 +197,7 @@ namespace SDL2Engine.Core
         private void HandleCameraInput(ICamera camera)
         {
             float cameraSpeed = 50f * Time.DeltaTime;
-            Vector2 movement = Vector2.Zero;
+            OpenTK.Mathematics.Vector3 movement =  OpenTK.Mathematics.Vector3.Zero;
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_UP))
                 movement.Y -= cameraSpeed;
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_DOWN))

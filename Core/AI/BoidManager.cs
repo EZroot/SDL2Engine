@@ -1,6 +1,4 @@
-using System.Collections.Concurrent;
-using System.Numerics;
-using System.Threading.Tasks;
+using OpenTK.Mathematics;
 using SDL2Engine.Core.AI.Data;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Partitions;
@@ -36,7 +34,7 @@ namespace SDL2Engine.Core.AI
             {
                 var gameObject = new GameObject(
                     data.Sprite,
-                    data.Position,
+                    new Vector3(data.Position.X, data.Position.Y, 0),
                     data.Scale,
                     _partitioner);
                 _boids.Add(gameObject);
@@ -61,9 +59,9 @@ namespace SDL2Engine.Core.AI
                 Vector2 cohesion    = CalculateCohesion(boid, neighbors)    * CohesionWeight;
                 Vector2 separation  = CalculateSeparation(boid, neighbors)  * SeparationWeight;
 
-                Vector2 toMouse = mousePosition - boid.Position;
+                var toMouse = mousePosition - new Vector2(boid.Position.X, boid.Position.Y);
                 Vector2 mouseAttraction = Vector2.Zero;
-                if (toMouse.LengthSquared() > 0)
+                if (toMouse.LengthSquared > 0)
                     mouseAttraction = Vector2.Normalize(toMouse) * DebugMousePullWeight;
 
                 boidSteerings[i] = alignment + cohesion + separation + mouseAttraction;
@@ -73,13 +71,13 @@ namespace SDL2Engine.Core.AI
             {
                 var boid = _boids[i];
 
-                boid.Velocity += boidSteerings[i] * deltaTime;
+                boid.Velocity += new Vector3(boidSteerings[i].X, boidSteerings[i].Y,0) * deltaTime;
 
                 float maxSpeed = _boidSpeed; 
-                float speedSq = boid.Velocity.LengthSquared();
+                float speedSq = boid.Velocity.LengthSquared;
                 if (speedSq > maxSpeed * maxSpeed)
                 {
-                    boid.Velocity = Vector2.Normalize(boid.Velocity) * maxSpeed;
+                    boid.Velocity = Vector3.Normalize(boid.Velocity) * maxSpeed;
                 }
 
                 boid.Update(deltaTime);
@@ -101,17 +99,17 @@ namespace SDL2Engine.Core.AI
             int count = 0;
             foreach (var neighbor in neighbors)
             {
-                averageVelocity += neighbor.Velocity;
+                averageVelocity += new Vector2(neighbor.Velocity.X, neighbor.Velocity.Y);
                 count++;
             }
             if (count == 0) return Vector2.Zero;
             averageVelocity /= count;
-            return averageVelocity - boid.Velocity;
+            return averageVelocity - new Vector2(boid.Velocity.X, boid.Velocity.Y);
         }
 
         private Vector2 CalculateCohesion(GameObject boid, IEnumerable<GameObject> neighbors)
         {
-            Vector2 centerOfMass = Vector2.Zero;
+            Vector3 centerOfMass = Vector3.Zero;
             int count = 0;
             foreach (var neighbor in neighbors)
             {
@@ -121,8 +119,9 @@ namespace SDL2Engine.Core.AI
             if (count == 0) return Vector2.Zero;
             centerOfMass /= count;
 
-            Vector2 dir = centerOfMass - boid.Position;
-            return (dir.LengthSquared() > 0) ? Vector2.Normalize(dir) : Vector2.Zero;
+            Vector3 dir = centerOfMass - boid.Position;
+            var result = (dir.LengthSquared > 0) ? Vector3.Normalize(dir) : Vector3.Zero;
+            return new Vector2(result.X,result.Y);
         }
 
         private Vector2 CalculateSeparation(GameObject boid, IEnumerable<GameObject> neighbors)
@@ -131,25 +130,27 @@ namespace SDL2Engine.Core.AI
 
             foreach (var neighbor in neighbors)
             {
-                Vector2 diff = boid.Position - neighbor.Position;
-                float distanceSquared = diff.LengthSquared();
+                var diff = boid.Position - neighbor.Position;
+                float distanceSquared = diff.LengthSquared;
                 if (distanceSquared > 0 && distanceSquared < NeighborRadiusSquared)
                 {
                     float distance = MathF.Sqrt(distanceSquared);
                     if (distance < MinSeparationDistance)
                     {
                         float strength = (MinSeparationDistance - distance) / MinSeparationDistance;
-                        separation += Vector2.Normalize(diff) * strength * 10.0f; 
+                        var pos = Vector3.Normalize(diff) * strength * 10.0f;
+                        separation += new Vector2(pos.X, pos.Y);
                     }
                     else
                     {
                         float strength = 1.0f / distanceSquared;
-                        separation += diff * strength;
+                        var result = diff * strength;
+                        separation += new Vector2(result.X,result.Y);
                     }
                 }
             }
 
-            return (separation.LengthSquared() > 0) ? Vector2.Normalize(separation) : Vector2.Zero;
+            return (separation.LengthSquared > 0) ? Vector2.Normalize(separation) : Vector2.Zero;
         }
     }
 }

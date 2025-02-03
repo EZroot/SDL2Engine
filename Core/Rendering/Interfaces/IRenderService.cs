@@ -8,7 +8,7 @@ namespace SDL2Engine.Core.Rendering.Interfaces
         nint RenderPtr { get; }
         OpenGLHandle OpenGLHandleGui { get; }
         OpenGLHandle OpenGLHandle2D { get; }
-        OpenGLHandle OpenGlHandleDebug { get; }
+        OpenGLHandle OpenGLHandle3D { get; }
         public void DrawLine(Vector2 start, Vector2 end, Color4 color);
         public void DrawRect(Vector2 topLeft, Vector2 bottomRight, Color4 color);
         public void RenderDebugPrimitives(Matrix4 projection);

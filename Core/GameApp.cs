@@ -30,7 +30,7 @@ public class GameApp
     /// SDL Renderer makes things much easier, but no custom OPENGL 
     /// </summary>
     /// <param name="rendererType"></param>
-    public GameApp(RendererType rendererType = RendererType.SDLRenderer)
+    public GameApp(RendererType rendererType = RendererType.SDLRenderer, PipelineType pipelineType = PipelineType.Pipe2D)
     {
         var services = new ServiceCollection();
 
@@ -55,13 +55,19 @@ public class GameApp
 
         var serviceProvider = services.BuildServiceProvider();
         
-        _engine = new Engine(serviceProvider, rendererType);
+        _engine = new Engine(serviceProvider, rendererType, pipelineType);
     }
 
     public void Run(IGame game)
     {
         _engine?.Run(game);
     }
+}
+
+public enum PipelineType
+{
+    Pipe2D,
+    Pipe3D
 }
 
 public enum RendererType

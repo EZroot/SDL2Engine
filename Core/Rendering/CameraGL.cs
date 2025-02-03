@@ -19,7 +19,7 @@ public class CameraGL : Camera
         private float _viewportWidth;
         private float _viewportHeight;
 
-        public CameraGL(System.Numerics.Vector2 initialPosition, float viewportWidth, float viewportHeight, float initialZoom = 1.0f, string name = null)
+        public CameraGL(Vector3 initialPosition, float viewportWidth, float viewportHeight, float initialZoom = 1.0f, string name = null)
             : base(initialPosition, initialZoom, name)
         {
             _viewportWidth = viewportWidth;
@@ -61,13 +61,13 @@ public class CameraGL : Camera
         /// <summary>
         /// Sets the camera's position and updates the view matrix.
         /// </summary>
-        public override void SetPosition(System.Numerics.Vector2 newPosition)
+        public override void SetPosition(Vector3 newPosition)
         {
             base.SetPosition(newPosition);
             UpdateView();
         }
 
-        public override void Move(System.Numerics.Vector2 delta)
+        public override void Move(Vector3 delta)
         {
             SetPosition(Position + delta);
         }

@@ -1,4 +1,4 @@
-using System.Numerics;
+using OpenTK.Mathematics;
 using SDL2Engine.Core.Addressables.Interfaces;
 
 namespace SDL2Engine.Core.AI.Data;

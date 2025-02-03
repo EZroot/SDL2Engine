@@ -26,11 +26,11 @@ namespace SDL2Engine.Core.Rendering
             int cameraId = _nextId++;
             
             //  Default camera (SDL)
-            ICamera camera = new Camera(Vector2.Zero);
+            ICamera camera = new Camera(OpenTK.Mathematics.Vector3.Zero);
             if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
             {
                 // Camera with some additional GL params (Viewport, Projection)
-                camera = new CameraGL(Vector2.Zero, windowWidth,windowHeight);
+                camera = new CameraGL(OpenTK.Mathematics.Vector3.Zero, windowWidth,windowHeight);
             }
             _idToCamera[cameraId] = camera;
             Debug.Log($"<color=green>OpenGL Camera Created:</color> ID={cameraId}, Position={camera.Position}, Zoom={camera.Zoom}");

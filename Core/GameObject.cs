@@ -1,5 +1,5 @@
-using System.Numerics;
 using Box2DSharp.Dynamics;
+using OpenTK.Mathematics;
 using SDL2;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.Partitions;
@@ -9,7 +9,7 @@ using SDL2Engine.Core.Utils;
 
 public class GameObject
 {
-    public GameObject(ISprite sprite, Vector2 position, Vector2 scale, IPartitioner partitioner = null)
+    public GameObject(ISprite sprite, Vector3 position, Vector2 scale, IPartitioner partitioner = null)
     {
         Sprite = sprite;
         Position = position;
@@ -25,16 +25,16 @@ public class GameObject
     private const float PPM = 100f;
 
     private IPartitioner m_partitioner;
-    private Vector2 m_position;
-    private Vector2 m_lastPosition; 
+    private Vector3 m_position;
+    private Vector3 m_lastPosition; 
     private (int, int)? m_currentCell;
 
-    public Vector2 Position
+    public Vector3 Position
     {
         get => m_position;
         set => m_position = value; 
     }
-    public Vector2 Velocity { get; set; } 
+    public Vector3 Velocity { get; set; } 
     public float Rotation { get; set; }
     public Vector2 Scale { get; set; } = Vector2.One;
 
@@ -56,7 +56,8 @@ public class GameObject
         // Sync with physics
         if (PhysicsBody != null)
         {
-            Position = PhysicsBody.GetPosition() * PPM;
+            var pos = PhysicsBody.GetPosition();
+            Position = new Vector3(pos.X,pos.Y,0) * PPM;
             Rotation = (float)(PhysicsBody.GetAngle() * (180 / Math.PI));
         }
         else
@@ -66,7 +67,7 @@ public class GameObject
         
         if (m_partitioner != null && Position != m_lastPosition)
         {
-            m_partitioner.Update(this, m_lastPosition);
+            m_partitioner.Update(this);
             m_lastPosition = Position; 
         }
 
@@ -88,7 +89,7 @@ public class GameObject
         if (cameraService != null)
         {
             var cameraOffset = cameraService.GetActiveCamera().GetOffset();
-            Vector2 cameraAdjustedPosition = Position - cameraOffset;
+            Vector3 cameraAdjustedPosition = Position - cameraOffset;
             Sprite.Render(renderer, cameraAdjustedPosition, Rotation, Scale);
         }
         else

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Numerics;
 using OpenTK.Mathematics;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.ECS.Components;
@@ -38,7 +36,7 @@ namespace SDL2Engine.Core.ECS.Systems
             Color4 debugRectColor = new Color4(0.5f, 0f, 0.5f, 1f); // Magenta for debug rectangles
 
             // Obtain the camera offset if available
-            Vector2 cameraOffset = Vector2.Zero;
+            Vector3 cameraOffset = Vector3.Zero;
             if (cameraService != null)
             {
                 cameraOffset = cameraService.GetActiveCamera().GetOffset();
@@ -91,13 +89,14 @@ namespace SDL2Engine.Core.ECS.Systems
                     }
                 }
 
+                var cam = cameraService.GetActiveCamera();
                 // Batch render all sprites
                 if (modelMatrices.Count > 0)
                 {
                     imageService.DrawTexturesGLBatched(
                         glHandle,
                         textureIds.ToArray(),
-                        cameraService.GetActiveCamera(),
+                        cam,
                         modelMatrices.ToArray()
                     );
                 }
@@ -112,7 +111,7 @@ namespace SDL2Engine.Core.ECS.Systems
                         sprites.TryGetValue(entityId, out var sprite))
                     {
                         // Render the sprite
-                        sprite.Sprite.Render(renderer, position.Position, 0, sprite.Scale);
+                        sprite.Sprite.Render(renderer, new Vector3(position.Position.X, position.Position.Y,0), 0, sprite.Scale);
                     }
                 }
             }

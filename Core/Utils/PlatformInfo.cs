@@ -13,6 +13,7 @@ public static class PlatformInfo
     public static bool IsIOS { get; private set; }
     
     public static RendererType RendererType { get; private set; }
+    public static PipelineType PipelineType { get; private set; }
     
     static PlatformInfo()
     {
@@ -22,6 +23,11 @@ public static class PlatformInfo
     public static void SetRenderType(RendererType rendererType)
     {
         RendererType = rendererType;
+    }
+
+    public static void SetPipelineType(PipelineType pipelineType)
+    {
+        PipelineType = pipelineType;
     }
 
     private static void DetectPlatform()

@@ -1,6 +1,6 @@
 using SDL2;
 using System.Collections.Generic;
-using System.Numerics;
+using OpenTK.Mathematics;
 using SDL2Engine.Core.Partitions.Interfaces;
 using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.Utils;
@@ -24,7 +24,7 @@ public class SpatialPartitioner : IPartitioner
         grid = new Dictionary<(int, int), HashSet<GameObject>>(new CellComparer());
     }
 
-    private (int, int) GetCell(Vector2 position)
+    private (int, int) GetCell(Vector3 position)
     {
         int x = (int)Math.Floor(position.X / cellSize);
         int y = (int)Math.Floor(position.Y / cellSize);
@@ -62,7 +62,7 @@ public class SpatialPartitioner : IPartitioner
         }
     }
 
-    public void Update(GameObject obj, Vector2 oldPosition)
+    public void Update(GameObject obj)
     {
         if (obj == null) return;
         var newCell = GetCell(obj.Position);
@@ -73,7 +73,7 @@ public class SpatialPartitioner : IPartitioner
         }
     }
 
-    public IEnumerable<GameObject> GetNeighbors(Vector2 position, float radius)
+    public IEnumerable<GameObject> GetNeighbors(Vector3 position, float radius)
     {
         float radiusSq = radius * radius;
 
@@ -92,7 +92,7 @@ public class SpatialPartitioner : IPartitioner
                 {
                     foreach (var obj in cellObjects)
                     {
-                        if (Vector2.DistanceSquared(obj.Position, position) <= radiusSq)
+                        if (Vector2.DistanceSquared(new Vector2(obj.Position.X, obj.Position.Y), new Vector2(position.X, position.Y)) <= radiusSq)
                             neighbors.Add(obj);
                     }
                 }
@@ -102,7 +102,7 @@ public class SpatialPartitioner : IPartitioner
         return neighbors;
     }
 
-    public IEnumerable<GameObject> GetObjectsInCell(Vector2 position)
+    public IEnumerable<GameObject> GetObjectsInCell(Vector3 position)
     {
         var cell = GetCell(position);
         return grid.TryGetValue(cell, out var set) ? set : Enumerable.Empty<GameObject>();
@@ -114,7 +114,7 @@ public class SpatialPartitioner : IPartitioner
         var lineColor = new SDL.SDL_Color { r = 0, g = 255, b = 0, a = 255 };
 
 
-        Vector2 cameraOffset = Vector2.Zero;
+        OpenTK.Mathematics.Vector3 cameraOffset = OpenTK.Mathematics.Vector3.Zero;
 
         if (cameraService != null)
         {
@@ -141,13 +141,13 @@ public class SpatialPartitioner : IPartitioner
 
             foreach (var obj in objects)
             {
-                Vector2 objPosition = obj.Position - cameraOffset;
+                Vector3 objPosition = obj.Position - cameraOffset;
 
                 foreach (var other in objects)
                 {
                     if (obj == other) continue;
 
-                    Vector2 otherPosition = other.Position - cameraOffset;
+                    Vector3 otherPosition = other.Position - cameraOffset;
 
                     SDL.SDL_RenderDrawLine(renderer,
                         (int)objPosition.X, (int)objPosition.Y,

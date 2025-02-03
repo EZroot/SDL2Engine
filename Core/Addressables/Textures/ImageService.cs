@@ -186,6 +186,26 @@ public class ImageService : IImageService
         GL.UseProgram(0);
     }
     
+    public void DrawCubeGL(OpenGLHandle glHandler, Matrix4 modelMatrix, CameraGL3D camera)
+    {
+        GL.UseProgram(glHandler.Handles.Shader);
+
+        int modelLoc = GL.GetUniformLocation(glHandler.Handles.Shader, "model");
+        int viewLoc = GL.GetUniformLocation(glHandler.Handles.Shader, "view");
+        int projLoc = GL.GetUniformLocation(glHandler.Handles.Shader, "projection");
+
+        var camView = camera.View;
+        var proj = camera.Projection;
+        GL.UniformMatrix4(modelLoc, false, ref modelMatrix);
+        GL.UniformMatrix4(viewLoc, false, ref camView);
+        GL.UniformMatrix4(projLoc, false, ref proj);
+
+        GL.BindVertexArray(glHandler.Handles.Vao);
+        GL.DrawArrays(PrimitiveType.Triangles, 0, 36); // cube with 36 vertices
+        GL.BindVertexArray(0);
+        GL.UseProgram(0);
+    }
+
     public void DrawTexturesGLBatched(OpenGLHandle glHandler, int[] textureIds, ICamera camera, Matrix4[] modelMatrices)
     {
         var cameraGL = (CameraGL)camera;
@@ -314,7 +334,7 @@ public class ImageService : IImageService
     private SDL.SDL_Rect ApplyCameraTransform(SDL.SDL_Rect dstRect, ICamera camera)
     {
         // Calculate the offset based on camera position and zoom
-        Vector2 cameraOffset = camera.GetOffset();
+        var cameraOffset = camera.GetOffset();
 
         // Apply zoom to the position and size
         float zoom = camera.Zoom;

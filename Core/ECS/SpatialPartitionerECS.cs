@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using OpenTK.Mathematics;
 using SDL2Engine.Core.ECS;
 using SDL2Engine.Core.ECS.Components;
 using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.Utils;
-using Vector2 = System.Numerics.Vector2;
 
 namespace SDL2Engine.Core.Partitions
 {
@@ -46,7 +42,7 @@ namespace SDL2Engine.Core.Partitions
             if (!componentManager.TryGetComponent(entity, out PositionComponent positionComp))
                 return;
 
-            var cell = GetCell(positionComp.Position);
+            var cell = GetCell(new Vector2(positionComp.Position.X,positionComp.Position.Y));
 
             if (componentManager.TryGetComponent(entity, out CurrentCellComponent currentCellComp))
             {
@@ -101,7 +97,7 @@ namespace SDL2Engine.Core.Partitions
                 return;
 
             var oldCell = GetCell(oldPosition);
-            var newCell = GetCell(newPositionComp.Position);
+            var newCell = GetCell(new Vector2(newPositionComp.Position.X, newPositionComp.Position.Y));
 
             if (oldCell != newCell)
             {
@@ -133,8 +129,8 @@ namespace SDL2Engine.Core.Partitions
                         {
                             if (componentManager.TryGetComponent(entity, out PositionComponent posComp))
                             {
-                                Vector2 diff = posComp.Position - position;
-                                if (diff.LengthSquared() <= radiusSq)
+                                var diff = posComp.Position - position;
+                                if (diff.LengthSquared <= radiusSq)
                                 {
                                     neighbors.Add(entity);
                                 }
@@ -163,7 +159,7 @@ namespace SDL2Engine.Core.Partitions
             Color4 rectColor = new Color4(1.0f, 0.0f, 0.0f, 1.0f);
             Color4 lineColor = new Color4(0.0f, 1.0f, 0.0f, 1.0f);
 
-            Vector2 cameraOffset = Vector2.Zero;
+            var cameraOffset = Vector3.Zero;
 
             if (cameraService != null)
             {
@@ -173,7 +169,7 @@ namespace SDL2Engine.Core.Partitions
             foreach (var cell in grid.Keys)
             {
                 // Calculate the top-left and bottom-right coordinates of the cell
-                Vector2 topLeft = new Vector2(cell.Item1 * cellSize, cell.Item2 * cellSize) - cameraOffset;
+                Vector2 topLeft = new Vector2(cell.Item1 * cellSize, cell.Item2 * cellSize) - new Vector2(cameraOffset.X, cameraOffset.Y);
                 Vector2 bottomRight = topLeft + new Vector2(cellSize, cellSize);
 
                 // Convert to OpenTK Vector2 for rendering
@@ -189,7 +185,7 @@ namespace SDL2Engine.Core.Partitions
                         var entityA = entitiesInCell[i];
                         if (!componentManager.TryGetComponent(entityA, out PositionComponent posCompA))
                             continue;
-                        Vector2 posA = posCompA.Position - cameraOffset;
+                        Vector2 posA = posCompA.Position - new Vector2(cameraOffset.X, cameraOffset.Y);
                         var vA = new OpenTK.Mathematics.Vector2(posA.X, posA.Y);
 
                         for (int j = i + 1; j < entitiesInCell.Count; j++)
@@ -197,7 +193,7 @@ namespace SDL2Engine.Core.Partitions
                             var entityB = entitiesInCell[j];
                             if (!componentManager.TryGetComponent(entityB, out PositionComponent posCompB))
                                 continue;
-                            Vector2 posB = posCompB.Position - cameraOffset;
+                            Vector2 posB = posCompB.Position - new Vector2(cameraOffset.X, cameraOffset.Y);
                             var vB = new OpenTK.Mathematics.Vector2(posB.X, posB.Y);
 
                             renderService.DrawLine(vA, vB, lineColor);
