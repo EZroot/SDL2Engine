@@ -216,7 +216,6 @@ public class ModelService : IModelService
         return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shader, vertexCount));
     }
 
-// Now the sphere loader sets up shadow mapping uniforms too.
 public OpenGLHandle LoadSphere(string vertShaderPath, string fragShaderPath, float aspect, int sectorCount = 36, int stackCount = 18)
 {
     string vertSrc = File.ReadAllText(vertShaderPath);
@@ -245,7 +244,6 @@ public OpenGLHandle LoadSphere(string vertShaderPath, string fragShaderPath, flo
         }
     }
 
-    // Build indices (each quad split into two triangles)
     List<int> indices = new List<int>();
     int rowCount = sectorCount + 1;
     for (int i = 0; i < stackCount; i++)
@@ -259,7 +257,6 @@ public OpenGLHandle LoadSphere(string vertShaderPath, string fragShaderPath, flo
         }
     }
 
-    // Reassemble final vertex array for triangles only.
     float[] finalVertices = new float[indices.Count * 8];
     for (int i = 0; i < indices.Count; i++)
     {
@@ -299,14 +296,12 @@ public OpenGLHandle LoadSphere(string vertShaderPath, string fragShaderPath, flo
     GL.UniformMatrix4(GL.GetUniformLocation(shader, "model"), false, ref model);
     GL.UniformMatrix4(GL.GetUniformLocation(shader, "view"), false, ref view);
     GL.UniformMatrix4(GL.GetUniformLocation(shader, "projection"), false, ref proj);
-    // Set a default lightSpaceMatrix (identity) if the shader expects it.
     int lsLoc = GL.GetUniformLocation(shader, "lightSpaceMatrix");
     if (lsLoc != -1)
     {
         Matrix4 identity = Matrix4.Identity;
         GL.UniformMatrix4(lsLoc, false, ref identity);
     }
-    // Tell the shader that shadowMap will be on texture unit 1.
     int shadowLoc = GL.GetUniformLocation(shader, "shadowMap");
     if (shadowLoc != -1)
         GL.Uniform1(shadowLoc, 1);
@@ -316,60 +311,58 @@ public OpenGLHandle LoadSphere(string vertShaderPath, string fragShaderPath, flo
     return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shader, vertexCount));
 }
 
-// Updated draw call: now accepts both the diffuse texture and the shadow map,
-// plus the lightSpaceMatrix needed for shadow mapping.
-public void DrawModelGL(OpenGLHandle glHandle, Matrix4 modelMatrix, CameraGL3D camera, nint diffuseTexturePointer, Matrix4 lightSpaceMatrix, nint shadowMapPointer)
+public void DrawModelGL(
+    OpenGLHandle glHandle,
+    Matrix4 modelMatrix,
+    CameraGL3D camera,
+    nint diffuseTexPtr,
+    Matrix4 lightSpaceMatrix,
+    nint shadowMapPtr,
+    Vector3 lightDir,
+    Vector3 lightColor,
+    Vector3 ambientColor)
 {
     GL.UseProgram(glHandle.Handles.Shader);
 
-    // Set transformation matrices.
-    int modelLoc = GL.GetUniformLocation(glHandle.Handles.Shader, "model");
-    int viewLoc = GL.GetUniformLocation(glHandle.Handles.Shader, "view");
-    int projLoc = GL.GetUniformLocation(glHandle.Handles.Shader, "projection");
-    Matrix4 camView = camera.View;
-    Matrix4 proj = camera.Projection;
-    GL.UniformMatrix4(modelLoc, false, ref modelMatrix);
-    GL.UniformMatrix4(viewLoc, false, ref camView);
-    GL.UniformMatrix4(projLoc, false, ref proj);
+    // --- Set Light Uniforms ---
+    int loc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightDir");
+    if (loc != -1) GL.Uniform3(loc, ref lightDir);
 
-    // Set the light space matrix for shadow mapping.
-    int lsLoc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightSpaceMatrix");
-    if (lsLoc != -1)
-        GL.UniformMatrix4(lsLoc, false, ref lightSpaceMatrix);
+    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightColor");
+    if (loc != -1) GL.Uniform3(loc, ref lightColor);
 
-    // Bind diffuse texture to unit 0.
+    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "ambientColor");
+    if (loc != -1) GL.Uniform3(loc, ref ambientColor);
+
+    var camView = camera.View;
+    var camProj = camera.Projection;
+
+    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "model");
+    if (loc != -1) GL.UniformMatrix4(loc, false, ref modelMatrix);
+
+    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "view");
+    if (loc != -1) GL.UniformMatrix4(loc, false, ref camView);
+
+    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "projection");
+    if (loc != -1) GL.UniformMatrix4(loc, false, ref camProj);
+
+    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightSpaceMatrix");
+    if (loc != -1) GL.UniformMatrix4(loc, false, ref lightSpaceMatrix);
+
     GL.ActiveTexture(TextureUnit.Texture0);
-    GL.BindTexture(TextureTarget.Texture2D, (int)diffuseTexturePointer);
-    int diffuseLoc = GL.GetUniformLocation(glHandle.Handles.Shader, "diffuseTexture");
-    if (diffuseLoc != -1)
-        GL.Uniform1(diffuseLoc, 0);
+    GL.BindTexture(TextureTarget.Texture2D, (int)diffuseTexPtr);
+    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "diffuseTexture");
+    if (loc != -1) GL.Uniform1(loc, 0);
 
-    // Bind shadow map to unit 1.
     GL.ActiveTexture(TextureUnit.Texture1);
-    GL.BindTexture(TextureTarget.Texture2D, (int)shadowMapPointer);
-    int shadowLoc = GL.GetUniformLocation(glHandle.Handles.Shader, "shadowMap");
-    if (shadowLoc != -1)
-        GL.Uniform1(shadowLoc, 1);
-
-    // Optional: Set lighting info if needed.
-    Vector3 lightDir = new Vector3(1f, 1f, 1f).Normalized();
-    Vector3 lightColor = new Vector3(1f, 0f, 0f);
-    Vector3 ambientColor = new Vector3(0f, 0f, 0.1f);
-    int lightDirLoc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightDir");
-    int lightColorLoc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightColor");
-    int ambientColorLoc = GL.GetUniformLocation(glHandle.Handles.Shader, "ambientColor");
-    if (lightDirLoc != -1)
-        GL.Uniform3(lightDirLoc, ref lightDir);
-    if (lightColorLoc != -1)
-        GL.Uniform3(lightColorLoc, ref lightColor);
-    if (ambientColorLoc != -1)
-        GL.Uniform3(ambientColorLoc, ref ambientColor);
+    GL.BindTexture(TextureTarget.Texture2D, (int)shadowMapPtr);
+    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "shadowMap");
+    if (loc != -1) GL.Uniform1(loc, 1);
 
     GL.BindVertexArray(glHandle.Handles.Vao);
     GL.DrawArrays(PrimitiveType.Triangles, 0, glHandle.Handles.VertexCount);
-    GL.BindVertexArray(0);
 
-    // Cleanup: unbind textures.
+    GL.BindVertexArray(0);
     GL.ActiveTexture(TextureUnit.Texture1);
     GL.BindTexture(TextureTarget.Texture2D, 0);
     GL.ActiveTexture(TextureUnit.Texture0);
@@ -377,7 +370,7 @@ public void DrawModelGL(OpenGLHandle glHandle, Matrix4 modelMatrix, CameraGL3D c
     GL.UseProgram(0);
 }
 
-    private static void AppendVertex(string faceVertex, List<Vector3> positions, List<Vector2> texCoords,
+private static void AppendVertex(string faceVertex, List<Vector3> positions, List<Vector2> texCoords,
         List<Vector3> normals, List<float> finalVertices)
     {
         // Expected format: "v/vt/vn" or "v//vn"
