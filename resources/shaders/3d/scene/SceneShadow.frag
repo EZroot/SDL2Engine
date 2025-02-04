@@ -7,45 +7,43 @@ in vec4 FragPosLightSpace;
 out vec4 FragColor;
 
 uniform sampler2D diffuseTexture;
-uniform sampler2D shadowMap; // your depth texture
+uniform sampler2DShadow shadowMap; // use sampler2DShadow for hardware PCF
 
 uniform vec3 lightDir;
 uniform vec3 lightColor;
 uniform vec3 ambientColor;
+uniform bool debugShadow;
 
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
-    // perform perspective divide
+    // Perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform to [0, 1]
+    // Transform to [0, 1] range
     projCoords = projCoords * 0.5 + 0.5;
+    // Invert Y coordinate to match our flipped light space matrix
+    projCoords.y = 1.0 - projCoords.y;
 
-    // if outside the shadow map, no shadow
-    if(projCoords.z > 1.0)
-    return 0.0;
+    // Calculate bias to prevent shadow acne
+    float bias = max(0.005 * (1.0 - dot(normalize(Normal), -normalize(lightDir))), 0.005);
 
-    // fetch depth from shadow map
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
-    float currentDepth = projCoords.z;
-
-    // bias to prevent acne (tweak as needed)
-    float bias = max(0.005 * (1.0 - dot(normalize(Normal), -lightDir)), 0.005);
-
-    // shadow factor: 1.0 means in shadow
-    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
-    return shadow;
+    // Hardware shadow mapping: the third coordinate is the reference depth
+    return texture(shadowMap, vec3(projCoords.xy, projCoords.z - bias));
 }
 
 void main()
 {
     vec3 norm = normalize(Normal);
-    vec3 lightDirection = normalize(lightDir);
-    float diff = max(dot(norm, -lightDirection), 0.0);
-    vec3 diffuse = diff * lightColor;
-
     float shadow = ShadowCalculation(FragPosLightSpace);
-    vec3 lighting = ambientColor + (1.0 - shadow) * diffuse;
 
-    vec4 color = texture(diffuseTexture, TexCoord);
-    FragColor = vec4(color.rgb * lighting, color.a);
+    if(debugShadow)
+    {
+        FragColor = vec4(vec3(shadow), 1.0);
+        return;
+    }
+
+    float diff = max(dot(norm, -normalize(lightDir)), 0.0);
+    vec3 diffuse = diff * lightColor;
+    vec3 lighting = ambientColor + diffuse * shadow;
+    vec4 texColor = texture(diffuseTexture, TexCoord);
+    FragColor = vec4(texColor.rgb * lighting, texColor.a);
 }

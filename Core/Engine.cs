@@ -235,7 +235,7 @@ namespace SDL2Engine.Core
             float deltaY = lastMouseY - mouseY;
             lastMouseX = mouseX;
             lastMouseY = mouseY;
-            if (PlatformInfo.PipelineType == PipelineType.Pipe3D)
+            if (PlatformInfo.PipelineType == PipelineType.Pipe3D && InputManager.IsMouseButtonPressed(SDL.SDL_BUTTON_RIGHT))
             {
                 ((CameraGL3D)camera).ProcessMouseMovement(deltaX, deltaY);
             }
