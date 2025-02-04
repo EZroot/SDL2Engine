@@ -1,3 +1,4 @@
+using OpenTK.Audio.OpenAL;
 using OpenTK.Mathematics;
 
 public static class MathHelper
@@ -24,6 +25,8 @@ public static class MathHelper
         return degrees * (Pi / 180f);
     }
     
+    public static float RadiansToDegrees => 180f / MathF.PI;
+    
     /// <summary>
     /// Generates a model matrix for a 3d position.
     /// </summary>
@@ -33,7 +36,13 @@ public static class MathHelper
     public static Matrix4 GetMatrixTranslation(Vector3 position, float scale = 1.0f)
     {
         // Create the model matrix with translation and scale
-        return Matrix4.CreateScale(scale, scale, 1.0f) * Matrix4.CreateTranslation(position);
+        return Matrix4.CreateScale(scale, scale, scale) * Matrix4.CreateTranslation(position);
+    }
+    
+    public static Matrix4 GetMatrixTranslation(Vector3 position, Vector3 scale)
+    {
+        // Create the model matrix with translation and scale
+        return Matrix4.CreateScale(scale) * Matrix4.CreateTranslation(position);
     }
     
     public static Matrix4 GetMatrixRotationAroundPivot(Matrix4 rotation, Vector3 pivot)

@@ -12,7 +12,7 @@ public class ModelService : IModelService
         string fragShaderSrc = File.ReadAllText(fragShaderPath);
         int shaderProgram = GLHelper.CreateShaderProgram(vertShaderSrc, fragShaderSrc);
 
-        // Custom OBJ loader: parse positions, texture coordinates, and normals.
+        // parse positions, texture coordinates, and normals
         List<Vector3> positions = new List<Vector3>();
         List<Vector2> texCoords = new List<Vector2>();
         List<Vector3> normals = new List<Vector3>();
@@ -46,7 +46,7 @@ public class ModelService : IModelService
                         float.Parse(parts[3], CultureInfo.InvariantCulture)));
                     break;
                 case "f":
-                    // Triangulate the face (assumes convex polygon)
+                    // (assumes convex polygon)
                     int faceVertexCount = parts.Length - 1;
                     for (int i = 1; i < faceVertexCount - 1; i++)
                     {
@@ -63,10 +63,9 @@ public class ModelService : IModelService
         if (vertices.Length == 0)
             throw new Exception("No vertices loaded from model file.");
 
-        // Calculate vertex count (each vertex consists of 8 floats).
+        // (each vertex consists of 8 floats).
         int vertexCount = vertices.Length / 8;
-
-        // Create VAO/VBO.
+        
         int vao = GL.GenVertexArray();
         int vbo = GL.GenBuffer();
         GL.BindVertexArray(vao);
@@ -82,7 +81,7 @@ public class ModelService : IModelService
         GL.BindVertexArray(0);
 
         Matrix4 model = Matrix4.Identity;
-        Matrix4 view = Matrix4.CreateTranslation(0f, 0f, -3f);
+        Matrix4 view = Matrix4.CreateTranslation(0f, 0f, 0f);
         Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(90f), aspect, 0.1f, 100f);
         GL.UseProgram(shaderProgram);
         GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "model"), false, ref model);
@@ -90,10 +89,6 @@ public class ModelService : IModelService
         GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "projection"), false, ref projection);
         GL.UseProgram(0);
 
-        // Here we assume your OpenGLMandatoryHandles class has been updated to store the vertex count.
-        // For example, its constructor might now be:
-        //   OpenGLMandatoryHandles(int vao, int vbo, int vertexCount, int shader)
-        // and it exposes a VertexCount property.
         return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram, vertexCount));
     }
 

@@ -66,13 +66,15 @@ namespace SDL2Engine.Core.Rendering
                 Create2DGLBindings(
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/2d/2dshader.vert"),
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/2d/2dshader.frag"));
-                Create3DGLBindings(
-                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.vert"),
-                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.frag"), 32);
+                // Create3DGLBindings(
+                //     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.vert"),
+                //     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.frag"), 32);
                 CreateDebugGLBindings(
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.vert"),
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.frag"));
 
+                GL.Enable(EnableCap.DepthTest);
+                GL.DepthFunc(DepthFunction.Less);
                 GL.Enable(EnableCap.Blend);
                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 

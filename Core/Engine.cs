@@ -20,9 +20,8 @@ namespace SDL2Engine.Core
 {
     internal class Engine : IDisposable
     {
-
+        public const int CAM_SPEED = 10;
         public enum ExampleEnum { OptionA, OptionB, OptionC };
-        
         private readonly IWindowService m_windowService;
         private readonly IRenderService m_renderService;
         private readonly IGuiRenderService m_guiRenderService;
@@ -40,7 +39,9 @@ namespace SDL2Engine.Core
         
         private bool disposed = false;
         private bool TEST_window_isopen = true;
-
+        
+        private float lastMouseX = InputManager.MouseX;
+        private float lastMouseY = InputManager.MouseY;
         public Engine(IServiceProvider serviceProvider, RendererType rendererType, PipelineType pipelineType)
         {
             m_serviceProvider = serviceProvider;
@@ -187,8 +188,7 @@ namespace SDL2Engine.Core
 
                     if (PlatformInfo.PipelineType == PipelineType.Pipe3D)
                     {
-                        // TOdo: Implement this
-                        // ((CameraGL3D)(m_cameraService.GetActiveCamera())).ResizeViewport(m_windowWidth, m_windowHeight);
+                        ((CameraGL3D)(m_cameraService.GetActiveCamera())).ResizeViewport(m_windowWidth, m_windowHeight);
                     }
                 }
 
@@ -205,8 +205,8 @@ namespace SDL2Engine.Core
         /// </summary>
         private void HandleCameraInput(ICamera camera)
         {
-            float cameraSpeed = 50f * Time.DeltaTime;
-            OpenTK.Mathematics.Vector3 movement =  OpenTK.Mathematics.Vector3.Zero;
+            float cameraSpeed = CAM_SPEED * Time.DeltaTime;
+            OpenTK.Mathematics.Vector3 movement = OpenTK.Mathematics.Vector3.Zero;
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_UP))
                 movement.Y -= cameraSpeed;
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_DOWN))
@@ -215,15 +215,32 @@ namespace SDL2Engine.Core
                 movement.X -= cameraSpeed;
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_RIGHT))
                 movement.X += cameraSpeed;
-            
+    
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_q))
+                movement.Z -= cameraSpeed;
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_e))
+                movement.Z += cameraSpeed;
+    
             camera.Move(movement);
-            
+    
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_EQUALS))
                 camera.SetZoom(camera.Zoom + 0.1f);
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_MINUS))
                 camera.SetZoom(camera.Zoom - 0.1f);
+    
+            // First-person mouse look:
+            float mouseX = InputManager.MouseX;
+            float mouseY = InputManager.MouseY;
+            float deltaX = mouseX - lastMouseX;
+            float deltaY = lastMouseY - mouseY;
+            lastMouseX = mouseX;
+            lastMouseY = mouseY;
+            if (PlatformInfo.PipelineType == PipelineType.Pipe3D)
+            {
+                ((CameraGL3D)camera).ProcessMouseMovement(deltaX, deltaY);
+            }
         }
-        
+ 
         public void Dispose()
         {
             if (disposed)
