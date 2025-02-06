@@ -7,103 +7,122 @@ using SDL2Engine.Core.Utils;
 
 public class ModelService : IModelService
 {
-public OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragShaderPath, float aspect)
-{
-    // Load and compile shaders.
-    string vertSrc = FileHelper.ReadFileContents(vertShaderPath);
-    string fragSrc = FileHelper.ReadFileContents(fragShaderPath);
-    int shaderProgram = GLHelper.CreateShaderProgram(vertSrc, fragSrc);
+    private OpenGLHandle m_frameBufferQuadHandle;
+    private int fbo, colorTex;
+    public int FboColorTexture => colorTex;
 
-    var positions = new List<Vector3>();
-    var texCoords = new List<Vector2>();
-    var normals   = new List<Vector3>();
-    var finalVerts = new List<float>();
-    var culture = CultureInfo.InvariantCulture;
-
-    foreach (string line in File.ReadLines(path))
+    public ModelService()
     {
-        string trimmed = line.Trim();
-        if (string.IsNullOrEmpty(trimmed) || trimmed[0] == '#')
-            continue;
-
-        string[] parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0)
-            continue;
-
-        switch (parts[0])
-        {
-            case "v":
-                if (parts.Length < 4) continue;
-                positions.Add(new Vector3(
-                    float.Parse(parts[1], culture),
-                    float.Parse(parts[2], culture),
-                    float.Parse(parts[3], culture)));
-                break;
-            case "vt":
-                if (parts.Length < 3) continue;
-                texCoords.Add(new Vector2(
-                    float.Parse(parts[1], culture),
-                    float.Parse(parts[2], culture)));
-                break;
-            case "vn":
-                if (parts.Length < 4) continue;
-                normals.Add(new Vector3(
-                    float.Parse(parts[1], culture),
-                    float.Parse(parts[2], culture),
-                    float.Parse(parts[3], culture)));
-                break;
-            case "f":
-                // Assumes convex polygon faces.
-                int count = parts.Length - 1;
-                for (int i = 1; i < count - 1; i++)
-                {
-                    AppendVertex(parts[1], positions, texCoords, normals, finalVerts);
-                    AppendVertex(parts[i + 1], positions, texCoords, normals, finalVerts);
-                    AppendVertex(parts[i + 2], positions, texCoords, normals, finalVerts);
-                }
-                break;
-        }
+        InitializeFrameBuffer(1920, 1080);
     }
 
-    var vertices = finalVerts.ToArray();
-    if (vertices.Length == 0)
-        throw new Exception("No vertices loaded from model file.");
+    /// <summary>
+    /// Loads a .Obj 3d model
+    /// </summary>
+    /// <param name="path"></param>
+    /// <param name="vertShaderPath"></param>
+    /// <param name="fragShaderPath"></param>
+    /// <param name="aspect"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragShaderPath, float aspect)
+    {
+        // Load and compile shaders.
+        string vertSrc = FileHelper.ReadFileContents(vertShaderPath);
+        string fragSrc = FileHelper.ReadFileContents(fragShaderPath);
+        int shaderProgram = GLHelper.CreateShaderProgram(vertSrc, fragSrc);
 
-    int vertexCount = vertices.Length / 8;
+        var positions = new List<Vector3>();
+        var texCoords = new List<Vector2>();
+        var normals = new List<Vector3>();
+        var finalVerts = new List<float>();
+        var culture = CultureInfo.InvariantCulture;
 
-    // Generate and bind buffers.
-    int vao = GL.GenVertexArray();
-    int vbo = GL.GenBuffer();
-    GL.BindVertexArray(vao);
-    GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
-    GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+        foreach (string line in File.ReadLines(path))
+        {
+            string trimmed = line.Trim();
+            if (string.IsNullOrEmpty(trimmed) || trimmed[0] == '#')
+                continue;
 
-    const int stride = 8 * sizeof(float);
-    GL.EnableVertexAttribArray(0);
-    GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
-    GL.EnableVertexAttribArray(1);
-    GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, stride, 3 * sizeof(float));
-    GL.EnableVertexAttribArray(2);
-    GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 6 * sizeof(float));
-    GL.BindVertexArray(0);
+            string[] parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                continue;
 
-    // Set default transforms.
-    Matrix4 model = Matrix4.Identity;
-    Matrix4 view = Matrix4.Identity;
-    Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(
-        MathHelper.DegreesToRadians(90f), aspect, 0.1f, 100f);
+            switch (parts[0])
+            {
+                case "v":
+                    if (parts.Length < 4) continue;
+                    positions.Add(new Vector3(
+                        float.Parse(parts[1], culture),
+                        float.Parse(parts[2], culture),
+                        float.Parse(parts[3], culture)));
+                    break;
+                case "vt":
+                    if (parts.Length < 3) continue;
+                    texCoords.Add(new Vector2(
+                        float.Parse(parts[1], culture),
+                        float.Parse(parts[2], culture)));
+                    break;
+                case "vn":
+                    if (parts.Length < 4) continue;
+                    normals.Add(new Vector3(
+                        float.Parse(parts[1], culture),
+                        float.Parse(parts[2], culture),
+                        float.Parse(parts[3], culture)));
+                    break;
+                case "f":
+                    // Assumes convex polygon faces.
+                    int count = parts.Length - 1;
+                    for (int i = 1; i < count - 1; i++)
+                    {
+                        AppendVertex(parts[1], positions, texCoords, normals, finalVerts);
+                        AppendVertex(parts[i + 1], positions, texCoords, normals, finalVerts);
+                        AppendVertex(parts[i + 2], positions, texCoords, normals, finalVerts);
+                    }
 
-    // Set uniforms.
-    GL.UseProgram(shaderProgram);
-    GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "model"), false, ref model);
-    GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "view"), false, ref view);
-    GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "projection"), false, ref projection);
-    GL.UseProgram(0);
+                    break;
+            }
+        }
 
-    return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram, vertexCount));
-}
+        var vertices = finalVerts.ToArray();
+        if (vertices.Length == 0)
+            throw new Exception("No vertices loaded from model file.");
 
-    public OpenGLHandle Load3DArrow(string vertShaderPath, string fragShaderPath)
+        int vertexCount = vertices.Length / 8;
+
+        // Generate and bind buffers.
+        int vao = GL.GenVertexArray();
+        int vbo = GL.GenBuffer();
+        GL.BindVertexArray(vao);
+        GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+        GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+
+        const int stride = 8 * sizeof(float);
+        GL.EnableVertexAttribArray(0);
+        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
+        GL.EnableVertexAttribArray(1);
+        GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, stride, 3 * sizeof(float));
+        GL.EnableVertexAttribArray(2);
+        GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 6 * sizeof(float));
+        GL.BindVertexArray(0);
+
+        // Set default transforms.
+        Matrix4 model = Matrix4.Identity;
+        Matrix4 view = Matrix4.Identity;
+        Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(
+            MathHelper.DegreesToRadians(90f), aspect, 0.1f, 100f);
+
+        // Set uniforms.
+        GL.UseProgram(shaderProgram);
+        GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "model"), false, ref model);
+        GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "view"), false, ref view);
+        GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "projection"), false, ref projection);
+        GL.UseProgram(0);
+
+        return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram, vertexCount));
+    }
+
+    public OpenGLHandle Create3DArrow(string vertShaderPath, string fragShaderPath)
     {
         string vertShaderSrc = FileHelper.ReadFileContents(vertShaderPath);
         string fragShaderSrc = FileHelper.ReadFileContents(fragShaderPath);
@@ -128,7 +147,7 @@ public OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragS
         return new OpenGLHandle(new OpenGLMandatoryHandles(arrowVao, arrowVbo, 0, arrowShader, arrowVertCount));
     }
 
-    public OpenGLHandle LoadQuad(string vertShaderPath, string fragShaderPath, float aspect)
+    public OpenGLHandle CreateQuad(string vertShaderPath, string fragShaderPath, float aspect)
     {
         string vertSrc = FileHelper.ReadFileContents(vertShaderPath);
         string fragSrc = FileHelper.ReadFileContents(fragShaderPath);
@@ -173,7 +192,7 @@ public OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragS
         return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shader, vertexCount));
     }
 
-    public OpenGLHandle LoadCube(string vertShaderPath, string fragShaderPath, float aspect)
+    public OpenGLHandle CreateCube(string vertShaderPath, string fragShaderPath, float aspect)
     {
         string vertSrc = FileHelper.ReadFileContents(vertShaderPath);
         string fragSrc = FileHelper.ReadFileContents(fragShaderPath);
@@ -252,7 +271,7 @@ public OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragS
         return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shader, vertexCount));
     }
 
-    public OpenGLHandle LoadSphere(string vertShaderPath, string fragShaderPath, float aspect, int sectorCount = 36,
+    public OpenGLHandle CreateSphere(string vertShaderPath, string fragShaderPath, float aspect, int sectorCount = 36,
         int stackCount = 18)
     {
         string vertSrc = FileHelper.ReadFileContents(vertShaderPath);
@@ -359,7 +378,51 @@ public OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragS
         return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shader, vertexCount));
     }
 
-    public void DrawLightArrow(OpenGLHandle arrowHandle, CameraGL3D cam, Vector3 position, Vector3 dirNormalized)
+    public OpenGLHandle CreateFullscreenQuad(string vertShaderPath, string fragShaderPath)
+    {
+        string vertSrc = FileHelper.ReadFileContents(vertShaderPath);
+        string fragSrc = FileHelper.ReadFileContents(fragShaderPath);
+        int shader = GLHelper.CreateShaderProgram(vertSrc, fragSrc);
+
+        int vao = GL.GenVertexArray();
+        int vbo = GL.GenBuffer();
+        GL.BindVertexArray(vao);
+        GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+        float[] vertices = new float[]
+        {
+            // First triangle.
+            -1.0f, 1.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f,
+            1.0f, -1.0f, 1.0f, 0.0f,
+
+            // Second triangle.
+            -1.0f, 1.0f, 0.0f, 1.0f,
+            1.0f, -1.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+        };
+
+        // upload vertex data
+        GL.BufferData(BufferTarget.ArrayBuffer,
+            vertices.Length * sizeof(float),
+            vertices,
+            BufferUsageHint.StaticDraw);
+
+        int stride = 4 * sizeof(float);
+        // Position attribute (location = 0): 2 floats, offset 0.
+        GL.EnableVertexAttribArray(0);
+        GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, stride, 0);
+        // TexCoord attribute (location = 1): 2 floats, offset 2 * sizeof(float).
+        GL.EnableVertexAttribArray(1);
+        GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, stride, 2 * sizeof(float));
+
+        GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+        GL.BindVertexArray(0);
+
+        var mandatoryHandles = new OpenGLMandatoryHandles(vao, vbo, 0, shader, 6);
+        return new OpenGLHandle(mandatoryHandles);
+    }
+
+    public void DrawArrow(OpenGLHandle arrowHandle, CameraGL3D cam, Vector3 position, Vector3 dirNormalized)
     {
         var arrowShader = arrowHandle.Handles.Shader;
         // Arrow is modeled along +Z
@@ -466,6 +529,64 @@ public OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragS
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2D, 0);
         GL.UseProgram(0);
+    }
+
+    public void BindFramebuffer(int screenWidth, int screenHeight)
+    {
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
+        GL.Viewport(0, 0, screenWidth, screenHeight);
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+    }
+
+    public void UnbindFramebuffer()
+    {
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+    }
+
+    public void RenderFramebuffer()
+    {
+        GL.UseProgram(m_frameBufferQuadHandle.Handles.Shader);
+
+        GL.ActiveTexture(TextureUnit.Texture0);
+        GL.BindTexture(TextureTarget.Texture2D, FboColorTexture);
+        GL.Uniform1(GL.GetUniformLocation(m_frameBufferQuadHandle.Handles.Shader, "screenTexture"), 0);
+
+        GL.BindVertexArray(m_frameBufferQuadHandle.Handles.Vao);
+        GL.DrawArrays(PrimitiveType.Triangles, 0, m_frameBufferQuadHandle.Handles.VertexCount);
+
+        GL.BindVertexArray(0);
+        GL.BindTexture(TextureTarget.Texture2D, 0);
+        GL.UseProgram(0);
+    }
+
+    private void InitializeFrameBuffer(int screenWidth, int screenHeight)
+    {
+        m_frameBufferQuadHandle = CreateFullscreenQuad(
+            PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/fbo/fbo.vert",
+            PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/fbo/fbo.frag");
+
+        fbo = GL.GenFramebuffer();
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
+
+        colorTex = GL.GenTexture();
+        GL.BindTexture(TextureTarget.Texture2D, colorTex);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, screenWidth, screenHeight, 0,
+            PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
+            TextureTarget.Texture2D, colorTex, 0);
+
+        int depthRbo = GL.GenRenderbuffer();
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, depthRbo);
+        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent, screenWidth,
+            screenHeight);
+        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
+            RenderbufferTarget.Renderbuffer, depthRbo);
+
+        if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
+            throw new Exception("Framebuffer not complete!");
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
     }
 
     private float[] GenerateBetterArrowGeometry(float shaftRadius = 0.2f,
