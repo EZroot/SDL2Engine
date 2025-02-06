@@ -24,10 +24,7 @@ For help on how to build each dll/library check the /docs
 ## Template Examples
 
 ### OpenGL 3D  Renderer + Shadows
-<video width="380" height="240" controls>
-  <source src="screenshottys/screenshottys/bettershadows.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+![OpenGL renderer gif](screenshottys/output.gif)
 
 
 ### SDL Renderer Game / Gui Example
