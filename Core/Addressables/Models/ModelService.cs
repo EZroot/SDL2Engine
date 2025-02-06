@@ -7,91 +7,101 @@ using SDL2Engine.Core.Utils;
 
 public class ModelService : IModelService
 {
-    public OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragShaderPath, float aspect)
+public OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragShaderPath, float aspect)
+{
+    // Load and compile shaders.
+    string vertSrc = FileHelper.ReadFileContents(vertShaderPath);
+    string fragSrc = FileHelper.ReadFileContents(fragShaderPath);
+    int shaderProgram = GLHelper.CreateShaderProgram(vertSrc, fragSrc);
+
+    var positions = new List<Vector3>();
+    var texCoords = new List<Vector2>();
+    var normals   = new List<Vector3>();
+    var finalVerts = new List<float>();
+    var culture = CultureInfo.InvariantCulture;
+
+    foreach (string line in File.ReadLines(path))
     {
-        string vertShaderSrc = FileHelper.ReadFileContents(vertShaderPath);
-        string fragShaderSrc = FileHelper.ReadFileContents(fragShaderPath);
-        int shaderProgram = GLHelper.CreateShaderProgram(vertShaderSrc, fragShaderSrc);
+        string trimmed = line.Trim();
+        if (string.IsNullOrEmpty(trimmed) || trimmed[0] == '#')
+            continue;
 
-        // parse positions, texture coordinates, and normals
-        List<Vector3> positions = new List<Vector3>();
-        List<Vector2> texCoords = new List<Vector2>();
-        List<Vector3> normals = new List<Vector3>();
-        List<float> finalVertices = new List<float>();
+        string[] parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+            continue;
 
-        string[] lines = File.ReadAllLines(path);
-        foreach (string line in lines)
+        switch (parts[0])
         {
-            string trimmed = line.Trim();
-            if (trimmed.StartsWith("#") || string.IsNullOrWhiteSpace(trimmed))
-                continue;
-
-            string[] parts = trimmed.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            switch (parts[0])
-            {
-                case "v":
-                    positions.Add(new Vector3(
-                        float.Parse(parts[1], CultureInfo.InvariantCulture),
-                        float.Parse(parts[2], CultureInfo.InvariantCulture),
-                        float.Parse(parts[3], CultureInfo.InvariantCulture)));
-                    break;
-                case "vt":
-                    texCoords.Add(new Vector2(
-                        float.Parse(parts[1], CultureInfo.InvariantCulture),
-                        float.Parse(parts[2], CultureInfo.InvariantCulture)));
-                    break;
-                case "vn":
-                    normals.Add(new Vector3(
-                        float.Parse(parts[1], CultureInfo.InvariantCulture),
-                        float.Parse(parts[2], CultureInfo.InvariantCulture),
-                        float.Parse(parts[3], CultureInfo.InvariantCulture)));
-                    break;
-                case "f":
-                    // (assumes convex polygon)
-                    int faceVertexCount = parts.Length - 1;
-                    for (int i = 1; i < faceVertexCount - 1; i++)
-                    {
-                        AppendVertex(parts[1], positions, texCoords, normals, finalVertices);
-                        AppendVertex(parts[i + 1], positions, texCoords, normals, finalVertices);
-                        AppendVertex(parts[i + 2], positions, texCoords, normals, finalVertices);
-                    }
-
-                    break;
-            }
+            case "v":
+                if (parts.Length < 4) continue;
+                positions.Add(new Vector3(
+                    float.Parse(parts[1], culture),
+                    float.Parse(parts[2], culture),
+                    float.Parse(parts[3], culture)));
+                break;
+            case "vt":
+                if (parts.Length < 3) continue;
+                texCoords.Add(new Vector2(
+                    float.Parse(parts[1], culture),
+                    float.Parse(parts[2], culture)));
+                break;
+            case "vn":
+                if (parts.Length < 4) continue;
+                normals.Add(new Vector3(
+                    float.Parse(parts[1], culture),
+                    float.Parse(parts[2], culture),
+                    float.Parse(parts[3], culture)));
+                break;
+            case "f":
+                // Assumes convex polygon faces.
+                int count = parts.Length - 1;
+                for (int i = 1; i < count - 1; i++)
+                {
+                    AppendVertex(parts[1], positions, texCoords, normals, finalVerts);
+                    AppendVertex(parts[i + 1], positions, texCoords, normals, finalVerts);
+                    AppendVertex(parts[i + 2], positions, texCoords, normals, finalVerts);
+                }
+                break;
         }
-
-        float[] vertices = finalVertices.ToArray();
-        if (vertices.Length == 0)
-            throw new Exception("No vertices loaded from model file.");
-
-        // (each vertex consists of 8 floats).
-        int vertexCount = vertices.Length / 8;
-
-        int vao = GL.GenVertexArray();
-        int vbo = GL.GenBuffer();
-        GL.BindVertexArray(vao);
-        GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
-        GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
-
-        GL.EnableVertexAttribArray(0);
-        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
-        GL.EnableVertexAttribArray(1);
-        GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
-        GL.EnableVertexAttribArray(2);
-        GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 6 * sizeof(float));
-        GL.BindVertexArray(0);
-
-        Matrix4 model = Matrix4.Identity;
-        Matrix4 view = Matrix4.CreateTranslation(0f, 0f, 0f);
-        Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(90f), aspect, 0.1f, 100f);
-        GL.UseProgram(shaderProgram);
-        GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "model"), false, ref model);
-        GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "view"), false, ref view);
-        GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "projection"), false, ref projection);
-        GL.UseProgram(0);
-
-        return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram, vertexCount));
     }
+
+    var vertices = finalVerts.ToArray();
+    if (vertices.Length == 0)
+        throw new Exception("No vertices loaded from model file.");
+
+    int vertexCount = vertices.Length / 8;
+
+    // Generate and bind buffers.
+    int vao = GL.GenVertexArray();
+    int vbo = GL.GenBuffer();
+    GL.BindVertexArray(vao);
+    GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+    GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+
+    const int stride = 8 * sizeof(float);
+    GL.EnableVertexAttribArray(0);
+    GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
+    GL.EnableVertexAttribArray(1);
+    GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, stride, 3 * sizeof(float));
+    GL.EnableVertexAttribArray(2);
+    GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 6 * sizeof(float));
+    GL.BindVertexArray(0);
+
+    // Set default transforms.
+    Matrix4 model = Matrix4.Identity;
+    Matrix4 view = Matrix4.Identity;
+    Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(
+        MathHelper.DegreesToRadians(90f), aspect, 0.1f, 100f);
+
+    // Set uniforms.
+    GL.UseProgram(shaderProgram);
+    GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "model"), false, ref model);
+    GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "view"), false, ref view);
+    GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "projection"), false, ref projection);
+    GL.UseProgram(0);
+
+    return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram, vertexCount));
+}
 
     public OpenGLHandle Load3DArrow(string vertShaderPath, string fragShaderPath)
     {
@@ -459,75 +469,75 @@ public class ModelService : IModelService
     }
 
     public void DrawModelGL(
-    OpenGLHandle glHandle,
-    Matrix4 modelMatrix,
-    CameraGL3D camera,
-    nint diffuseTexPtr,
-    Matrix4 lightSpaceMatrix,
-    nint shadowMapPtr,
-    Vector3 lightDir,
-    Vector3 lightColor,
-    Vector3 ambientColor,
-    float shadowBias,
-    float pcfDiskRadius,
-    int numSamples)
-{
-    GL.UseProgram(glHandle.Handles.Shader);
+        OpenGLHandle glHandle,
+        Matrix4 modelMatrix,
+        CameraGL3D camera,
+        nint diffuseTexPtr,
+        Matrix4 lightSpaceMatrix,
+        nint shadowMapPtr,
+        Vector3 lightDir,
+        Vector3 lightColor,
+        Vector3 ambientColor,
+        float shadowBias,
+        float pcfDiskRadius,
+        int numSamples)
+    {
+        GL.UseProgram(glHandle.Handles.Shader);
 
-    int loc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightDir");
-    if (loc != -1) GL.Uniform3(loc, ref lightDir);
+        int loc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightDir");
+        if (loc != -1) GL.Uniform3(loc, ref lightDir);
 
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightColor");
-    if (loc != -1) GL.Uniform3(loc, ref lightColor);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightColor");
+        if (loc != -1) GL.Uniform3(loc, ref lightColor);
 
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "ambientColor");
-    if (loc != -1) GL.Uniform3(loc, ref ambientColor);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "ambientColor");
+        if (loc != -1) GL.Uniform3(loc, ref ambientColor);
 
-    var camView = camera.View;
-    var camProj = camera.Projection;
+        var camView = camera.View;
+        var camProj = camera.Projection;
 
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "model");
-    if (loc != -1) GL.UniformMatrix4(loc, false, ref modelMatrix);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "model");
+        if (loc != -1) GL.UniformMatrix4(loc, false, ref modelMatrix);
 
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "view");
-    if (loc != -1) GL.UniformMatrix4(loc, false, ref camView);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "view");
+        if (loc != -1) GL.UniformMatrix4(loc, false, ref camView);
 
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "projection");
-    if (loc != -1) GL.UniformMatrix4(loc, false, ref camProj);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "projection");
+        if (loc != -1) GL.UniformMatrix4(loc, false, ref camProj);
 
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightSpaceMatrix");
-    if (loc != -1) GL.UniformMatrix4(loc, false, ref lightSpaceMatrix);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "lightSpaceMatrix");
+        if (loc != -1) GL.UniformMatrix4(loc, false, ref lightSpaceMatrix);
 
-    // Set shadow parameters in the main shader.
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "shadowBias");
-    if (loc != -1) GL.Uniform1(loc, shadowBias);
+        // Set shadow parameters in the main shader.
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "shadowBias");
+        if (loc != -1) GL.Uniform1(loc, shadowBias);
 
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "pcfDiskRadius");
-    if (loc != -1) GL.Uniform1(loc, pcfDiskRadius);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "pcfDiskRadius");
+        if (loc != -1) GL.Uniform1(loc, pcfDiskRadius);
 
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "NUM_SAMPLES");
-    if (loc != -1) GL.Uniform1(loc, numSamples);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "NUM_SAMPLES");
+        if (loc != -1) GL.Uniform1(loc, numSamples);
 
-    GL.ActiveTexture(TextureUnit.Texture0);
-    GL.BindTexture(TextureTarget.Texture2D, (int)diffuseTexPtr);
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "diffuseTexture");
-    if (loc != -1) GL.Uniform1(loc, 0);
+        GL.ActiveTexture(TextureUnit.Texture0);
+        GL.BindTexture(TextureTarget.Texture2D, (int)diffuseTexPtr);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "diffuseTexture");
+        if (loc != -1) GL.Uniform1(loc, 0);
 
-    GL.ActiveTexture(TextureUnit.Texture1);
-    GL.BindTexture(TextureTarget.Texture2D, (int)shadowMapPtr);
-    loc = GL.GetUniformLocation(glHandle.Handles.Shader, "shadowMap");
-    if (loc != -1) GL.Uniform1(loc, 1);
+        GL.ActiveTexture(TextureUnit.Texture1);
+        GL.BindTexture(TextureTarget.Texture2D, (int)shadowMapPtr);
+        loc = GL.GetUniformLocation(glHandle.Handles.Shader, "shadowMap");
+        if (loc != -1) GL.Uniform1(loc, 1);
 
-    GL.BindVertexArray(glHandle.Handles.Vao);
-    GL.DrawArrays(PrimitiveType.Triangles, 0, glHandle.Handles.VertexCount);
+        GL.BindVertexArray(glHandle.Handles.Vao);
+        GL.DrawArrays(PrimitiveType.Triangles, 0, glHandle.Handles.VertexCount);
 
-    GL.BindVertexArray(0);
-    GL.ActiveTexture(TextureUnit.Texture1);
-    GL.BindTexture(TextureTarget.Texture2D, 0);
-    GL.ActiveTexture(TextureUnit.Texture0);
-    GL.BindTexture(TextureTarget.Texture2D, 0);
-    GL.UseProgram(0);
-}
+        GL.BindVertexArray(0);
+        GL.ActiveTexture(TextureUnit.Texture1);
+        GL.BindTexture(TextureTarget.Texture2D, 0);
+        GL.ActiveTexture(TextureUnit.Texture0);
+        GL.BindTexture(TextureTarget.Texture2D, 0);
+        GL.UseProgram(0);
+    }
 
     private float[] GenerateBetterArrowGeometry(float shaftRadius = 0.2f,
         float shaftLength = 5.7f,

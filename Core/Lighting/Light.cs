@@ -39,7 +39,7 @@ public class Light : ILight
     public Matrix4 Update(Vector3 pos, Quaternion rotation, float lightDistance)
     {
         LightDirection = Vector3.Transform(Vector3.UnitZ, rotation);
-        LightPosition = (pos - LightDirection) * -lightDistance;
+        LightPosition = pos - LightDirection * lightDistance;
         var up = Vector3.Transform(Vector3.UnitY, rotation);
         LightView = Matrix4.LookAt(LightPosition, pos, up);
         var lightSpaceMatrix = m_lightProjection * LightView;
@@ -50,7 +50,7 @@ public class Light : ILight
     {
         Quaternion lightRotation = Quaternion.FromEulerAngles(lightRotationX, lightRotationY, lightRotationZ);
         LightDirection = Vector3.Transform(Vector3.UnitZ, lightRotation);
-        LightPosition = (pos - LightDirection) * -lightDistance;
+        LightPosition = pos - LightDirection * lightDistance;
         var up = Vector3.Transform(Vector3.UnitY, lightRotation);
         LightView = Matrix4.LookAt(LightPosition, pos, up);
         var lightSpaceMatrix = m_lightProjection * LightView;
