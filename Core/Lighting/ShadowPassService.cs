@@ -95,6 +95,8 @@ public class ShadowPassService : IShadowPassService
     //TODO: proper register system so we dont pass asset/model and do opengl render setup each time
     public void RenderShadowPass(OpenGLHandle asset, Matrix4 model, Matrix4 lightView, Matrix4 lightProjection)
     {
+        GL.Enable(EnableCap.DepthTest);
+        GL.DepthFunc(DepthFunction.Less);
         GL.Enable(EnableCap.CullFace);
         GL.CullFace(CullFaceMode.Front);
         GL.Viewport(0, 0, shadowWidth, shadowHeight);
