@@ -58,7 +58,7 @@ void main()
     vec3 norm = normalize(Normal);
     float shadow = PCFShadow(FragPosLightSpace, norm);
 
-    // Debug: show the raw shadow factor
+    // debug: show the raw shadow factor
     if (debugShadow)
     {
         FragColor = vec4(vec3(shadow), 1.0);
