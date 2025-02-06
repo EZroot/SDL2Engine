@@ -32,7 +32,7 @@ float PCFShadow(vec4 fragPosLS, vec3 norm)
     vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    // Outside the light's frustum, treat as lit.
+    // outside the light's frustum
     if (projCoords.x < 0.0 || projCoords.x > 1.0 ||
     projCoords.y < 0.0 || projCoords.y > 1.0 ||
     projCoords.z > 1.0)
@@ -58,27 +58,27 @@ void main()
     vec3 norm = normalize(Normal);
     float shadow = PCFShadow(FragPosLightSpace, norm);
 
-    // Debug: show the raw shadow factor
+    // show raw shadow factor
     if (debugShadow)
     {
         FragColor = vec4(vec3(shadow), 1.0);
         return;
     }
 
-    // Standard lighting (Blinn-Phong)
+    // (Blinn-Phong)
     vec3 viewDir   = normalize(viewPos - FragPos);
     vec3 lightDirN = normalize(lightDir);
 
-    // Diffuse term
+    // diffuse
     float diff = max(dot(norm, lightDirN), 0.0);
     vec3 diffuse = diff * lightColor;
 
-    // Specular term
+    // specular
     vec3 halfwayDir = normalize(lightDirN + viewDir);
     float spec = pow(max(dot(norm, halfwayDir), 0.0), 32.0); // 32 = shininess
     vec3 specular = spec * lightColor;
 
-    // Combine lighting: ambient is always applied, diffuse and specular are shadowed.
+    // combined: ambient is always applied, diffuse and specular are shadowed.
     vec3 ambient = ambientColor;
     vec3 lighting = ambient + shadow * (diffuse + specular);
 
