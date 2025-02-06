@@ -5,6 +5,8 @@ using SDL2Engine.Core.Addressables.Fonts.Interfaces;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.Addressables.Models;
 using SDL2Engine.Core.Addressables.Models.Interfaces;
+using SDL2Engine.Core.Buffers;
+using SDL2Engine.Core.Buffers.Interfaces;
 using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.GuiRenderer;
 using SDL2Engine.Core.GuiRenderer.Interfaces;
@@ -46,6 +48,7 @@ public class GameApp
         services.AddSingleton<IAudioService, AudioService>();
         services.AddSingleton<IModelService, ModelService>();
         services.AddSingleton<IShadowPassService, ShadowPassService>();
+        services.AddSingleton<IFrameBufferService, FrameBufferService>();
         
         services.AddSingleton<ICameraService, CameraService>();
         

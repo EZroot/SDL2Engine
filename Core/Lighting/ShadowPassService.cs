@@ -124,8 +124,8 @@ namespace SDL2Engine.Core.Lighting
         {
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Less);
-            GL.Enable(EnableCap.CullFace);
-            GL.CullFace(CullFaceMode.Front);
+            // GL.Enable(EnableCap.CullFace);
+            // GL.CullFace(CullFaceMode.Front);
             GL.Viewport(0, 0, shadowWidth, shadowHeight);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, shadowFBO);
             GL.Clear(ClearBufferMask.DepthBufferBit);
