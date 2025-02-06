@@ -21,7 +21,7 @@ Configure your .NET project to reference these libraries.
 For help on how to build each dll/library check the /docs
 - [Building Dll / Lib's Tutorial](docs/DLLCMAKEHELP.md)
 
-## Template Examples
+## Template Examples (Compressed Gifs)
 
 ### OpenGL 3D  Renderer + Shadows
 ![OpenGL renderer gif](screenshottys/output.gif)
@@ -30,13 +30,9 @@ For help on how to build each dll/library check the /docs
 ### SDL Renderer Game / Gui Example
 - Repository: https://github.com/EZroot/SDL2Game
 
-<div style="display: flex; flex-wrap: wrap; gap: 10px;">
-  <img src="screenshottys/screenshottys/pinkboy.png" alt="SDL Game Screenshot" width="300">
-</div>
+![Boids renderer gif](screenshottys/boidz.gif)
 
 ### Music Player Example
 - Repository: https://github.com/EZroot/MusicPlayer
 
-<div style="display: flex; flex-wrap: wrap; gap: 10px;">
-  <img src="screenshottys/screenshottysmisk/playing2.png" alt="Music Player Screenshot" width="500">
-</div>
+![OpenGL renderer gif](screenshottys/musik.gif)
