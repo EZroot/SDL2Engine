@@ -2,7 +2,7 @@ using SDL2;
 using SDL2Engine.Core.Windowing.Interfaces;
 using Debug = SDL2Engine.Core.Utils.Debug;
 using ImGuiNET;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 using SDL2Engine.Core.GuiRenderer;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.GuiRenderer.Interfaces;
@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenTK.Graphics.OpenGL4;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Physics.Interfaces;
-using SDL2Engine.Core.Rendering;
+using SDL2Engine.Core.Cameras;
 using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core

@@ -2,7 +2,7 @@ using OpenTK.Mathematics;
 using SDL2Engine.Core.AI.Data;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Partitions;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 
 namespace SDL2Engine.Core.AI
 {

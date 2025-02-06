@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace SDL2Engine.Core.Rendering.Interfaces;
+namespace SDL2Engine.Core.Cameras.Interfaces;
 
 public interface ICameraService
 {

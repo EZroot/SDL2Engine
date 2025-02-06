@@ -1,7 +1,6 @@
 using OpenTK.Mathematics;
-using SDL2Engine.Core.Rendering.Interfaces;
-using Vector2 = System.Numerics.Vector2;
-
+using SDL2Engine.Core.Cameras.Interfaces;
+namespace SDL2Engine.Core.Cameras;
 public class CameraGL3D : ICamera
 {
     public Matrix4 Projection { get; private set; }

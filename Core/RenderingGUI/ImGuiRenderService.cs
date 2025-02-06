@@ -9,7 +9,7 @@ using SDL2Engine.Core.CoreSystem.Configuration;
 using SDL2Engine.Core.GuiRenderer.Converters;
 using SDL2Engine.Core.GuiRenderer.Helpers;
 using SDL2Engine.Core.Input;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 using SDL2Engine.Core.Utils;
 using static SDL2Engine.Core.GuiRenderer.GuiStyles.StyleHelper;
 namespace SDL2Engine.Core.GuiRenderer

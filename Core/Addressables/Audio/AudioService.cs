@@ -1,6 +1,6 @@
 using SDL2;
 using SDL2Engine.Core.Addressables.Interfaces;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.Addressables;

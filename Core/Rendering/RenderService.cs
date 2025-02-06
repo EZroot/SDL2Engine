@@ -5,11 +5,11 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using SDL2;
+using SDL2Engine.Core.Cameras.Interfaces;
 using SDL2Engine.Core.CoreSystem.Configuration;
-using SDL2Engine.Core.Rendering.Interfaces;
 using SDL2Engine.Core.Utils;
 
-namespace SDL2Engine.Core.Rendering
+namespace SDL2Engine.Core.Cameras
 {
     internal class RenderService : IRenderService
     {

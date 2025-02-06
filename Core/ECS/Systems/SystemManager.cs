@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using SDL2Engine.Core.Addressables.Interfaces;
 using SDL2Engine.Core.ECS.Components;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 
 namespace SDL2Engine.Core.ECS.Systems
 {

@@ -1,8 +1,8 @@
 using System;
 using OpenTK.Mathematics;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 
-namespace SDL2Engine.Core.Rendering
+namespace SDL2Engine.Core.Cameras
 {
     public class Camera : ICamera
     {

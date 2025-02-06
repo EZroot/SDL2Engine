@@ -1,11 +1,11 @@
-using SDL2Engine.Core.Rendering.Interfaces;
 using System.Collections.Generic;
 using System.Numerics;
 using SDL2;
+using SDL2Engine.Core.Cameras.Interfaces;
 using SDL2Engine.Core.Utils;
 using Vector3 = OpenTK.Mathematics.Vector3;
 
-namespace SDL2Engine.Core.Rendering
+namespace SDL2Engine.Core.Cameras
 {
     public class CameraService : ICameraService
     {

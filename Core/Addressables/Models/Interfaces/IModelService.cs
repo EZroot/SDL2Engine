@@ -1,4 +1,5 @@
 using OpenTK.Mathematics;
+using SDL2Engine.Core.Cameras;
 
 namespace SDL2Engine.Core.Addressables.Models.Interfaces;
 
@@ -22,4 +23,18 @@ public interface IModelService
         Vector3 lightDir,
         Vector3 lightColor,
         Vector3 ambientColor);
+
+    void DrawModelGL(
+        OpenGLHandle glHandle,
+        Matrix4 modelMatrix,
+        CameraGL3D camera,
+        nint diffuseTexPtr,
+        Matrix4 lightSpaceMatrix,
+        nint shadowMapPtr,
+        Vector3 lightDir,
+        Vector3 lightColor,
+        Vector3 ambientColor,
+        float shadowBias,
+        float pcfDiskRadius,
+        int numSamples);
 }

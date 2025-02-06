@@ -6,7 +6,7 @@ using SDL2;
 using SDL2Engine.Core.ECS.Components;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Partitions;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.ECS.Systems

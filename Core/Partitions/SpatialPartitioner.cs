@@ -2,7 +2,7 @@ using SDL2;
 using System.Collections.Generic;
 using OpenTK.Mathematics;
 using SDL2Engine.Core.Partitions.Interfaces;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.Partitions;

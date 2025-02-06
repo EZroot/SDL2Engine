@@ -1,6 +1,6 @@
 using ImGuiNET;
 using SDL2Engine.Core.GuiRenderer.Helpers;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 using static SDL2Engine.Core.GuiRenderer.GuiStyles.StyleHelper;
 
 namespace SDL2Engine.Core.GuiRenderer

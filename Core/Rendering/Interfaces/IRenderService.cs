@@ -1,7 +1,7 @@
 using OpenTK.Mathematics;
 using SDL2;
 
-namespace SDL2Engine.Core.Rendering.Interfaces
+namespace SDL2Engine.Core.Cameras.Interfaces
 {
     public interface IRenderService
     {

@@ -1,4 +1,4 @@
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 
 namespace SDL2Engine.Core.ECS.Systems
 {

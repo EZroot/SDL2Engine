@@ -1,7 +1,7 @@
 using OpenTK.Mathematics;
 using SDL2;
 using SDL2Engine.Core.Addressables.Data;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras.Interfaces;
 
 namespace SDL2Engine.Core.Addressables.Interfaces;
 

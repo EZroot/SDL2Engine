@@ -4,8 +4,8 @@ using OpenTK.Mathematics;
 using SDL2;
 using SDL2Engine.Core.Addressables.Data;
 using SDL2Engine.Core.Addressables.Interfaces;
-using SDL2Engine.Core.Rendering;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras;
+using SDL2Engine.Core.Cameras.Interfaces;
 using SDL2Engine.Core.Utils;
 using Vector2 = System.Numerics.Vector2;
 

@@ -12,8 +12,10 @@ using SDL2Engine.Core.Networking;
 using SDL2Engine.Core.Networking.Interfaces;
 using SDL2Engine.Core.Physics;
 using SDL2Engine.Core.Physics.Interfaces;
-using SDL2Engine.Core.Rendering;
-using SDL2Engine.Core.Rendering.Interfaces;
+using SDL2Engine.Core.Cameras;
+using SDL2Engine.Core.Cameras.Interfaces;
+using SDL2Engine.Core.Lighting;
+using SDL2Engine.Core.Lighting.Interfaces;
 using SDL2Engine.Core.Windowing;
 using SDL2Engine.Core.Windowing.Interfaces;
 using ImGuiWindowBuilder = SDL2Engine.Core.GuiRenderer.ImGuiWindowBuilder;
@@ -43,6 +45,7 @@ public class GameApp
         services.AddSingleton<IImageService, ImageService>();
         services.AddSingleton<IAudioService, AudioService>();
         services.AddSingleton<IModelService, ModelService>();
+        services.AddSingleton<IShadowPassService, ShadowPassService>();
         
         services.AddSingleton<ICameraService, CameraService>();
         

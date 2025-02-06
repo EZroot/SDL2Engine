@@ -3,7 +3,7 @@ using OpenTK.Graphics.OpenGL4;
 using SDL2;
 using System;
 
-namespace SDL2Engine.Core.Rendering.GLBindingsContext
+namespace SDL2Engine.Core.Cameras.GLBindingsContext
 {
     public class SDL2BindingsContext : IBindingsContext
     {
