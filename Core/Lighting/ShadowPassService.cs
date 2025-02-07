@@ -25,77 +25,83 @@ namespace SDL2Engine.Core.Lighting
 
         public int DepthTexturePtr => depthTexture;
 
-public void Initialize(int shadowWidth = 2048, int shadowHeight = 2048)
-{
-    this.shadowWidth = shadowWidth;
-    this.shadowHeight = shadowHeight;
+        public void Initialize(int shadowWidth = 2048, int shadowHeight = 2048)
+        {
+            this.shadowWidth = shadowWidth;
+            this.shadowHeight = shadowHeight;
 
-    // Create and bind shadow FBO.
-    shadowFBO = GL.GenFramebuffer();
-    GL.BindFramebuffer(FramebufferTarget.Framebuffer, shadowFBO);
+            // Create and bind shadow FBO.
+            shadowFBO = GL.GenFramebuffer();
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, shadowFBO);
 
-    // Create depth texture.
-    depthTexture = GL.GenTexture();
-    GL.BindTexture(TextureTarget.Texture2D, depthTexture);
-    GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent,
-        shadowWidth, shadowHeight, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            // Create depth texture.
+            depthTexture = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, depthTexture);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent,
+                shadowWidth, shadowHeight, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
 
-    // Set texture parameters.
-    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
-    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
-    float[] borderColor = { 1f, 1f, 1f, 1f };
-    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, borderColor);
-    // Disable hardware depth comparison (we're using sampler2D).
-    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareMode, (int)TextureCompareMode.None);
+            // Set texture parameters.
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
+                (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
+                (int)TextureMagFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS,
+                (int)TextureWrapMode.ClampToBorder);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT,
+                (int)TextureWrapMode.ClampToBorder);
+            float[] borderColor = { 1f, 1f, 1f, 1f };
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, borderColor);
 
-    // Attach texture to FBO.
-    GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
-        TextureTarget.Texture2D, depthTexture, 0);
-    GL.DrawBuffer(DrawBufferMode.None);
-    GL.ReadBuffer(ReadBufferMode.None);
-    if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
-        throw new Exception("Shadow framebuffer incomplete!");
-    GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            // Attach texture to FBO.
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
+                TextureTarget.Texture2D, depthTexture, 0);
+            GL.DrawBuffer(DrawBufferMode.None);
+            GL.ReadBuffer(ReadBufferMode.None);
+            if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
+                throw new Exception("Shadow framebuffer incomplete!");
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
-    // Create depth shader and cache its uniforms.
-    string depthVert = FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/depth/depth.vert");
-    string depthFrag = FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/depth/depth.frag");
-    depthShader = GLHelper.CreateShaderProgram(depthVert, depthFrag);
-    locLightView = GL.GetUniformLocation(depthShader, "lightView");
-    locLightProjection = GL.GetUniformLocation(depthShader, "lightProjection");
-    locModel = GL.GetUniformLocation(depthShader, "model");
+            // Create depth shader and cache its uniforms.
+            string depthVert =
+                FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/depth/depth.vert");
+            string depthFrag =
+                FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/depth/depth.frag");
+            depthShader = GLHelper.CreateShaderProgram(depthVert, depthFrag);
+            locLightView = GL.GetUniformLocation(depthShader, "lightView");
+            locLightProjection = GL.GetUniformLocation(depthShader, "lightProjection");
+            locModel = GL.GetUniformLocation(depthShader, "model");
 
-    // Create debug shader.
-    string debugVert = FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/debug/debug.vert");
-    string debugFrag = FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/debug/debug.frag");
-    debugShader = GLHelper.CreateShaderProgram(debugVert, debugFrag);
+            // Create debug shader.
+            string debugVert =
+                FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/debug/debug.vert");
+            string debugFrag =
+                FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/debug/debug.frag");
+            debugShader = GLHelper.CreateShaderProgram(debugVert, debugFrag);
 
-    // Create fullscreen debug quad.
-    float[] quadVertices =
-    {
-        -1f,  1f, 0f, 1f,
-        -1f,  0f, 0f, 0f,
-         0f,  0f, 1f, 0f,
-        -1f,  1f, 0f, 1f,
-         0f,  0f, 1f, 0f,
-         0f,  1f, 1f, 1f,
-    };
-    int quadVao = GL.GenVertexArray();
-    int quadVbo = GL.GenBuffer();
-    GL.BindVertexArray(quadVao);
-    GL.BindBuffer(BufferTarget.ArrayBuffer, quadVbo);
-    GL.BufferData(BufferTarget.ArrayBuffer, quadVertices.Length * sizeof(float), quadVertices, BufferUsageHint.StaticDraw);
-    GL.EnableVertexAttribArray(0);
-    GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
-    GL.EnableVertexAttribArray(1);
-    GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
-    GL.BindVertexArray(0);
+            // Create fullscreen debug quad.
+            float[] quadVertices =
+            {
+                -1f, 1f, 0f, 1f,
+                -1f, 0f, 0f, 0f,
+                0f, 0f, 1f, 0f,
+                -1f, 1f, 0f, 1f,
+                0f, 0f, 1f, 0f,
+                0f, 1f, 1f, 1f,
+            };
+            int quadVao = GL.GenVertexArray();
+            int quadVbo = GL.GenBuffer();
+            GL.BindVertexArray(quadVao);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, quadVbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, quadVertices.Length * sizeof(float), quadVertices,
+                BufferUsageHint.StaticDraw);
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(1);
+            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
+            GL.BindVertexArray(0);
 
-    debugQuadHandle = new OpenGLHandle(new OpenGLMandatoryHandles(quadVao, quadVbo, 0, debugShader, 6));
-}
-
+            debugQuadHandle = new OpenGLHandle(new OpenGLMandatoryHandles(quadVao, quadVbo, 0, debugShader, 6));
+        }
 
         /// <summary>
         /// Register a mesh to our shadow pass and its initial model matrix
@@ -134,7 +140,7 @@ public void Initialize(int shadowWidth = 2048, int shadowHeight = 2048)
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Lequal);
             GL.Enable(EnableCap.CullFace);
-            GL.CullFace(CullFaceMode.Front);
+            // GL.CullFace(CullFaceMode.Front);
             GL.Viewport(0, 0, shadowWidth, shadowHeight);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, shadowFBO);
             GL.Clear(ClearBufferMask.DepthBufferBit);
@@ -167,11 +173,12 @@ public void Initialize(int shadowWidth = 2048, int shadowHeight = 2048)
             GL.UseProgram(debugShader);
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, depthTexture);
-    
+
             // Ensure we're sampling raw depth data.
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareMode, (int)TextureCompareMode.None);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareMode,
+                (int)TextureCompareMode.None);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareFunc, (int)All.Lequal);
-    
+
             // Update shader uniforms.
             int debugTextureLoc = GL.GetUniformLocation(debugShader, "debugTexture");
             int showRawDepthLoc = GL.GetUniformLocation(debugShader, "showRawDepth");
@@ -181,7 +188,7 @@ public void Initialize(int shadowWidth = 2048, int shadowHeight = 2048)
             GL.Uniform1(showRawDepthLoc, showRawDepth ? 1 : 0);
             GL.Uniform1(nearPlaneLoc, nearPlane);
             GL.Uniform1(farPlaneLoc, farPlane);
-    
+
             GL.BindVertexArray(debugQuadHandle.Handles.Vao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, debugQuadHandle.Handles.VertexCount);
             GL.BindVertexArray(0);
@@ -189,6 +196,5 @@ public void Initialize(int shadowWidth = 2048, int shadowHeight = 2048)
             GL.UseProgram(0);
             GL.Disable(EnableCap.CullFace);
         }
-
     }
 }
