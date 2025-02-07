@@ -3,6 +3,7 @@ in vec2 TexCoord;
 out vec4 FragColor;
 
 uniform sampler2D screenTexture;
+uniform sampler2D godrayTexture;
 
 // Fixed resolution for testing.
 const vec2 resolution = vec2(1920.0, 1080.0);
@@ -129,11 +130,14 @@ void main()
     vec3 fxaaColor = applyFXAA(TexCoord);
     vec3 caColor = applyChromaticAberration(TexCoord);
     vec3 color = fxaaColor;//mix(fxaaColor, caColor, 0.1);
-    color = applyBloom(TexCoord, color);
+//    color = applyBloom(TexCoord, color);
     
 //    color = applyToneMapping(color * exposure);
 //    color = applyVignette(TexCoord, color);
 //    color = applyFilmGrain(TexCoord, color);
 
-    FragColor = vec4(color, 1.0);
+    vec3 godrayColor = texture(godrayTexture, TexCoord).rgb;
+    vec3 finalColor = color + godrayColor;
+    
+    FragColor = vec4(finalColor, 1.0);
 }

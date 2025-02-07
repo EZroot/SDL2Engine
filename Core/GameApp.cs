@@ -48,6 +48,7 @@ public class GameApp
         services.AddSingleton<IAudioService, AudioService>();
         services.AddSingleton<IModelService, ModelService>();
         services.AddSingleton<IShadowPassService, ShadowPassService>();
+        services.AddSingleton<IGodRayBufferService, GodRayBufferService>();
         services.AddSingleton<IFrameBufferService, FrameBufferService>();
         
         services.AddSingleton<ICameraService, CameraService>();

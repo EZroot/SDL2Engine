@@ -1,84 +1,102 @@
-using System.Globalization;
+using System;
 using OpenTK.Graphics.OpenGL4;
 using SDL2Engine.Core.Addressables.Models.Interfaces;
 using SDL2Engine.Core.Buffers.Interfaces;
 using SDL2Engine.Core.Utils;
 
-namespace SDL2Engine.Core.Buffers;
-
-public class FrameBufferService : IFrameBufferService
+namespace SDL2Engine.Core.Buffers
 {
-    private OpenGLHandle m_frameBufferQuadHandle;
-    private int fbo, colorTex;
-    private IModelService m_modelService;
-
-    public FrameBufferService(IModelService modelService)
+    public class FrameBufferService : IFrameBufferService
     {
-        m_modelService = modelService;
-        InitializeFrameBuffer(1920, 1080);
-    }
-    
-    private void InitializeFrameBuffer(int screenWidth, int screenHeight)
-    {
-        m_frameBufferQuadHandle = m_modelService.CreateFullscreenQuad(
-            PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/fbo/fbo.vert",
-            PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/fbo/fbo.frag");
+        private OpenGLHandle m_frameBufferQuadHandle;
+        private int fbo, colorTex, depthTex;
+        private IModelService m_modelService;
+        private IGodRayBufferService m_grbService;
 
-        fbo = GL.GenFramebuffer();
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
+        public FrameBufferService(IModelService modelService, IGodRayBufferService godRayBufferService)
+        {
+            m_modelService = modelService;
+            m_grbService = godRayBufferService;
+            InitializeFrameBuffer(1920, 1080);
+        }
+        
+        private void InitializeFrameBuffer(int screenWidth, int screenHeight)
+        {
+            m_frameBufferQuadHandle = m_modelService.CreateFullscreenQuad(
+                PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/fbo/fbo.vert",
+                PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/fbo/fbo.frag");
 
-        colorTex = GL.GenTexture();
-        GL.BindTexture(TextureTarget.Texture2D, colorTex);
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, screenWidth, screenHeight, 0,
-            PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
-            TextureTarget.Texture2D, colorTex, 0);
+            fbo = GL.GenFramebuffer();
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
 
-        int depthRbo = GL.GenRenderbuffer();
-        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, depthRbo);
-        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent, screenWidth,
-            screenHeight);
-        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
-            RenderbufferTarget.Renderbuffer, depthRbo);
+            colorTex = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, colorTex);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
+                screenWidth, screenHeight, 0,
+                PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
+                TextureTarget.Texture2D, colorTex, 0);
 
-        if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
-            throw new Exception("Framebuffer not complete!");
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-    }
+            depthTex = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, depthTex);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24,
+                          screenWidth, screenHeight, 0,
+                          PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
+                                    TextureTarget.Texture2D, depthTex, 0);
 
-    public void BindFramebuffer(int screenWidth, int screenHeight)
-    {
-        GL.Enable(EnableCap.DepthTest);
-        GL.DepthFunc(DepthFunction.Less);
-        GL.Enable(EnableCap.CullFace);
-        GL.CullFace(CullFaceMode.Back);
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
-        GL.Viewport(0, 0, screenWidth, screenHeight);
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-    }
+            if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
+                throw new Exception("Framebuffer not complete!");
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        }
 
-    public void UnbindFramebuffer()
-    {
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-        GL.Disable(EnableCap.CullFace);
-        GL.Disable(EnableCap.DepthTest);
-    }
+        public void BindFramebuffer(int screenWidth, int screenHeight)
+        {
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Less);
+            GL.Enable(EnableCap.CullFace);
+            GL.CullFace(CullFaceMode.Back);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
+            GL.Viewport(0, 0, screenWidth, screenHeight);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        }
 
-    public void RenderFramebuffer()
-    {
-        GL.UseProgram(m_frameBufferQuadHandle.Handles.Shader);
+        public void UnbindFramebuffer()
+        {
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.Disable(EnableCap.CullFace);
+            GL.Disable(EnableCap.DepthTest);
+        }
 
-        GL.ActiveTexture(TextureUnit.Texture0);
-        GL.BindTexture(TextureTarget.Texture2D, colorTex);
-        GL.Uniform1(GL.GetUniformLocation(m_frameBufferQuadHandle.Handles.Shader, "screenTexture"), 0);
+        // composite pass: combine main scene and god rays
+        public void RenderFramebuffer()
+        {
+            GL.UseProgram(m_frameBufferQuadHandle.Handles.Shader);
+            
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, colorTex);
+            GL.Uniform1(GL.GetUniformLocation(m_frameBufferQuadHandle.Handles.Shader, "screenTexture"), 0);
+            
+            GL.ActiveTexture(TextureUnit.Texture1);
+            GL.BindTexture(TextureTarget.Texture2D, m_grbService.GetTexture());
+            GL.Uniform1(GL.GetUniformLocation(m_frameBufferQuadHandle.Handles.Shader, "godrayTexture"), 1);
+            
+            GL.BindVertexArray(m_frameBufferQuadHandle.Handles.Vao);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, m_frameBufferQuadHandle.Handles.VertexCount);
+            GL.BindVertexArray(0);
 
-        GL.BindVertexArray(m_frameBufferQuadHandle.Handles.Vao);
-        GL.DrawArrays(PrimitiveType.Triangles, 0, m_frameBufferQuadHandle.Handles.VertexCount);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.UseProgram(0);
+        }
 
-        GL.BindVertexArray(0);
-        GL.BindTexture(TextureTarget.Texture2D, 0);
-        GL.UseProgram(0);
+        public int GetTexture() => colorTex;
+        public int GetDepthTexture() => depthTex;
     }
 }
