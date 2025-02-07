@@ -16,7 +16,7 @@ uniform vec3 ambientColor;
 uniform vec3 viewPos;
 
 uniform bool debugShadow;
-uniform float shadowBias    = 0.0008;
+uniform float shadowBias    = 0.002;
 uniform float pcfDiskRadius = 1.0;
 
 const int NUM_SAMPLES = 16;
@@ -32,7 +32,7 @@ float PCFShadow(vec4 fragPosLS, vec3 norm)
     vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    // outside the light's frustum
+    // Outside the light's frustum.
     if (projCoords.x < 0.0 || projCoords.x > 1.0 ||
     projCoords.y < 0.0 || projCoords.y > 1.0 ||
     projCoords.z > 1.0)
@@ -42,11 +42,14 @@ float PCFShadow(vec4 fragPosLS, vec3 norm)
 
     float angleFactor = max(dot(norm, normalize(lightDir)), 0.0);
     float bias = shadowBias * (1.0 - angleFactor);
+
+    // Dynamically compute texel size.
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     float shadowSum = 0.0;
 
     for (int i = 0; i < NUM_SAMPLES; i++)
     {
-        vec2 offset = poissonDisk[i] * pcfDiskRadius / 2048.0;
+        vec2 offset = poissonDisk[i] * pcfDiskRadius * texelSize;
         shadowSum += texture(shadowMap, vec3(projCoords.xy + offset, projCoords.z - bias));
     }
 
@@ -85,5 +88,9 @@ void main()
     vec3 baseColor = texture(diffuseTexture, TexCoord).rgb;
     vec3 finalColor = baseColor * lighting;
 
+//    vec3 projCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
+//    projCoords = projCoords * 0.5 + 0.5;
+//    FragColor = vec4(projCoords, 1.0);
+    
     FragColor = vec4(finalColor, 1.0);
 }

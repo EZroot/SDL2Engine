@@ -9,5 +9,5 @@ public interface IShadowPassService
     void RegisterMesh(OpenGLHandle asset, Matrix4 model);
     void UpdateMeshModel(OpenGLHandle asset, Matrix4 newModel);
     void RenderShadowPass(Matrix4 lightView, Matrix4 lightProjection);
-    void RenderDebugQuad();
+    void RenderDebugQuad(bool showRawDepth, float nearPlane, float farPlane);
 }

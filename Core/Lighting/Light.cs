@@ -28,12 +28,21 @@ public class Light : ILight
         m_projectionSize = projSize;
         m_nearPlane = nearPlane;
         m_farPlane = farPlane;
-        
-        m_lightProjection = Matrix4.CreateOrthographicOffCenter(
-            -m_projectionSize, m_projectionSize,
-            -m_projectionSize, m_projectionSize,
-            m_nearPlane, m_farPlane
-        );
+
+        if (m_lightType == LightType.Directional)
+        {
+            m_lightProjection = Matrix4.CreateOrthographicOffCenter(
+                -m_projectionSize, m_projectionSize,
+                -m_projectionSize, m_projectionSize,
+                m_nearPlane, m_farPlane
+            );
+        }
+
+        if (m_lightType == LightType.Point)
+        {
+            m_lightProjection = Matrix4.CreatePerspectiveFieldOfView(
+                MathHelper.DegreesToRadians(90f), 1f, m_nearPlane, m_farPlane);
+        }
     }
 
     public Matrix4 Update(Vector3 pos, Quaternion rotation, float lightDistance)
