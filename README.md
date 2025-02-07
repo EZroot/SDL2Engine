@@ -25,8 +25,9 @@ For help on how to build each dll/library check the /docs
 
 ### OpenGL 3D  Renderer + Shadows
 - Repository: https://github.com/EZroot/TreeDee
-  
+
 ![OpenGL renderer gif](screenshottys/output.gif)
+![OpenGL renderer gif](screenshottys/godraybloom.gif)
 
 
 ### SDL Renderer Game / Gui Example
