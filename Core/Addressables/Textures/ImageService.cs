@@ -14,17 +14,19 @@ namespace SDL2Engine.Core.Addressables;
 public class ImageService : IImageService
 {
     private readonly IImageLoader m_imageLoader;
+    private readonly IRenderService m_renderService;
     private readonly Dictionary<int, TextureData> _idToTexture;
     private readonly Dictionary<string, int> _pathToId;
     private int _nextId;
 
-    public ImageService()
+    public ImageService(IRenderService renderService)
     {
         _idToTexture = new Dictionary<int, TextureData>();
         _pathToId = new Dictionary<string, int>();
         _nextId = 1;
 
         m_imageLoader = new ImageLoader();
+        m_renderService = renderService;
     }
 
     public IntPtr LoadImageRaw(string path)
@@ -38,7 +40,7 @@ public class ImageService : IImageService
     /// <param name="renderer">SDL Renderer</param>
     /// <param name="path">Texture file path</param>
     /// <returns>TextureData object</returns>
-    public TextureData LoadTexture(IntPtr renderer, string path)
+    public TextureData LoadTexture(string path)
     {
         if (PlatformInfo.RendererType == RendererType.SDLRenderer)
         {
@@ -56,7 +58,7 @@ public class ImageService : IImageService
                 return null;
             }
 
-            IntPtr texture = SDL.SDL_CreateTextureFromSurface(renderer, surface);
+            IntPtr texture = SDL.SDL_CreateTextureFromSurface(m_renderService.RenderPtr, surface);
             SDL.SDL_FreeSurface(surface);
 
             if (texture == IntPtr.Zero)
@@ -220,7 +222,7 @@ public class ImageService : IImageService
         GL.UseProgram(0);
     }
     
-    public void DrawTexture(IntPtr renderer, int textureId, ref SDL.SDL_Rect dstRect, ICamera camera)
+    public void DrawTexture(int textureId, ref SDL.SDL_Rect dstRect, ICamera camera)
     {
         if (!_idToTexture.TryGetValue(textureId, out var textureData))
         {
@@ -236,10 +238,10 @@ public class ImageService : IImageService
 
         SDL.SDL_Rect transformedDstRect = ApplyCameraTransform(dstRect, camera);
         SDL.SDL_Rect srcRect = textureData.SrcRect.Value;
-        SDL.SDL_RenderCopy(renderer, textureData.Texture, ref srcRect, ref transformedDstRect);
+        SDL.SDL_RenderCopy(m_renderService.RenderPtr, textureData.Texture, ref srcRect, ref transformedDstRect);
     }
 
-    public void DrawTextureWithRotation(nint renderer, int textureId, ref SDL.SDL_Rect destRect, float rotation,
+    public void DrawTextureWithRotation(int textureId, ref SDL.SDL_Rect destRect, float rotation,
         ref SDL.SDL_Point center, ICamera camera)
     {
         if (!_idToTexture.TryGetValue(textureId, out var textureData))
@@ -258,7 +260,7 @@ public class ImageService : IImageService
 
         SDL.SDL_Rect transformedDstRect = ApplyCameraTransform(destRect, camera);
         var srcRec = textureData.SrcRect.Value;
-        SDL.SDL_RenderCopyEx(renderer, textureData.Texture, ref srcRec, ref transformedDstRect, angleInDegrees,
+        SDL.SDL_RenderCopyEx(m_renderService.RenderPtr, textureData.Texture, ref srcRec, ref transformedDstRect, angleInDegrees,
             ref center,
             SDL.SDL_RendererFlip.SDL_FLIP_NONE);
     }
