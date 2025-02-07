@@ -79,8 +79,8 @@ namespace SDL2Engine.Core.Cameras
                 GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
                 // Initialize framebuffer
-                SDL.SDL_GetWindowSize(window, out int windowWidth, out int windowHeight);
-                InitializeFrameBuffer(windowWidth, windowHeight);
+                // SDL.SDL_GetWindowSize(window, out int windowWidth, out int windowHeight);
+                // InitializeFrameBuffer(windowWidth, windowHeight);
 
                 return renderer;
             }

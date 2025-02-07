@@ -80,9 +80,6 @@ namespace SDL2Engine.Core.GuiRenderer
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 
                     width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
                 io.Fonts.SetTexID((IntPtr)fontTexture);
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 
-                    width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, pixels);
-                io.Fonts.SetTexID((IntPtr)fontTexture);
                 io.Fonts.ClearTexData();           
             }
         }
@@ -270,6 +267,12 @@ namespace SDL2Engine.Core.GuiRenderer
 
         private void RenderDrawDataOpenGL(IRenderService renderService, ImDrawDataPtr drawData)
         {
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Disable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.CullFace);
+            GL.Enable(EnableCap.ScissorTest);
+
             var glHandle = renderService.OpenGLHandleGui;
             float L = 0.0f;
             float R = drawData.DisplaySize.X;
@@ -343,6 +346,11 @@ namespace SDL2Engine.Core.GuiRenderer
                     idxOffset += (int)pcmd.ElemCount;
                 }
             }
+
+            GL.Disable(EnableCap.Blend);
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.CullFace);
+            GL.Disable(EnableCap.ScissorTest);
 
             GL.BindVertexArray(0);
             GL.UseProgram(0);
