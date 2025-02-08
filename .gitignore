@@ -2,6 +2,15 @@
 bin/
 obj/
 
+# Specific testing models
+resources/3d/Earth2K.obj
+resources/3d/EarthTextures/
+resources/3d/mountains.obj
+resources/3d/room_obj/
+resources/3d/skull.obj
+resources/3d/woodenwatchtower2.obj
+resources/3d/woodwatchtowertextures/
+
 # Visual Studio
 *.suo
 *.user
