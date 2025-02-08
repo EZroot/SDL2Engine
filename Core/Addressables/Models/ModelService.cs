@@ -50,9 +50,9 @@ public class ModelService : IModelService
                     break;
                 case "vt":
                     if (parts.Length < 3) continue;
-                    texCoords.Add(new Vector2(
-                        float.Parse(parts[1], culture),
-                        float.Parse(parts[2], culture)));
+                    float u = float.Parse(parts[1], culture);
+                    float v = 1f - float.Parse(parts[2], culture); // flip V here
+                    texCoords.Add(new Vector2(u, v));
                     break;
                 case "vn":
                     if (parts.Length < 4) continue;
@@ -628,7 +628,7 @@ public class ModelService : IModelService
         return verts.ToArray();
     }
 
-    private static void AppendVertex(string faceVertex, List<Vector3> positions, List<Vector2> texCoords,
+    private void AppendVertex(string faceVertex, List<Vector3> positions, List<Vector2> texCoords,
         List<Vector3> normals, List<float> finalVertices)
     {
         // Expected format: "v/vt/vn" or "v//vn"
