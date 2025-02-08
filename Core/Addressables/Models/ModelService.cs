@@ -51,7 +51,7 @@ public class ModelService : IModelService
                 case "vt":
                     if (parts.Length < 3) continue;
                     float u = float.Parse(parts[1], culture);
-                    float v = 1f - float.Parse(parts[2], culture); // flip V here
+                    float v = 1f - float.Parse(parts[2], culture); 
                     texCoords.Add(new Vector2(u, v));
                     break;
                 case "vn":

@@ -19,7 +19,7 @@ const float bloomIntensity = 0.5;
 const float aberrationAmount = 0.001; 
 
 // Tone mapping parameter
-const float exposure = .7;
+const float exposure = 1.2;
 
 // Vignette parameters
 const float vignetteStrength = 0.5; 
@@ -128,9 +128,9 @@ vec3 applyFilmGrain(vec2 uv, vec3 color)
 void main()
 {
     vec3 fxaaColor = applyFXAA(TexCoord);
-    vec3 caColor = applyChromaticAberration(TexCoord);
+//    vec3 caColor = applyChromaticAberration(TexCoord);
     vec3 color = fxaaColor;//mix(fxaaColor, caColor, 0.1);
-//    color = applyBloom(TexCoord, color);
+    color = applyBloom(TexCoord, color);
     
 //    color = applyToneMapping(color * exposure);
 //    color = applyVignette(TexCoord, color);
