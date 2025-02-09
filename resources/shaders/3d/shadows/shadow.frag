@@ -78,7 +78,7 @@ void main()
 
     // specular
     vec3 halfwayDir = normalize(lightDirN + viewDir);
-    float spec = pow(max(dot(norm, halfwayDir), 0.0), 32.0); // 32 = shininess
+    float spec = pow(max(dot(norm, halfwayDir), 0.0), 16.0); // 32 = shininess
     vec3 specular = spec * lightColor;
 
     // combined: ambient is always applied, diffuse and specular are shadowed.

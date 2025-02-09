@@ -50,7 +50,7 @@ void main()
         sampleUV.y < 0.0 || sampleUV.y > 1.0)
         break;
         float intensity = texture(godrayTex, sampleUV).r;
-        vec4 sampleColor = vec4(1.0, 0.85, 0.6, 0.0) * intensity;
+        vec4 sampleColor = vec4(1.0, 0.85, 0.6, 1.0) * intensity;
 
         accumulated += sampleColor * illuminationDecay * weight;
         illuminationDecay *= decay;

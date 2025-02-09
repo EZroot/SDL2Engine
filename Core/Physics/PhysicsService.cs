@@ -5,6 +5,10 @@ using Box2DSharp.Dynamics;
 using SDL2Engine.Core;
 using SDL2Engine.Core.Physics.Interfaces;
 using SDL2Engine.Core.Utils;
+using BepuPhysics;
+using BepuPhysics.CollisionDetection;
+using BepuUtilities.Memory;
+using SDL2Engine.Core.Physics.Bepu;
 
 namespace SDL2Engine.Core.Physics
 {
@@ -20,14 +24,33 @@ namespace SDL2Engine.Core.Physics
         private readonly List<Body> m_boundaryBodies = new List<Body>();
         
         public CollisionDetector CollisionDetector => m_collisionDetector;
+
+        private Simulation m_simulation;
+        private BufferPool m_bufferPool;
         
         // Use positive gravity by default because SDL and Box2d y values are flipped
         public void Initialize(float gravity = 9.81f)
         {
-            Vector2 gravityVec = new Vector2(0f, gravity);
-            m_world = new World(gravityVec);
-            m_collisionDetector = new CollisionDetector(m_world, PPM);
-            Debug.Log($"<color=green>PHYSICS ENGINE INITIALIZED gravity: {gravity}</color>");
+            if (PlatformInfo.PipelineType == PipelineType.Pipe2D)
+            {
+                Vector2 gravityVec = new Vector2(0f, gravity);
+                m_world = new World(gravityVec);
+                m_collisionDetector = new CollisionDetector(m_world, PPM);
+                Debug.Log($"<color=green>2D PHYSICS ENGINE INITIALIZED (BOX2D): {gravity}</color>");
+            }
+
+            if (PlatformInfo.PipelineType == PipelineType.Pipe3D)
+            {
+                m_bufferPool = new BufferPool();
+                m_simulation = Simulation.Create(
+                    m_bufferPool,
+                    new DefaultNarrowPhaseCallbacks(),
+                    new DefaultPoseIntegratorCallbacks(),
+                    new SolveDescription(4, 1)  // e.g. 4 substeps, 1 velocity iteration per substep
+                );
+                Debug.Log($"<color=green>3D PHYSICS ENGINE INITIALIZED (BEPU): {gravity}</color>");
+
+            }
         }
 
         /// <summary>
@@ -76,7 +99,15 @@ namespace SDL2Engine.Core.Physics
         /// </summary>
         public void UpdatePhysics(float deltaTime)
         {
-            m_world.Step(deltaTime, velocityIterations: 8, positionIterations: 3);
+            if (PlatformInfo.PipelineType == PipelineType.Pipe2D)
+            {
+                m_world.Step(deltaTime, velocityIterations: 8, positionIterations: 3);
+            }
+
+            if (PlatformInfo.PipelineType == PipelineType.Pipe3D)
+            {
+                m_simulation.Timestep(deltaTime);
+            }
         }
 
         /// <summary>
@@ -86,6 +117,9 @@ namespace SDL2Engine.Core.Physics
         /// </summary>
         public void CreateWindowBoundaries(float screenWidth, float screenHeight)
         {
+            if (PlatformInfo.PipelineType == PipelineType.Pipe3D)
+                return;
+            
             foreach (var body in m_boundaryBodies)
             {
                 m_world.DestroyBody(body);
