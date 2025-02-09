@@ -2,7 +2,7 @@
 in vec2 TexCoord;
 out vec4 FragColor;
 
-uniform sampler2D godrayTex;  
+uniform sampler2D godrayTex;
 uniform sampler2D depthTex;
 
 uniform mat4 view;
@@ -11,7 +11,7 @@ uniform mat4 invProjection;
 uniform mat4 invView;
 uniform vec3 cameraPos;
 uniform vec3 lightPos;
-uniform vec3 lightColor;  
+uniform vec3 lightColor;
 
 uniform int numSamples;
 uniform float density;
@@ -33,7 +33,8 @@ void main()
 {
     float depth = texture(depthTex, TexCoord).r;
     vec3 worldPos = ReconstructWorldPosition(TexCoord, depth);
-    vec3 dirToLight = normalize(lightPos - worldPos);
+    // March away from the light instead of toward it.
+    vec3 dirFromLight = normalize(worldPos - lightPos);
 
     vec3 samplePos = worldPos;
     vec4 accumulated = vec4(0.0);
@@ -41,7 +42,7 @@ void main()
 
     for (int i = 0; i < numSamples; i++)
     {
-        samplePos += dirToLight * density;
+        samplePos += dirFromLight * density;
         vec4 clipPos = projection * view * vec4(samplePos, 1.0);
         clipPos /= clipPos.w;
         vec2 sampleUV = clipPos.xy * 0.5 + 0.5;

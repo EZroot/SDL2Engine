@@ -1,4 +1,3 @@
-using System.Data;
 using OpenTK.Mathematics;
 using SDL2Engine.Core.Lighting.Interfaces;
 
@@ -22,6 +21,7 @@ public class Light : ILight
     public Matrix4 LightProjection => m_lightProjection;
     public Vector3 LightPosition { get; private set; }
     public Vector3 LightDirection { get; private set; }
+    
     public Light(LightType lightType, int projSize, float nearPlane, float farPlane)
     {
         m_lightType = lightType;
@@ -37,32 +37,39 @@ public class Light : ILight
                 m_nearPlane, m_farPlane
             );
         }
-
-        if (m_lightType == LightType.Point)
+        else if (m_lightType == LightType.Point)
         {
             m_lightProjection = Matrix4.CreatePerspectiveFieldOfView(
                 MathHelper.DegreesToRadians(90f), 1f, m_nearPlane, m_farPlane);
         }
     }
 
+    // For point lights, lightDistance is used. For directional lights, we ignore the parameter.
     public Matrix4 Update(Vector3 pos, Quaternion rotation, float lightDistance)
     {
         LightDirection = Vector3.Transform(Vector3.UnitZ, rotation);
-        LightPosition = pos - LightDirection * lightDistance;
+        if (m_lightType == LightType.Directional)
+            // Use m_farPlane (or another suitably large value) to simulate "infinite" distance.
+            LightPosition = pos - LightDirection * m_farPlane;
+        else
+            LightPosition = pos - LightDirection * lightDistance;
+        
         var up = Vector3.Transform(Vector3.UnitY, rotation);
         LightView = Matrix4.LookAt(LightPosition, pos, up);
-        var lightSpaceMatrix = m_lightProjection * LightView;
-        return lightSpaceMatrix;
+        return m_lightProjection * LightView;
     }
     
     public Matrix4 Update(Vector3 pos, float lightRotationX, float lightRotationY, float lightRotationZ, float lightDistance)
     {
         Quaternion lightRotation = Quaternion.FromEulerAngles(lightRotationX, lightRotationY, lightRotationZ);
         LightDirection = Vector3.Transform(Vector3.UnitZ, lightRotation);
-        LightPosition = pos - LightDirection * lightDistance;
+        if (m_lightType == LightType.Directional)
+            LightPosition = pos - LightDirection * m_farPlane;
+        else
+            LightPosition = pos - LightDirection * lightDistance;
+        
         var up = Vector3.Transform(Vector3.UnitY, lightRotation);
         LightView = Matrix4.LookAt(LightPosition, pos, up);
-        var lightSpaceMatrix = m_lightProjection * LightView;
-        return lightSpaceMatrix;
+        return m_lightProjection * LightView;
     }
 }

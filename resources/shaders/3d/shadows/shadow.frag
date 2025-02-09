@@ -83,7 +83,7 @@ void main()
 
     // combined: ambient is always applied, diffuse and specular are shadowed.
     vec3 ambient = ambientColor;
-    vec3 lighting = ambient + shadow * (diffuse + specular);
+    vec3 lighting = ambient + shadow * diffuse + specular;
 
     vec3 baseColor = texture(diffuseTexture, TexCoord).rgb;
     vec3 finalColor = baseColor * lighting;

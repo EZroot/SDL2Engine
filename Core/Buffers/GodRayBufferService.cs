@@ -150,11 +150,12 @@ namespace SDL2Engine.Core.Buffers
             GL.Uniform3(GL.GetUniformLocation(shader, "lightPos"), light.LightPosition);
             GL.Uniform3(GL.GetUniformLocation(shader, "lightColor"), new Vector3(1,1,1));
 
-            GL.Uniform1(GL.GetUniformLocation(shader, "numSamples"), 512);
-            GL.Uniform1(GL.GetUniformLocation(shader, "density"), 0.45f);
-            GL.Uniform1(GL.GetUniformLocation(shader, "decay"), 0.9f);
-            GL.Uniform1(GL.GetUniformLocation(shader, "weight"), 0.2f);
-            GL.Uniform1(GL.GetUniformLocation(shader, "exposure"), 0.5f);
+            GL.Uniform1(GL.GetUniformLocation(shader, "numSamples"), 128);
+            GL.Uniform1(GL.GetUniformLocation(shader, "density"), 0.8f);
+            GL.Uniform1(GL.GetUniformLocation(shader, "decay"), 0.95f);
+            GL.Uniform1(GL.GetUniformLocation(shader, "weight"), 0.1f);
+            GL.Uniform1(GL.GetUniformLocation(shader, "exposure"), 0.7f);
+
 
             GL.BindVertexArray(m_frameBufferQuadHandle.Handles.Vao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, m_frameBufferQuadHandle.Handles.VertexCount);
