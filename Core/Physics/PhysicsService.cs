@@ -208,6 +208,33 @@ namespace SDL2Engine.Core.Physics
             BodyHandle bodyHandle = m_simulation.Bodies.Add(in bodyDescription);
             return bodyHandle;
         }
+        
+        public BodyHandle CreateSpherePhysicsBody(Vector3 position, float radius, float mass)
+        {
+            // Create the initial pose.
+            RigidPose pose = new RigidPose(position);
+
+            // Create a sphere shape using the desired radius.
+            Sphere sphereShape = new Sphere(radius);
+
+            // Compute the inertia for a sphere.
+            BodyInertia inertia = sphereShape.ComputeInertia(mass);
+
+            // Add the sphere shape to the simulation's shape collection.
+            TypedIndex shapeIndex = m_simulation.Shapes.Add(sphereShape);
+
+            // Create a collidable description. The second parameter is the speculative margin.
+            CollidableDescription collidableDescription = new CollidableDescription(shapeIndex, 0.1f);
+
+            // Create a dynamic body description for the sphere.
+            BodyDescription bodyDescription = BodyDescription.CreateDynamic(
+                pose, inertia, collidableDescription, new BodyActivityDescription(0f));
+
+            // Add the body to the simulation and return its handle.
+            BodyHandle bodyHandle = m_simulation.Bodies.Add(in bodyDescription);
+            return bodyHandle;
+        }
+
 
         /// <summary>
         /// Creates a Box2D physics object
