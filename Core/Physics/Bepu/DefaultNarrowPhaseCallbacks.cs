@@ -6,14 +6,21 @@ using BepuPhysics.CollisionDetection;
 
 namespace SDL2Engine.Core.Physics.Bepu
 {
+    /// <summary>
+    /// A basic narrow phase callback implementation that permits all contact generation.
+    /// </summary>
     public struct DefaultNarrowPhaseCallbacks : INarrowPhaseCallbacks
     {
         public void Initialize(Simulation simulation)
         {
-            // No initialization is required for the default callbacks.
+            // No initialization required.
         }
 
-        public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
+        public bool AllowContactGeneration(
+            int workerIndex,
+            CollidableReference a,
+            CollidableReference b,
+            ref float speculativeMargin)
         {
             // Allow contact generation for all colliding pairs.
             return true;
@@ -26,7 +33,7 @@ namespace SDL2Engine.Core.Physics.Bepu
             [UnscopedRef] out PairMaterialProperties pairMaterial)
             where TManifold : unmanaged, IContactManifold<TManifold>
         {
-            // Provide default pair material properties.
+            // Set default material properties.
             pairMaterial = new PairMaterialProperties();
             // Allow contact generation.
             return true;
@@ -34,7 +41,7 @@ namespace SDL2Engine.Core.Physics.Bepu
 
         public bool AllowContactGeneration(int workerIndex, CollidablePair pair, int childIndexA, int childIndexB)
         {
-            // Allow contacts for the specified child indices.
+            // Permit contacts for all specified child indices.
             return true;
         }
 
@@ -45,7 +52,7 @@ namespace SDL2Engine.Core.Physics.Bepu
             int childIndexB,
             ref ConvexContactManifold manifold)
         {
-            // Default behavior: allow contact generation.
+            // Allow contact manifold configuration.
             return true;
         }
 

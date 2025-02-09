@@ -6,6 +6,7 @@ using SDL2Engine.Core;
 using SDL2Engine.Core.Physics.Interfaces;
 using SDL2Engine.Core.Utils;
 using BepuPhysics;
+using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using BepuUtilities.Memory;
 using SDL2Engine.Core.Physics.Bepu;
@@ -14,6 +15,9 @@ namespace SDL2Engine.Core.Physics
 {
     public class PhysicsService : IPhysicsService
     {
+        /**********************************
+         *      BOX 2D INTEGRATION
+         **********************************/
         // 1 meter = 100 pixels
         private const float PPM = 100f;
 
@@ -24,7 +28,10 @@ namespace SDL2Engine.Core.Physics
         private readonly List<Body> m_boundaryBodies = new List<Body>();
         
         public CollisionDetector CollisionDetector => m_collisionDetector;
-
+        
+        /**********************************
+         *      BEPU 3D INTEGRATION
+         **********************************/
         private Simulation m_simulation;
         private BufferPool m_bufferPool;
         
@@ -42,14 +49,14 @@ namespace SDL2Engine.Core.Physics
             if (PlatformInfo.PipelineType == PipelineType.Pipe3D)
             {
                 m_bufferPool = new BufferPool();
+                // Use a negative Y gravity vector (Y is up in BEPU by default)
+                var poseIntegrator = new DefaultPoseIntegratorCallbacks(new System.Numerics.Vector3(0, -gravity, 0));
                 m_simulation = Simulation.Create(
                     m_bufferPool,
                     new DefaultNarrowPhaseCallbacks(),
-                    new DefaultPoseIntegratorCallbacks(),
-                    new SolveDescription(4, 1)  // e.g. 4 substeps, 1 velocity iteration per substep
-                );
+                    poseIntegrator,
+                    new SolveDescription(4, 1));  // 4 substeps, 1 velocity iteration per substep
                 Debug.Log($"<color=green>3D PHYSICS ENGINE INITIALIZED (BEPU): {gravity}</color>");
-
             }
         }
 
@@ -179,6 +186,37 @@ namespace SDL2Engine.Core.Physics
             return body;
         }
 
+        /// <summary>
+        /// Creates a 3D BEPU physics object
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="size"></param>
+        /// <param name="mass"></param>
+        /// <returns></returns>
+        public BodyHandle CreatePhysicsBody(Vector3 position, Vector3 size, float mass)
+        {
+            // Create the initial pose.
+            RigidPose pos = new RigidPose(position);
+            Box boxShape = new Box(size.X, size.Y, size.Z);
+            BodyInertia inertia = boxShape.ComputeInertia(mass);
+            TypedIndex shapeIndex = m_simulation.Shapes.Add(boxShape);
+            CollidableDescription collidableDescription = new CollidableDescription(shapeIndex, 0.1f);
+            BodyDescription bodyDescription = BodyDescription.CreateDynamic(
+                pos, inertia, collidableDescription, new BodyActivityDescription());
+    
+            // Add the body to the simulation and return its handle.
+            BodyHandle bodyHandle = m_simulation.Bodies.Add(in bodyDescription);
+            return bodyHandle;
+        }
+
+        /// <summary>
+        /// Creates a Box2D physics object
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public Body CreatePhysicsBody(Vector2 position, float width, float height, BodyType type)
         {
             BodyDef bodyDef = new BodyDef
@@ -201,6 +239,20 @@ namespace SDL2Engine.Core.Physics
             body.CreateFixture(fixtureDef);
 
             return body;
+        }
+
+        public void ApplyLinearImpulse(BodyHandle handle, in Vector3 impulse)
+        {
+            m_simulation.Bodies.GetBodyReference(handle).ApplyLinearImpulse(in impulse);
+        }
+
+        /// <summary>
+        /// Returns the body reference for the BEPU physics body
+        /// </summary>
+        /// <param name="bodyHandle"></param>
+        public BodyReference GetBodyReference(BodyHandle bodyHandle)
+        {
+            return m_simulation.Bodies[bodyHandle];
         }
 
         public void SetContactListener(IContactListener contactListener)
