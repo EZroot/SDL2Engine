@@ -33,6 +33,7 @@ Discover the capabilities of the SDL 2D renderer combined with GUI elements and 
 - [SDL2Game Repository](https://github.com/EZroot/SDL2Game)
 
 ![Boids simulation](screenshottys/boidz.gif)
+![Box2D Physics](screenshottys/box2d.gif)
 
 ### Music Player Example
 Check out the Music Player demonstrating audio playback integration in:
