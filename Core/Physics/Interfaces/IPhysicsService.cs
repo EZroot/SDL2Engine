@@ -13,6 +13,7 @@ public interface IPhysicsService
     void UpdatePhysics(float fixedTime);
     // void InterpolateObjects(float deltaTime);
     BodyHandle CreatePhysicsBody(Vector3 position, Vector3 size, float mass);
+    void CreateStaticPhysicsBody(Vector3 position, Vector3 size);
     Body CreatePhysicsBody(Vector2 position, float width, float height, BodyType type);
     BodyHandle CreateSpherePhysicsBody(Vector3 position, float radius, float mass);
     BodyReference GetBodyReference(BodyHandle bodyHandle);

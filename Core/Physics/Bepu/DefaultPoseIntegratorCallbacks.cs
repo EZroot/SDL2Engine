@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using BepuPhysics;
 using BepuUtilities;
@@ -5,52 +6,77 @@ using BepuUtilities;
 namespace SDL2Engine.Core.Physics.Bepu
 {
     /// <summary>
-    /// A basic pose integrator callback that applies gravity using simple Euler integration.
+    /// Updated pose integrator callback that applies gravity and damping.
     /// </summary>
     public struct DefaultPoseIntegratorCallbacks : IPoseIntegratorCallbacks
     {
         /// <summary>
-        /// Gets or sets the gravity vector to apply.
+        /// Gravity to apply to dynamic bodies.
         /// </summary>
         public Vector3 Gravity { get; set; }
+        /// <summary>
+        /// Fraction of dynamic body linear velocity to remove per unit time (0 is undamped).
+        /// </summary>
+        public float LinearDamping;
+        /// <summary>
+        /// Fraction of dynamic body angular velocity to remove per unit time (0 is undamped).
+        /// </summary>
+        public float AngularDamping;
 
-        // Cached gravity * dt in wide format.
+        // Cached values for use in SIMD velocity integration.
         private Vector3Wide gravityWideDt;
+        private Vector<float> linearDampingDt;
+        private Vector<float> angularDampingDt;
 
         /// <summary>
-        /// Constructs the callbacks with the specified gravity.
+        /// Constructs the callbacks with the specified gravity and damping values.
         /// </summary>
-        public DefaultPoseIntegratorCallbacks(Vector3 gravity)
+        /// <param name="gravity">Gravity vector.</param>
+        /// <param name="linearDamping">Linear damping coefficient (e.g. 0.03f).</param>
+        /// <param name="angularDamping">Angular damping coefficient (e.g. 0.03f).</param>
+        public DefaultPoseIntegratorCallbacks(Vector3 gravity, float linearDamping = 0.03f, float angularDamping = 0.03f)
         {
             Gravity = gravity;
+            LinearDamping = linearDamping;
+            AngularDamping = angularDamping;
             gravityWideDt = default;
+            linearDampingDt = default;
+            angularDampingDt = default;
         }
 
         public void Initialize(Simulation simulation)
         {
-            // No initialization needed.
+            // No additional initialization required.
         }
 
         public void PrepareForIntegration(float dt)
         {
-            // Precompute gravity * dt for use in velocity integration.
+            // Compute damping multipliers.
+            // Clamp (1 - damping) between 0 and 1.
+            float clampedLinear = MathHelper.Clamp(1 - LinearDamping, 0, 1);
+            float clampedAngular = MathHelper.Clamp(1 - AngularDamping, 0, 1);
+            // Exponentially decay the velocities based on dt.
+            linearDampingDt = new Vector<float>(MathF.Pow(clampedLinear, dt));
+            angularDampingDt = new Vector<float>(MathF.Pow(clampedAngular, dt));
+            
+            // Precompute gravity * dt.
             Vector3 gravityDt = Gravity * dt;
             Vector3Wide.Broadcast(gravityDt, out gravityWideDt);
         }
 
         public void IntegrateVelocity(
-            System.Numerics.Vector<int> bodyIndices,
+            Vector<int> bodyIndices,
             Vector3Wide position,
             QuaternionWide orientation,
             BodyInertiaWide localInertia,
-            System.Numerics.Vector<int> integrationMask,
+            Vector<int> integrationMask,
             int workerIndex,
-            System.Numerics.Vector<float> dt,
+            Vector<float> dt,
             ref BodyVelocityWide velocity)
         {
-            // Add gravity to each body's linear velocity.
-            Vector3Wide.Add(velocity.Linear, gravityWideDt, out velocity.Linear);
-            // Angular velocity remains unchanged.
+            // Add gravity and apply damping.
+            velocity.Linear = (velocity.Linear + gravityWideDt) * linearDampingDt;
+            velocity.Angular = velocity.Angular * angularDampingDt;
         }
 
         public AngularIntegrationMode AngularIntegrationMode => AngularIntegrationMode.Nonconserving;

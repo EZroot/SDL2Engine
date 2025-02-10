@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using System.Collections.Generic;
 using Box2DSharp.Collision.Shapes;
@@ -9,6 +10,7 @@ using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using BepuUtilities.Memory;
+using OpenTK.Graphics.OpenGL;
 using SDL2Engine.Core.Physics.Bepu;
 
 namespace SDL2Engine.Core.Physics
@@ -55,7 +57,7 @@ namespace SDL2Engine.Core.Physics
                     m_bufferPool,
                     new DefaultNarrowPhaseCallbacks(),
                     poseIntegrator,
-                    new SolveDescription(4, 1));  // 4 substeps, 1 velocity iteration per substep
+                    new SolveDescription(1, 4));  // 4 substeps, 1 velocity iteration per substep
                 Debug.Log($"<color=green>3D PHYSICS ENGINE INITIALIZED (BEPU): {gravity}</color>");
             }
         }
@@ -187,12 +189,12 @@ namespace SDL2Engine.Core.Physics
         }
 
         /// <summary>
-        /// Creates a 3D BEPU physics object
+        /// Creates a 3D BEPU dynamic box physics object.
         /// </summary>
-        /// <param name="position"></param>
-        /// <param name="size"></param>
-        /// <param name="mass"></param>
-        /// <returns></returns>
+        /// <param name="position">The starting position.</param>
+        /// <param name="size">The dimensions of the box (width, height, depth).</param>
+        /// <param name="mass">The mass of the object.</param>
+        /// <returns>A BodyHandle for the created physics body.</returns>
         public BodyHandle CreatePhysicsBody(Vector3 position, Vector3 size, float mass)
         {
             // Create the initial pose.
@@ -202,48 +204,66 @@ namespace SDL2Engine.Core.Physics
             TypedIndex shapeIndex = m_simulation.Shapes.Add(boxShape);
             CollidableDescription collidableDescription = new CollidableDescription(shapeIndex, 0.1f);
             BodyDescription bodyDescription = BodyDescription.CreateDynamic(
-                pos, inertia, collidableDescription, new BodyActivityDescription());
+                pos, inertia, collidableDescription, new BodyActivityDescription(0f));
     
             // Add the body to the simulation and return its handle.
             BodyHandle bodyHandle = m_simulation.Bodies.Add(in bodyDescription);
             return bodyHandle;
         }
         
+        /// <summary>
+        /// Creates a 3D BEPU dynamic sphere physics object.
+        /// </summary>
+        /// <param name="position">The starting position.</param>
+        /// <param name="radius">The radius of the sphere.</param>
+        /// <param name="mass">The mass of the sphere.</param>
+        /// <returns>A BodyHandle for the created physics sphere.</returns>
         public BodyHandle CreateSpherePhysicsBody(Vector3 position, float radius, float mass)
         {
-            // Create the initial pose.
             RigidPose pose = new RigidPose(position);
-
-            // Create a sphere shape using the desired radius.
             Sphere sphereShape = new Sphere(radius);
-
-            // Compute the inertia for a sphere.
             BodyInertia inertia = sphereShape.ComputeInertia(mass);
-
-            // Add the sphere shape to the simulation's shape collection.
             TypedIndex shapeIndex = m_simulation.Shapes.Add(sphereShape);
-
-            // Create a collidable description. The second parameter is the speculative margin.
-            CollidableDescription collidableDescription = new CollidableDescription(shapeIndex, 0.1f);
-
-            // Create a dynamic body description for the sphere.
+            CollidableDescription collidableDescription = new CollidableDescription(shapeIndex, 0.01f);
             BodyDescription bodyDescription = BodyDescription.CreateDynamic(
-                pose, inertia, collidableDescription, new BodyActivityDescription(0f));
-
-            // Add the body to the simulation and return its handle.
+                pose, inertia, collidableDescription, new BodyActivityDescription(0));
             BodyHandle bodyHandle = m_simulation.Bodies.Add(in bodyDescription);
             return bodyHandle;
         }
 
+        /// <summary>
+        /// Creates a 3D BEPU static box physics object.
+        /// </summary>
+        /// <param name="position">The position of the static body.</param>
+        /// <param name="size">The dimensions of the box (width, height, depth).</param>
+        /// <returns>A BodyHandle representing the static physics object.</returns>
+        public void CreateStaticPhysicsBody(Vector3 position, Vector3 size)
+        {
+            // Create the initial pose for the static.
+            RigidPose pose = new RigidPose(position);
+
+            // Create a box shape for the static object.
+            Box boxShape = new Box(size.X, size.Y, size.Z);
+
+            // Add the box shape to the simulation's shape collection.
+            TypedIndex shapeIndex = m_simulation.Shapes.Add(boxShape);
+
+            // Create a static description using the overload that defaults to discrete collision detection.
+            var staticDescription = new StaticDescription(pose, shapeIndex);
+
+            // Add the static object to the simulation's statics collection.
+            m_simulation.Statics.Add(staticDescription);
+        }
+
 
         /// <summary>
-        /// Creates a Box2D physics object
+        /// Creates a Box2D physics object.
         /// </summary>
-        /// <param name="position"></param>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
-        /// <param name="type"></param>
-        /// <returns></returns>
+        /// <param name="position">The starting position.</param>
+        /// <param name="width">The width of the box.</param>
+        /// <param name="height">The height of the box.</param>
+        /// <param name="type">The body type (dynamic, static, kinematic).</param>
+        /// <returns>A Body representing the created physics object.</returns>
         public Body CreatePhysicsBody(Vector2 position, float width, float height, BodyType type)
         {
             BodyDef bodyDef = new BodyDef
@@ -274,9 +294,9 @@ namespace SDL2Engine.Core.Physics
         }
 
         /// <summary>
-        /// Returns the body reference for the BEPU physics body
+        /// Returns the body reference for the BEPU physics body.
         /// </summary>
-        /// <param name="bodyHandle"></param>
+        /// <param name="bodyHandle">The handle of the body.</param>
         public BodyReference GetBodyReference(BodyHandle bodyHandle)
         {
             return m_simulation.Bodies[bodyHandle];
