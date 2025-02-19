@@ -120,7 +120,7 @@ public class Scene
             obj.Shader.UnBind();
         }
         
-        m_shadowPassService.RenderDebugQuad(false,1,100);
+        // m_shadowPassService.RenderDebugQuad(false,1,100);
         m_frameBufferService.UnbindFramebuffer();
         // post process pass
         m_godrayBufferService.BindFramebuffer(1920, 1080);
@@ -180,13 +180,9 @@ public class Scene
             
             obj.Shader.UnBind();
         }
-        
-        // modelService.DrawModelGL(quadHandle, floorModel, cam,
-        //     texture[2], lightSpaceMatrix, shadowPassService.DepthTexturePtr,
-        //     m_directionalLight.LightDirection, new Vector3(1f, 1f, 1f), new Vector3(0f, 0f, 0f));
         m_godrayBufferService.UnbindFramebuffer();
             
-        // // process god rays
+        // process god rays
         m_godrayBufferService.ProcessGodRays(m_camera, m_directionalLight, m_frameBufferService.GetDepthTexture());
         // grbService.RenderDebug(); // visualize god rays 
         
