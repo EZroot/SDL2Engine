@@ -208,9 +208,9 @@ namespace SDL2Engine.Core
             float cameraSpeed = CAM_SPEED * Time.DeltaTime;
             OpenTK.Mathematics.Vector3 movement = OpenTK.Mathematics.Vector3.Zero;
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_UP))
-                movement.Y -= cameraSpeed;
-            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_DOWN))
                 movement.Y += cameraSpeed;
+            if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_DOWN))
+                movement.Y -= cameraSpeed;
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_LEFT))
                 movement.X -= cameraSpeed;
             if (InputManager.IsKeyPressed(SDL.SDL_Keycode.SDLK_RIGHT))

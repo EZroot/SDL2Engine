@@ -7,7 +7,7 @@ layout(location = 3) in vec4 FragPosLightSpace;
 
 layout(location = 0) out vec4 FragColor;
 
-uniform sampler2D       diffuseTexture;
+uniform sampler2D diffuseTexture;
 uniform sampler2DShadow shadowMap;
 
 uniform vec3 lightDir;
@@ -16,7 +16,8 @@ uniform vec3 ambientColor;
 uniform vec3 viewPos;
 
 uniform bool debugShadow;
-uniform float shadowBias    = 0.002;
+uniform float baseShadowBias = 0.002;
+uniform float minBias = 0.0001;
 uniform float pcfDiskRadius = 1.0;
 
 const int NUM_SAMPLES = 16;
@@ -32,7 +33,7 @@ float PCFShadow(vec4 fragPosLS, vec3 norm)
     vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    // Outside the light's frustum.
+    // Ensure we're inside the light's projection
     if (projCoords.x < 0.0 || projCoords.x > 1.0 ||
     projCoords.y < 0.0 || projCoords.y > 1.0 ||
     projCoords.z > 1.0)
@@ -40,13 +41,15 @@ float PCFShadow(vec4 fragPosLS, vec3 norm)
         return 1.0;
     }
 
+    // Compute dynamic bias
     float angleFactor = max(dot(norm, normalize(lightDir)), 0.0);
-    float bias = shadowBias * (1.0 - angleFactor);
+    float bias = max(baseShadowBias * (1.0 - angleFactor), minBias);
 
-    // Dynamically compute texel size.
+    // Compute texel size dynamically
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     float shadowSum = 0.0;
 
+    // Sample the shadow map using PCF with Poisson Disk sampling
     for (int i = 0; i < NUM_SAMPLES; i++)
     {
         vec2 offset = poissonDisk[i] * pcfDiskRadius * texelSize;
@@ -59,38 +62,38 @@ float PCFShadow(vec4 fragPosLS, vec3 norm)
 void main()
 {
     vec3 norm = normalize(Normal);
-    float shadow = PCFShadow(FragPosLightSpace, norm);
+    vec3 normalOffset = norm * 0.001; // Small push along normal
+    vec4 fragPosLSOffset = FragPosLightSpace + vec4(normalOffset, 0.0);
 
-    // show raw shadow factor
+    float shadow = PCFShadow(fragPosLSOffset, norm);
+
+    // Debug mode: visualize shadow map results
     if (debugShadow)
     {
         FragColor = vec4(vec3(shadow), 1.0);
         return;
     }
 
-    // (Blinn-Phong)
+    // (Blinn-Phong lighting model)
     vec3 viewDir   = normalize(viewPos - FragPos);
-    vec3 lightDirN = normalize(lightDir);
+    vec3 lightDirN = normalize(-lightDir);
 
-    // diffuse
+    // Diffuse lighting
     float diff = max(dot(norm, lightDirN), 0.0);
     vec3 diffuse = diff * lightColor;
 
-    // specular
+    // Specular lighting
     vec3 halfwayDir = normalize(lightDirN + viewDir);
-    float spec = pow(max(dot(norm, halfwayDir), 0.0), 16.0); // 32 = shininess
+    float spec = pow(max(dot(norm, halfwayDir), 0.0), 16.0);
     vec3 specular = spec * lightColor;
 
-    // combined: ambient is always applied, diffuse and specular are shadowed.
+    // Final lighting calculation
     vec3 ambient = ambientColor;
     vec3 lighting = ambient + shadow * diffuse + specular;
 
+    // Apply texture color
     vec3 baseColor = texture(diffuseTexture, TexCoord).rgb;
     vec3 finalColor = baseColor * lighting;
 
-//    vec3 projCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
-//    projCoords = projCoords * 0.5 + 0.5;
-//    FragColor = vec4(projCoords, 1.0);
-    
     FragColor = vec4(finalColor, 1.0);
 }

@@ -14,7 +14,10 @@ public class GameObject3D
     public Quaternion Rotation { get; private set;}
     public Vector3 Scale { get; private set;}
     public Matrix4 ModelMatrix { get; private set;}
-
+    public bool CastShadows { get; private set; }
+    public Vector3 Color { get; private set; }
+    public Vector3 AmbientColor { get; private set; }
+    
     public GameObject3D(Mesh mesh, TextureData diffuseTexture, Shader shader)
     {
         Mesh = mesh;
@@ -23,6 +26,21 @@ public class GameObject3D
         Position = Vector3.Zero;
         Rotation = Quaternion.Identity;
         Scale = Vector3.One;
+        Color = new Vector3(1, 1, 1);
+        AmbientColor = new Vector3(0f, 0f, 0.1f);
+        UpdateModelMatrix();
+    }
+    
+    public GameObject3D(Mesh mesh, TextureData diffuseTexture, Shader shader, Vector3 color, Vector3 ambientColor)
+    {
+        Mesh = mesh;
+        TextureData = diffuseTexture;
+        Shader = shader;
+        Position = Vector3.Zero;
+        Rotation = Quaternion.Identity;
+        Scale = Vector3.One;
+        Color = color;
+        AmbientColor = ambientColor;
         UpdateModelMatrix();
     }
     
@@ -55,9 +73,13 @@ public class GameObject3D
         UpdateModelMatrix();
     }
 
+    public void SetCastShadows(bool shouldCastShadows)
+    {
+        CastShadows = shouldCastShadows;
+    }
+
     private void UpdateModelMatrix()
     {
-        // Might have to update create from quaternion, if objects spin on a offset pivot thats prob why!
-        ModelMatrix = MathHelper.GetMatrixTranslation(Position, Scale) * Matrix4.CreateFromQuaternion(Rotation);
+        ModelMatrix = Matrix4.CreateFromQuaternion(Rotation) * MathHelper.GetMatrixTranslation(Position, Scale);
     }
 }

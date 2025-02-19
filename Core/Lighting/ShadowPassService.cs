@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
+using SDL2Engine.Core.Geometry;
 using SDL2Engine.Core.Lighting.Interfaces;
 using SDL2Engine.Core.Utils;
 
@@ -11,7 +12,7 @@ namespace SDL2Engine.Core.Lighting
     {
         int shadowFBO, depthTexture;
         int shadowWidth = 2048, shadowHeight = 2048;
-        float factorFill = 2f, factorUnit = 4f;
+        float factorFill = 1.1f, factorUnit = 4f;
 
         int depthShader;
         int debugShader;
@@ -21,7 +22,8 @@ namespace SDL2Engine.Core.Lighting
         int locLightView, locLightProjection, locModel;
 
         // Registered meshes with their model matrices.
-        readonly List<(OpenGLHandle Asset, Matrix4 Model)> m_shadowAssets = new();
+        readonly List<(OpenGLHandle Asset, Matrix4 Model)> m_shadowAssetsOld = new();
+        readonly List<(Mesh Asset, Matrix4 Model)> m_shadowAssetsMesh = new();
 
         public int DepthTexturePtr => depthTexture;
 
@@ -45,11 +47,8 @@ namespace SDL2Engine.Core.Lighting
                 (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
                 (int)TextureMagFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS,
-                (int)TextureWrapMode.ClampToBorder);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT,
-                (int)TextureWrapMode.ClampToBorder);
-            float[] borderColor = { 1f, 1f, 1f, 1f };
+
+            float[] borderColor = { 1.0f, 1.0f, 1.0f, 1.0f };
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, borderColor);
 
             // Attach texture to FBO.
@@ -102,15 +101,20 @@ namespace SDL2Engine.Core.Lighting
 
             debugQuadHandle = new OpenGLHandle(new OpenGLMandatoryHandles(quadVao, quadVbo, 0, debugShader, 6));
         }
-
+        
         /// <summary>
         /// Register a mesh to our shadow pass and its initial model matrix
         /// </summary>
         /// <param name="asset"></param>
         /// <param name="model"></param>
-        public void RegisterMesh(OpenGLHandle asset, Matrix4 model)
+        public void RegisterMesh(Mesh asset, Matrix4 model)
         {
-            m_shadowAssets.Add((asset, model));
+            m_shadowAssetsMesh.Add((asset, model));
+        }
+        
+        public void UnregisterMesh(Mesh asset, Matrix4 model)
+        {
+            m_shadowAssetsMesh.Remove((asset, model));
         }
 
         /// <summary>
@@ -118,18 +122,18 @@ namespace SDL2Engine.Core.Lighting
         /// </summary>
         /// <param name="asset"></param>
         /// <param name="newModel"></param>
-        public void UpdateMeshModel(OpenGLHandle asset, Matrix4 newModel)
+        public void UpdateMeshModel(Mesh asset, Matrix4 newModel)
         {
-            for (int i = 0; i < m_shadowAssets.Count; i++)
+            for (int i = 0; i < m_shadowAssetsMesh.Count; i++)
             {
-                if (m_shadowAssets[i].Asset.Equals(asset))
+                if (m_shadowAssetsMesh[i].Asset.Equals(asset))
                 {
-                    m_shadowAssets[i] = (asset, newModel);
+                    m_shadowAssetsMesh[i] = (asset, newModel);
                     break;
                 }
             }
         }
-
+        
         /// <summary>
         /// Render a shadow pass on all registered meshes based on a directional light
         /// </summary>
@@ -152,7 +156,99 @@ namespace SDL2Engine.Core.Lighting
             GL.Enable(EnableCap.PolygonOffsetFill);
             GL.PolygonOffset(factorFill, factorUnit);
 
-            foreach (var (asset, model) in m_shadowAssets)
+            foreach (var (asset, model) in m_shadowAssetsMesh)
+            {
+                var assetModel = model;
+                GL.UniformMatrix4(locModel, false, ref assetModel);
+                GL.BindVertexArray(asset.Vao);
+                GL.DrawArrays(PrimitiveType.Triangles, 0, asset.VertexCount);
+            }
+
+            GL.Disable(EnableCap.PolygonOffsetFill);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        }
+
+        public void RenderDebugQuad(bool showRawDepth, float nearPlane, float farPlane)
+        {
+            // GL.Viewport(0, 0, 1024, 1024);
+            GL.UseProgram(debugShader);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, depthTexture);
+
+            // Ensure we're sampling raw depth data.
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareMode,
+                (int)TextureCompareMode.None);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareFunc, (int)All.Lequal);
+
+            // Update shader uniforms.
+            int debugTextureLoc = GL.GetUniformLocation(debugShader, "debugTexture");
+            int showRawDepthLoc = GL.GetUniformLocation(debugShader, "showRawDepth");
+            int nearPlaneLoc = GL.GetUniformLocation(debugShader, "nearPlane");
+            int farPlaneLoc = GL.GetUniformLocation(debugShader, "farPlane");
+            GL.Uniform1(debugTextureLoc, 0);
+            GL.Uniform1(showRawDepthLoc, showRawDepth ? 1 : 0);
+            GL.Uniform1(nearPlaneLoc, nearPlane);
+            GL.Uniform1(farPlaneLoc, farPlane);
+
+            GL.BindVertexArray(debugQuadHandle.Handles.Vao);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, debugQuadHandle.Handles.VertexCount);
+            GL.BindVertexArray(0);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.UseProgram(0);
+            GL.Disable(EnableCap.CullFace);
+        }
+        
+        #region (OLD) Deprecated - Remove this shit later
+        /// <summary>
+        /// Register a mesh to our shadow pass and its initial model matrix
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <param name="model"></param>
+        public void RegisterMesh(OpenGLHandle asset, Matrix4 model)
+        {
+            m_shadowAssetsOld.Add((asset, model));
+        }
+
+        /// <summary>
+        /// Update a mesh assets model matrix
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <param name="newModel"></param>
+        public void UpdateMeshModel(OpenGLHandle asset, Matrix4 newModel)
+        {
+            for (int i = 0; i < m_shadowAssetsOld.Count; i++)
+            {
+                if (m_shadowAssetsOld[i].Asset.Equals(asset))
+                {
+                    m_shadowAssetsOld[i] = (asset, newModel);
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Render a shadow pass on all registered meshes based on a directional light
+        /// </summary>
+        /// <param name="lightView"></param>
+        /// <param name="lightProjection"></param>
+        public void RenderShadowPassDeprecated(Matrix4 lightView, Matrix4 lightProjection)
+        {
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Lequal);
+            GL.Enable(EnableCap.CullFace);
+            // GL.CullFace(CullFaceMode.Front);
+            GL.Viewport(0, 0, shadowWidth, shadowHeight);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, shadowFBO);
+            GL.Clear(ClearBufferMask.DepthBufferBit);
+
+            GL.UseProgram(depthShader);
+            GL.UniformMatrix4(locLightView, false, ref lightView);
+            GL.UniformMatrix4(locLightProjection, false, ref lightProjection);
+
+            GL.Enable(EnableCap.PolygonOffsetFill);
+            GL.PolygonOffset(factorFill, factorUnit);
+
+            foreach (var (asset, model) in m_shadowAssetsOld)
             {
                 var assetModel = model;
                 GL.UniformMatrix4(locModel, false, ref assetModel);
@@ -167,7 +263,7 @@ namespace SDL2Engine.Core.Lighting
         /// <summary>
         /// Render depth shader debug quad
         /// </summary>
-        public void RenderDebugQuad(bool showRawDepth, float nearPlane, float farPlane)
+        public void RenderDebugQuadOld(bool showRawDepth, float nearPlane, float farPlane)
         {
             GL.Viewport(0, 0, 1024, 1024);
             GL.UseProgram(debugShader);
@@ -196,5 +292,6 @@ namespace SDL2Engine.Core.Lighting
             GL.UseProgram(0);
             GL.Disable(EnableCap.CullFace);
         }
+        #endregion
     }
 }

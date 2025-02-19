@@ -38,15 +38,15 @@ namespace SDL2Engine.Core.Cameras
             if (PlatformInfo.RendererType == RendererType.OpenGlRenderer &&
                 PlatformInfo.PipelineType == PipelineType.Pipe3D)
             {
-                float aspect = windowWidth / (float)windowHeight;
+                var aspect = windowWidth / (float)windowHeight;
                 camera = new CameraGL3D(
-                    new Vector3(0, 0, 3),    
+                    new Vector3(0, 0, -10),    
                     new Vector3(0, 0, 0),    
                     Vector3.UnitY,           
-                    90f,                     
+                    80f,                     
                     aspect,
-                    0.1f,                    // Near plane
-                    2000f                   // Far plane
+                    0.1f,                    
+                    2000f                   
                 );
             }
             _idToCamera[cameraId] = camera;

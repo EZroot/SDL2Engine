@@ -33,8 +33,9 @@ void main()
 {
     float depth = texture(depthTex, TexCoord).r;
     vec3 worldPos = ReconstructWorldPosition(TexCoord, depth);
+    
     // March away from the light instead of toward it.
-    vec3 dirFromLight = normalize(worldPos - lightPos);
+    vec3 dirFromLight = normalize(lightPos - worldPos);
 
     vec3 samplePos = worldPos;
     vec4 accumulated = vec4(0.0);
