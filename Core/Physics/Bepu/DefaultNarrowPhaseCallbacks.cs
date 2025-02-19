@@ -22,7 +22,7 @@ namespace SDL2Engine.Core.Physics.Bepu
         /// <param name="contactSpringiness">Spring settings for contacts.</param>
         /// <param name="maximumRecoveryVelocity">Maximum recovery velocity.</param>
         /// <param name="frictionCoefficient">Friction coefficient.</param>
-        public DefaultNarrowPhaseCallbacks(SpringSettings contactSpringiness, float maximumRecoveryVelocity = 2f, float frictionCoefficient = 1f)
+        public DefaultNarrowPhaseCallbacks(SpringSettings contactSpringiness, float maximumRecoveryVelocity = 2f, float frictionCoefficient = .1f)
         {
             ContactSpringiness = contactSpringiness;
             MaximumRecoveryVelocity = maximumRecoveryVelocity;
@@ -33,9 +33,9 @@ namespace SDL2Engine.Core.Physics.Bepu
         {
             if (ContactSpringiness.AngularFrequency == 0 && ContactSpringiness.TwiceDampingRatio == 0)
             {
-                ContactSpringiness = new SpringSettings(30, 1.0f);
-                MaximumRecoveryVelocity = 2f;
-                FrictionCoefficient = 0.5f;
+                ContactSpringiness = new SpringSettings(30, 1f);
+                MaximumRecoveryVelocity = 8f;
+                FrictionCoefficient = 0.15f;
             }
         }
 

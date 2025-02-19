@@ -3,6 +3,7 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using SDL2Engine.Core.Addressables.Models.Interfaces;
 using SDL2Engine.Core.Cameras;
+using SDL2Engine.Core.Geometry;
 using SDL2Engine.Core.Utils;
 
 public class ModelService : IModelService
@@ -104,13 +105,93 @@ public class ModelService : IModelService
             MathHelper.DegreesToRadians(90f), aspect, 0.1f, 100f);
 
         // Set uniforms.
-        GL.UseProgram(shaderProgram);
-        GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "model"), false, ref model);
-        GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "view"), false, ref view);
-        GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "projection"), false, ref projection);
-        GL.UseProgram(0);
+        // GL.UseProgram(shaderProgram);
+        // GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "model"), false, ref model);
+        // GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "view"), false, ref view);
+        // GL.UniformMatrix4(GL.GetUniformLocation(shaderProgram, "projection"), false, ref projection);
+
+        // GL.UseProgram(0);
 
         return new OpenGLHandle(new OpenGLMandatoryHandles(vao, vbo, 0, shaderProgram, vertexCount));
+    }
+    
+     public Mesh LoadModel(string path)
+    {
+        var positions = new List<Vector3>();
+        var texCoords = new List<Vector2>();
+        var normals = new List<Vector3>();
+        var finalVerts = new List<float>();
+        var culture = CultureInfo.InvariantCulture;
+
+        foreach (string line in File.ReadLines(path))
+        {
+            string trimmed = line.Trim();
+            if (string.IsNullOrEmpty(trimmed) || trimmed[0] == '#')
+                continue;
+
+            string[] parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                continue;
+
+            switch (parts[0])
+            {
+                case "v":
+                    if (parts.Length < 4) continue;
+                    positions.Add(new Vector3(
+                        float.Parse(parts[1], culture),
+                        float.Parse(parts[2], culture),
+                        float.Parse(parts[3], culture)));
+                    break;
+                case "vt":
+                    if (parts.Length < 3) continue;
+                    float u = float.Parse(parts[1], culture);
+                    float v = 1f - float.Parse(parts[2], culture); 
+                    texCoords.Add(new Vector2(u, v));
+                    break;
+                case "vn":
+                    if (parts.Length < 4) continue;
+                    normals.Add(new Vector3(
+                        float.Parse(parts[1], culture),
+                        float.Parse(parts[2], culture),
+                        float.Parse(parts[3], culture)));
+                    break;
+                case "f":
+                    // Assumes convex polygon faces.
+                    int count = parts.Length - 1;
+                    for (int i = 1; i < count - 1; i++)
+                    {
+                        AppendVertex(parts[1], positions, texCoords, normals, finalVerts);
+                        AppendVertex(parts[i + 1], positions, texCoords, normals, finalVerts);
+                        AppendVertex(parts[i + 2], positions, texCoords, normals, finalVerts);
+                    }
+
+                    break;
+            }
+        }
+
+        var vertices = finalVerts.ToArray();
+        if (vertices.Length == 0)
+            throw new Exception("No vertices loaded from model file.");
+
+        int vertexCount = vertices.Length / 8;
+
+        // Generate and bind buffers.
+        int vao = GL.GenVertexArray();
+        int vbo = GL.GenBuffer();
+        GL.BindVertexArray(vao);
+        GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+        GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+
+        const int stride = 8 * sizeof(float);
+        GL.EnableVertexAttribArray(0);
+        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
+        GL.EnableVertexAttribArray(1);
+        GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, stride, 3 * sizeof(float));
+        GL.EnableVertexAttribArray(2);
+        GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 6 * sizeof(float));
+        GL.BindVertexArray(0);
+
+        return new Mesh(vao, vbo, 0, vertexCount);
     }
 
     public OpenGLHandle Create3DArrow(string vertShaderPath, string fragShaderPath)

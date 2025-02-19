@@ -23,7 +23,7 @@ namespace SDL2Engine.Core.Physics
         // 1 meter = 100 pixels
         private const float PPM = 100f;
 
-        private World m_world;
+        private Box2DSharp.Dynamics.World m_world;
         private CollisionDetector m_collisionDetector;
         
         private readonly List<GameObject> m_registeredObjects = new List<GameObject>();
@@ -43,7 +43,7 @@ namespace SDL2Engine.Core.Physics
             if (PlatformInfo.PipelineType == PipelineType.Pipe2D)
             {
                 Vector2 gravityVec = new Vector2(0f, gravity);
-                m_world = new World(gravityVec);
+                m_world = new Box2DSharp.Dynamics.World(gravityVec);
                 m_collisionDetector = new CollisionDetector(m_world, PPM);
                 Debug.Log($"<color=green>2D PHYSICS ENGINE INITIALIZED (BOX2D): {gravity}</color>");
             }

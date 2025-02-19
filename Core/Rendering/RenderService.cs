@@ -63,15 +63,15 @@ namespace SDL2Engine.Core.Cameras
                 CreateImGuiGLBindings(
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/imgui/imguishader.vert"),
                     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/imgui/imguishader.frag"));
-                Create2DGLBindings(
-                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/2d/2dshader.vert"),
-                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/2d/2dshader.frag"));
+                // Create2DGLBindings(
+                //     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/2d/2dshader.vert"),
+                //     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/2d/2dshader.frag"));
                 // Create3DGLBindings(
                 //     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.vert"),
                 //     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/3d.frag"), 32);
-                CreateDebugGLBindings(
-                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.vert"),
-                    FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.frag"));
+                // CreateDebugGLBindings(
+                //     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.vert"),
+                //     FileHelper.ReadFileContents(PlatformInfo.RESOURCES_FOLDER + "/shaders/debugging/debug.frag"));
 
                 GL.Enable(EnableCap.DepthTest);
                 GL.DepthFunc(DepthFunction.Less);

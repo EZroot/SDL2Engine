@@ -1,10 +1,12 @@
 using OpenTK.Mathematics;
 using SDL2Engine.Core.Cameras;
+using SDL2Engine.Core.Geometry;
 
 namespace SDL2Engine.Core.Addressables.Models.Interfaces;
 
 public interface IModelService
 {
+    Mesh LoadModel(string path);
     OpenGLHandle Load3DModel(string path, string vertShaderPath, string fragShaderPath, float aspect);
     OpenGLHandle Create3DArrow(string vertShaderPath, string fragShaderPath);
     OpenGLHandle CreateCube(string vertShaderPath, string fragShaderPath, float aspect);

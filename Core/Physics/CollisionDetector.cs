@@ -29,10 +29,10 @@ public class PointQueryCallback : IQueryCallback
 
 public class CollisionDetector
 {
-    private World m_world;
+    private Box2DSharp.Dynamics.World m_world;
     private float m_scale;
 
-    public CollisionDetector(World world, float scale = 100f)
+    public CollisionDetector(Box2DSharp.Dynamics.World world, float scale = 100f)
     {
         this.m_world = world;
         this.m_scale = scale;
