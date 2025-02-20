@@ -12,16 +12,51 @@ namespace SDL2Engine.Core.Buffers
         private int fbo, colorTex, depthTex;
         private IModelService m_modelService;
         private IGodRayBufferService m_grbService;
+        private int _fboWidth, _fboHeight;
+        public bool IsInitialized { get; private set; }
 
         public FrameBufferService(IModelService modelService, IGodRayBufferService godRayBufferService)
         {
             m_modelService = modelService;
             m_grbService = godRayBufferService;
-            InitializeFrameBuffer(1920, 1080);
+        }
+
+        public void Initialize()
+        {
+            InitializeFrameBuffer(1920,1080);
+            IsInitialized = true;
         }
         
+        public void Resize(int newWidth, int newHeight)
+        {
+            GL.BindTexture(TextureTarget.Texture2D, colorTex);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
+                newWidth, newHeight, 0,
+                PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            
+            GL.BindTexture(TextureTarget.Texture2D, depthTex);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24,
+                newWidth, newHeight, 0,
+                PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            
+            _fboWidth = newWidth;
+            _fboHeight = newHeight;
+            
+            // (Optional) Re-check status, unbind, etc.
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
+            if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) 
+                != FramebufferErrorCode.FramebufferComplete)
+            {
+                throw new Exception("Framebuffer not complete!");
+            }
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        }
+
         private void InitializeFrameBuffer(int screenWidth, int screenHeight)
         {
+            _fboWidth = screenWidth;
+            _fboHeight = screenHeight;
+            
             m_frameBufferQuadHandle = m_modelService.CreateFullscreenQuad(
                 PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/fbo/fbo.vert",
                 PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/fbo/fbo.frag");
@@ -56,14 +91,15 @@ namespace SDL2Engine.Core.Buffers
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
 
-        public void BindFramebuffer(int screenWidth, int screenHeight)
+
+        public void BindFramebuffer()
         {
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Less);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
-            GL.Viewport(0, 0, screenWidth, screenHeight);
+            GL.Viewport(0, 0, _fboWidth, _fboHeight);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         }
 

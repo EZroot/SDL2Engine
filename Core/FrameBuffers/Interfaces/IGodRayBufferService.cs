@@ -5,7 +5,7 @@ namespace SDL2Engine.Core.Buffers.Interfaces;
 
 public interface IGodRayBufferService
 {
-    void BindFramebuffer(int screenWidth, int screenHeight);
+    void BindFramebuffer();
     void UnbindFramebuffer();
     void ProcessGodRays(CameraGL3D cam, Light light, int depthTexture);
     int GetTexture();

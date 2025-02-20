@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using OpenTK.Mathematics;
 
 namespace SDL2Engine.Core.Utils;
 
@@ -14,6 +15,8 @@ public static class PlatformInfo
     
     public static RendererType RendererType { get; private set; }
     public static PipelineType PipelineType { get; private set; }
+    
+    public static Vector2i WindowSize { get; set; }
     
     static PlatformInfo()
     {

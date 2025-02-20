@@ -19,18 +19,21 @@ namespace SDL2Engine.Core.Buffers
         
         // FBO and texture for world geometry (bright-pass source).
         private int worldFbo, worldTex;
+        private int _fboWidth, _fboHeight;
         
         private IModelService m_modelService;
 
         public GodRayBufferService(IModelService modelService)
         {
             m_modelService = modelService;
-            InitializeFrameBuffers(1920, 1080);
+            InitializeFrameBuffers(1920,1080); // start off at max frame buffer (which it cant go above unless i change) (PlatformInfo.WindowSize.X, PlatformInfo.WindowSize.Y);
             // Debug quad already created in InitializeFrameBuffers.
         }
         
         private void InitializeFrameBuffers(int screenWidth, int screenHeight)
         {
+            _fboWidth = screenWidth;
+            _fboHeight = screenHeight;
             // Create debug quad (pass-through shader for viewing).
             m_debugQuadHandle = m_modelService.CreateFullscreenQuad(
                 PlatformInfo.RESOURCES_FOLDER + "/shaders/3d/debug/debug.vert",
@@ -97,14 +100,14 @@ namespace SDL2Engine.Core.Buffers
         }
 
         // Bind the world FBO for rendering your scene geometry.
-        public void BindFramebuffer(int screenWidth, int screenHeight)
+        public void BindFramebuffer()
         {
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Less);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, worldFbo);
-            GL.Viewport(0, 0, screenWidth, screenHeight);
+            GL.Viewport(0, 0, _fboWidth, _fboHeight);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         }
 

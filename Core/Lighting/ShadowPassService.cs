@@ -144,8 +144,6 @@ namespace SDL2Engine.Core.Lighting
             GL.Enable(EnableCap.DepthTest);
             GL.DepthFunc(DepthFunction.Lequal);
             GL.Enable(EnableCap.CullFace);
-            // GL.CullFace(CullFaceMode.Front);
-            GL.Viewport(0, 0, shadowWidth, shadowHeight);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, shadowFBO);
             GL.Clear(ClearBufferMask.DepthBufferBit);
 
@@ -170,7 +168,6 @@ namespace SDL2Engine.Core.Lighting
 
         public void RenderDebugQuad(bool showRawDepth, float nearPlane, float farPlane)
         {
-            // GL.Viewport(0, 0, 1024, 1024);
             GL.UseProgram(debugShader);
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, depthTexture);

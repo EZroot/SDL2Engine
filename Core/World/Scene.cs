@@ -1,12 +1,11 @@
-using OpenTK.Compute.OpenCL;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using SDL2Engine.Core.Addressables.Models.Interfaces;
+using SDL2;
 using SDL2Engine.Core.Buffers.Interfaces;
 using SDL2Engine.Core.Cameras;
 using SDL2Engine.Core.Lighting;
 using SDL2Engine.Core.Lighting.Interfaces;
-using PlatformInfo = SDL2Engine.Core.Utils.PlatformInfo;
+using SDL2Engine.Core.Utils;
 
 namespace SDL2Engine.Core.World;
 public class Scene
@@ -27,6 +26,8 @@ public class Scene
         m_camera = mainCamera;
         m_godrayBufferService = godRayBufferService;
         
+        m_frameBufferService.Initialize();
+
         // cache shader uniforms, setup/register to shadowmap, etc?
         m_directionalLight = new Light(LightType.Directional, 50, 1, 100);
         m_directionalLight.Update(new Vector3(0, -1, 0), Quaternion.FromEulerAngles(MathHelper.DegreesToRadians(45),MathHelper.DegreesToRadians(180),0), 0);
@@ -54,11 +55,11 @@ public class Scene
 
     public void Render()
     {
-        // shadow pass
-        m_shadowPassService.RenderShadowPass(m_directionalLight.LightView, m_directionalLight.LightProjection);
-        
+        m_frameBufferService.Resize(PlatformInfo.WindowSize.X, PlatformInfo.WindowSize.Y);
+        // // shadow pass
+        // m_shadowPassService.RenderShadowPass(m_directionalLight.LightView, m_directionalLight.LightProjection);
         // main render pass
-        m_frameBufferService.BindFramebuffer(1920,1080);
+        m_frameBufferService.BindFramebuffer();
         foreach (var obj in SceneObjects)
         {
             if(obj == null) continue;
@@ -79,38 +80,38 @@ public class Scene
             
             int loc = GL.GetUniformLocation(obj.Shader.ProgramId, "lightDir");
             if (loc != -1) GL.Uniform3(loc, ref lightDir);
-
+        
             loc = GL.GetUniformLocation(obj.Shader.ProgramId, "lightColor");
             if (loc != -1) GL.Uniform3(loc, ref lightColor);
-
+        
             loc = GL.GetUniformLocation(obj.Shader.ProgramId, "ambientColor");
             if (loc != -1) GL.Uniform3(loc, ref ambientColor);
             
             loc = GL.GetUniformLocation(obj.Shader.ProgramId, "model");
             if (loc != -1) GL.UniformMatrix4(loc, false, ref modelMat);
-
+        
             loc = GL.GetUniformLocation(obj.Shader.ProgramId, "view");
             if (loc != -1) GL.UniformMatrix4(loc, false, ref camView);
-
+        
             loc = GL.GetUniformLocation(obj.Shader.ProgramId, "projection");
             if (loc != -1) GL.UniformMatrix4(loc, false, ref camProj);
             
             loc = GL.GetUniformLocation(obj.Shader.ProgramId, "lightSpaceMatrix");
             if (loc != -1) GL.UniformMatrix4(loc, false, ref lightSpaceMatrix);
-
+        
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, (int)textureLoc);
             loc = GL.GetUniformLocation(obj.Shader.ProgramId, "diffuseTexture");
             if (loc != -1) GL.Uniform1(loc, 0);
-
+        
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2D, shadowMapPtr);
             loc = GL.GetUniformLocation(obj.Shader.ProgramId, "shadowMap");
             if (loc != -1) GL.Uniform1(loc, 1);
-
+        
             GL.BindVertexArray(obj.Mesh.Vao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, obj.Mesh.VertexCount);
-
+        
             GL.BindVertexArray(0);
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2D, 0);
@@ -123,71 +124,71 @@ public class Scene
         // m_shadowPassService.RenderDebugQuad(false,1,100);
         m_frameBufferService.UnbindFramebuffer();
         // post process pass
-        m_godrayBufferService.BindFramebuffer(1920, 1080);
-        foreach (var obj in SceneObjects)
-        {
-            obj.Shader.Bind();
-            var camView = m_camera.View;
-            var camProj = m_camera.Projection;
-            var modelMat = obj.ModelMatrix;
-            var lightSpaceMatrix = m_directionalLight.LightProjection * m_directionalLight.LightView;
-            var textureLoc = obj.TextureData.Texture;
-            var lightDir = m_directionalLight.LightDirection;
-            var lightColor = obj.Color;
-            var ambientColor = obj.AmbientColor;
-            
-            var shadowMapPtr = m_shadowPassService.DepthTexturePtr;
-            
-            int loc = GL.GetUniformLocation(obj.Shader.ProgramId, "lightDir");
-            if (loc != -1) GL.Uniform3(loc, ref lightDir);
-
-            loc = GL.GetUniformLocation(obj.Shader.ProgramId, "lightColor");
-            if (loc != -1) GL.Uniform3(loc, ref lightColor);
-
-            loc = GL.GetUniformLocation(obj.Shader.ProgramId, "ambientColor");
-            if (loc != -1) GL.Uniform3(loc, ref ambientColor);
-            
-            loc = GL.GetUniformLocation(obj.Shader.ProgramId, "model");
-            if (loc != -1) GL.UniformMatrix4(loc, false, ref modelMat);
-
-            loc = GL.GetUniformLocation(obj.Shader.ProgramId, "view");
-            if (loc != -1) GL.UniformMatrix4(loc, false, ref camView);
-
-            loc = GL.GetUniformLocation(obj.Shader.ProgramId, "projection");
-            if (loc != -1) GL.UniformMatrix4(loc, false, ref camProj);
-            
-            loc = GL.GetUniformLocation(obj.Shader.ProgramId, "lightSpaceMatrix");
-            if (loc != -1) GL.UniformMatrix4(loc, false, ref lightSpaceMatrix);
-
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, (int)textureLoc);
-            loc = GL.GetUniformLocation(obj.Shader.ProgramId, "diffuseTexture");
-            if (loc != -1) GL.Uniform1(loc, 0);
-
-            GL.ActiveTexture(TextureUnit.Texture1);
-            GL.BindTexture(TextureTarget.Texture2D, shadowMapPtr);
-            loc = GL.GetUniformLocation(obj.Shader.ProgramId, "shadowMap");
-            if (loc != -1) GL.Uniform1(loc, 1);
-
-            GL.BindVertexArray(obj.Mesh.Vao);
-            GL.DrawArrays(PrimitiveType.Triangles, 0, obj.Mesh.VertexCount);
-
-            GL.BindVertexArray(0);
-            GL.ActiveTexture(TextureUnit.Texture1);
-            GL.BindTexture(TextureTarget.Texture2D, 0);
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, 0);
-            
-            obj.Shader.UnBind();
-        }
-        m_godrayBufferService.UnbindFramebuffer();
-            
-        // process god rays
-        m_godrayBufferService.ProcessGodRays(m_camera, m_directionalLight, m_frameBufferService.GetDepthTexture());
-        // grbService.RenderDebug(); // visualize god rays 
-        
+        // m_godrayBufferService.BindFramebuffer();
+        // foreach (var obj in SceneObjects)
+        // {
+        //     obj.Shader.Bind();
+        //     var camView = m_camera.View;
+        //     var camProj = m_camera.Projection;
+        //     var modelMat = obj.ModelMatrix;
+        //     var lightSpaceMatrix = m_directionalLight.LightProjection * m_directionalLight.LightView;
+        //     var textureLoc = obj.TextureData.Texture;
+        //     var lightDir = m_directionalLight.LightDirection;
+        //     var lightColor = obj.Color;
+        //     var ambientColor = obj.AmbientColor;
+        //     
+        //     var shadowMapPtr = m_shadowPassService.DepthTexturePtr;
+        //     
+        //     int loc = GL.GetUniformLocation(obj.Shader.ProgramId, "lightDir");
+        //     if (loc != -1) GL.Uniform3(loc, ref lightDir);
+        //
+        //     loc = GL.GetUniformLocation(obj.Shader.ProgramId, "lightColor");
+        //     if (loc != -1) GL.Uniform3(loc, ref lightColor);
+        //
+        //     loc = GL.GetUniformLocation(obj.Shader.ProgramId, "ambientColor");
+        //     if (loc != -1) GL.Uniform3(loc, ref ambientColor);
+        //     
+        //     loc = GL.GetUniformLocation(obj.Shader.ProgramId, "model");
+        //     if (loc != -1) GL.UniformMatrix4(loc, false, ref modelMat);
+        //
+        //     loc = GL.GetUniformLocation(obj.Shader.ProgramId, "view");
+        //     if (loc != -1) GL.UniformMatrix4(loc, false, ref camView);
+        //
+        //     loc = GL.GetUniformLocation(obj.Shader.ProgramId, "projection");
+        //     if (loc != -1) GL.UniformMatrix4(loc, false, ref camProj);
+        //     
+        //     loc = GL.GetUniformLocation(obj.Shader.ProgramId, "lightSpaceMatrix");
+        //     if (loc != -1) GL.UniformMatrix4(loc, false, ref lightSpaceMatrix);
+        //
+        //     GL.ActiveTexture(TextureUnit.Texture0);
+        //     GL.BindTexture(TextureTarget.Texture2D, (int)textureLoc);
+        //     loc = GL.GetUniformLocation(obj.Shader.ProgramId, "diffuseTexture");
+        //     if (loc != -1) GL.Uniform1(loc, 0);
+        //
+        //     GL.ActiveTexture(TextureUnit.Texture1);
+        //     GL.BindTexture(TextureTarget.Texture2D, shadowMapPtr);
+        //     loc = GL.GetUniformLocation(obj.Shader.ProgramId, "shadowMap");
+        //     if (loc != -1) GL.Uniform1(loc, 1);
+        //
+        //     GL.BindVertexArray(obj.Mesh.Vao);
+        //     GL.DrawArrays(PrimitiveType.Triangles, 0, obj.Mesh.VertexCount);
+        //
+        //     GL.BindVertexArray(0);
+        //     GL.ActiveTexture(TextureUnit.Texture1);
+        //     GL.BindTexture(TextureTarget.Texture2D, 0);
+        //     GL.ActiveTexture(TextureUnit.Texture0);
+        //     GL.BindTexture(TextureTarget.Texture2D, 0);
+        //     
+        //     obj.Shader.UnBind();
+        // }
+        // m_godrayBufferService.UnbindFramebuffer();
+        //     
+        // // process god rays
+        // m_godrayBufferService.ProcessGodRays(m_camera, m_directionalLight, m_frameBufferService.GetDepthTexture());
+        // // grbService.RenderDebug(); // visualize god rays 
+        //
         // render frame buffer to camera
         m_frameBufferService.RenderFramebuffer();
-
+        
     }
 }

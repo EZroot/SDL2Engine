@@ -90,8 +90,16 @@ public class CameraGL3D : ICamera
     {
         _viewportWidth = width;
         _viewportHeight = height;
+
+        // Recalculate the aspect ratio based on the new width and height
+        if (height == 0f)
+            height = 1f; // Avoid division by zero
+    
+        aspect = width / height;
+
         UpdateProjection();
     }
+
     
     public void SetPosition(Vector3 newPosition)
     {

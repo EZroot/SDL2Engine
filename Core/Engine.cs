@@ -11,10 +11,12 @@ using SDL2Engine.Core.CoreSystem.Configuration.Components;
 using System.Numerics;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using SDL2Engine.Core.Input;
 using SDL2Engine.Core.Physics.Interfaces;
 using SDL2Engine.Core.Cameras;
 using SDL2Engine.Core.Utils;
+using Vector2 = OpenTK.Mathematics.Vector2;
 
 namespace SDL2Engine.Core
 {
@@ -34,7 +36,6 @@ namespace SDL2Engine.Core
         private readonly IServiceProvider m_serviceProvider;
         
         private IntPtr m_window, m_renderer;
-        private int m_windowWidth, m_windowHeight;
         private int m_camera;
         
         private bool disposed = false;
@@ -73,8 +74,7 @@ namespace SDL2Engine.Core
                 SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
 
             SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
-            m_windowWidth = windowWidth;
-            m_windowHeight = windowHeight;
+            PlatformInfo.WindowSize = new Vector2i(windowWidth, windowHeight);
 
             IntPtr imguiContext = ImGui.CreateContext();
             ImGui.SetCurrentContext(imguiContext);
@@ -175,27 +175,28 @@ namespace SDL2Engine.Core
                 uint flags = SDL.SDL_GetWindowFlags(m_window);
                 bool isFullscreen = (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0 ||
                                     (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
-
-                m_windowWidth = e.window.data1;
-                m_windowHeight = e.window.data2;
+                
+                SDL.SDL_GetWindowSize(m_window, out var windowWidth, out var windowHeight);
+                PlatformInfo.WindowSize = new Vector2i( windowWidth,  windowHeight);
+                Debug.Log($"Window Resized: {PlatformInfo.WindowSize}");
                 if (PlatformInfo.RendererType == RendererType.OpenGlRenderer)
                 {
-                    GL.Viewport(0, 0, m_windowWidth, m_windowHeight);
+                    // GL.Viewport(0, 0, PlatformInfo.WindowSize.X, PlatformInfo.WindowSize.Y);
                     if (PlatformInfo.PipelineType == PipelineType.Pipe2D)
                     {
-                        ((CameraGL)(m_cameraService.GetActiveCamera())).ResizeViewport(m_windowWidth, m_windowHeight);
+                        ((CameraGL)(m_cameraService.GetActiveCamera())).ResizeViewport(PlatformInfo.WindowSize.X,PlatformInfo.WindowSize.Y);
+                        m_physicsService.CreateWindowBoundaries(PlatformInfo.WindowSize.X, PlatformInfo.WindowSize.Y);
                     }
 
                     if (PlatformInfo.PipelineType == PipelineType.Pipe3D)
                     {
-                        ((CameraGL3D)(m_cameraService.GetActiveCamera())).ResizeViewport(m_windowWidth, m_windowHeight);
+                        ((CameraGL3D)(m_cameraService.GetActiveCamera())).ResizeViewport(PlatformInfo.WindowSize.X,PlatformInfo.WindowSize.Y);
+                        
                     }
                 }
 
-                m_guiRenderService.OnWindowResize(m_windowWidth, m_windowHeight);
-                m_physicsService.CreateWindowBoundaries(m_windowWidth, m_windowHeight);
-
-                var windowSettings = new WindowSettings(title, m_windowWidth, m_windowHeight, isFullscreen);
+                m_guiRenderService.OnWindowResize(PlatformInfo.WindowSize.X, PlatformInfo.WindowSize.Y);
+                var windowSettings = new WindowSettings(title, PlatformInfo.WindowSize.X, PlatformInfo.WindowSize.Y, isFullscreen);
                 EventHub.Raise(this, new OnWindowResized(windowSettings));
             }
         }
